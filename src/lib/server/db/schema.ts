@@ -1,5 +1,5 @@
 import type { SQL_Type, TS_Type } from '$lib/utils/struct';
-import { pgTable, text, integer, timestamp, boolean, type PgTableWithColumns, PgColumn } from 'drizzle-orm/pg-core';
+import { pgTable, text, integer, timestamp, boolean, type PgTableWithColumns, PgColumn, serial } from 'drizzle-orm/pg-core';
 
 type a = PgTableWithColumns<{
 	name: "account";
@@ -17,7 +17,7 @@ type a = PgTableWithColumns<{
 			isPrimaryKey: true;
 			isAutoincrement: false;
 			hasRuntimeDefault: false;
-			enumValues: undefined;
+			enumValues: [string, ...string[]];
 			baseColumn: never;
 			generated: undefined;
         }, {}, {}>;
@@ -29,18 +29,18 @@ type DataType<T extends SQL_Type> = T extends 'text' ? 'string' : T extends 'int
 type PgType<T extends SQL_Type> = T extends 'text' ? 'PgText' : T extends 'integer' ? 'PgInteger' : T extends 'boolean' ? 'PgBoolean' : never;
 
 type Col<TableName extends string, Type extends SQL_Type> = PgColumn<{
-	name: string;
-	tableName: TableName;
-	dataType: DataType<Type>;
-	columnType: PgType<Type>;
-	data: TS_Type<Type>;
-	driverParam: TS_Type<Type>;
+	name: "id";
+	tableName: "account";
+	dataType: "string";
+	columnType: "PgText";
+	data: string;
+	driverParam: string;
 	notNull: true;
 	hasDefault: false;
-	isPrimaryKey: false;
+	isPrimaryKey: true;
 	isAutoincrement: false;
 	hasRuntimeDefault: false;
-	enumValues: undefined;
+	enumValues: [string, ...string[]];
 	baseColumn: never;
 	generated: undefined;
 }, {}, {}>;
@@ -53,7 +53,7 @@ type Table<Name extends string, Cols extends Record<string, SQL_Type>> = PgTable
 	dialect: 'pg';
 }>;
 
-export const account = pgTable('account', {
+export const account: a = pgTable('account', {
 	id: text('id').primaryKey(),
 	// created: text('created').notNull(),
 	// updated: text('updated').notNull(),
@@ -73,8 +73,10 @@ export const account = pgTable('account', {
 	// verification: text('verification').notNull(),
 });
 
+const col = serial('id');
+
 export const session = pgTable('session', {
-	id: text('id').primaryKey(),
+	id: integer('id').primaryKey(),
 	created: text('created').notNull(),
 	updated: text('updated').notNull(),
 	archived: boolean('archived').notNull(),
@@ -89,6 +91,29 @@ export const session = pgTable('session', {
 	prevUrl: text('prev_url').notNull(),
 });
 
+session.id
+
 export type Session = typeof session.$inferSelect;
 
 export type Account = typeof account.$inferSelect;
+
+
+// import { serial, timestamp, boolean } from 'drizzle-orm/pg-core';
+
+// export const commonColumns = {
+//     id: serial('id').primaryKey(),
+//     created: timestamp('created').defaultNow().notNull(),
+//     updated: timestamp('updated').defaultNow().notNull(),
+//     archived: boolean('archived').default(false).notNull(),
+// };
+
+// // Define tables manually by spreading common columns
+// import { varchar, pgTable } from 'drizzle-orm/pg-core';
+
+// export const usersTable = pgTable('users', {
+//     ...commonColumns,
+//     username: varchar('username', { length: 255 }).notNull(),
+//     email: varchar('email', { length: 255 }).unique().notNull(),
+// });
+
+// usersTable.id;
