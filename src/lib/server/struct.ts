@@ -155,17 +155,3 @@ const data = s.Generator({
     password: 'test',
     archived: false,
 });
-
-const myOtherTable = pgTable('Test', {
-    id: text('id').primaryKey(),
-    name: text('name').notNull(),
-    age: text('age').notNull(),
-});
-
-(async () => {
-    const data = await DB.select().from(myOtherTable).where(sql`${myOtherTable.id} = ${1}`);
-
-    const a = data[0];
-
-    if (!a) return;
-})();
