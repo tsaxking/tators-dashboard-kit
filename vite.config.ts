@@ -6,8 +6,5 @@ export default defineConfig({
 
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
-	},
-	define: {
-		__VITE_HOST__: JSON.stringify('http://localhost:3000')
 	}
 });
