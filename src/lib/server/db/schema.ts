@@ -1,4 +1,3 @@
-import type { SQL_Type, TS_Type } from '$lib/utils/struct';
 import { pgTable, text, integer, timestamp, boolean, type PgTableWithColumns, PgColumn, serial } from 'drizzle-orm/pg-core';
 import { DB } from '.';
 import { eq } from 'drizzle-orm';
