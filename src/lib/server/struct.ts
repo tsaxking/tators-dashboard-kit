@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 import type { PgColumn, PgColumnBuilder, PgColumnBuilderBase, PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { sql, type BuildColumns, type ColumnBuilderBase } from 'drizzle-orm';
-import { attemptAsync, resolveAll, type Result } from '$lib/ts-utils/check';
+import { attempt, attemptAsync, resolveAll, type Result } from '$lib/ts-utils/check';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { DB } from './db';
 import { type ColumnDataType } from 'drizzle-orm';
@@ -44,6 +44,21 @@ export type StructBuilder<T extends Blank, Name extends string> = {
     name: Name;
     structure: T;
     sample?: boolean;
+    loop?: {
+        fn: (data: StructData<T, Name>, index: number) => void;
+        time: number;
+    }
+    frontend?: boolean;
+    defaultUniverses?: string[];
+    generators?: Partial<{
+        id: () => string;
+        attributes: () => string[];
+    }>;
+    versionHistory?: {
+        type: 'days' | 'versions';
+        amount: number;
+    };
+    universeLimit?: number;
 };
 
 const globalCols = {
@@ -170,15 +185,71 @@ export class StructData<T extends Blank, Name extends string> {
         });
     }
 
-    getAttributes() {}
-    setAttributes() {}
-    removeAttributes() {}
-    addAttributes() {}
+    getAttributes() {
+        return attempt(() => {
+            const a = JSON.parse(this.data.attributes);
+            if (!Array.isArray(a)) throw new DataError('Attributes must be an array');
+            if (!a.every(i => typeof i === 'string')) throw new DataError('Attributes must be an array of strings');
+            return a;
+        });
+    }
+    setAttributes(attributes: string[]) {
+        return attemptAsync(async () => {
+            attributes = attributes
+                .filter(i => typeof i === 'string')
+                .filter((v, i, a) => a.indexOf(v) === i);
+            return await this.struct.database.update(this.struct.table).set({
+                attributes: JSON.stringify(attributes),
+                updated: new Date(),
+            } as any).where(sql`${this.struct.table.id} = ${this.id}`);
+        });
+    }
+    removeAttributes(...attributes: string[]) {
+        return attemptAsync(async () => {
+            const a = this.getAttributes().unwrap();
+            const newAttributes = a.filter(i => !attributes.includes(i));
+            return (await this.setAttributes(newAttributes)).unwrap();
+        });
+    }
+    addAttributes(...attributes: string[]) {
+        return attemptAsync(async () => {
+            const a = this.getAttributes().unwrap();
+            return (await this.setAttributes([...a, ...attributes])).unwrap()
+        });
+    }
 
-    getUniverses() {}
-    setUniverses() {}
-    removeUniverses() {}
-    addUniverses() {}
+    getUniverses() {
+        return attempt(() => {
+            const a = JSON.parse(this.data.universes);
+            if (!Array.isArray(a)) throw new DataError('Universes must be an array');
+            if (!a.every(i => typeof i === 'string')) throw new DataError('Universes must be an array of strings');
+            return a;
+        });
+    }
+    setUniverses(universes: string[]) {
+        return attemptAsync(async () => {
+            universes = universes
+                .filter(i => typeof i === 'string')
+                .filter((v, i, a) => a.indexOf(v) === i);
+            return await this.struct.database.update(this.struct.table).set({
+                universes: JSON.stringify(universes),
+                updated: new Date(),
+            } as any).where(sql`${this.struct.table.id} = ${this.id}`);
+        });
+    }
+    removeUniverses(...universes: string[]) {
+        return attemptAsync(async () => {
+            const a = this.getUniverses().unwrap();
+            const newUniverses = a.filter(i => !universes.includes(i));
+            return (await this.setUniverses(newUniverses)).unwrap()
+        });
+    }
+    addUniverses(...universes: string[]) {
+        return attemptAsync(async () => {
+            const a = this.getUniverses().unwrap();
+            return (await this.setUniverses([...a, ...universes])).unwrap()
+        });
+    }
 }
 
 type StructEvents<T extends Blank, Name extends string> = {
@@ -395,17 +466,3 @@ export class Struct<T extends Blank, Name extends string> {
         });
     }
 }
-
-const s = new Struct({
-    name: 'Accounts',
-    database: DB,
-    structure: {
-        username: text('username').notNull(),
-        email: text('email').notNull().unique(),
-        password: text('password').notNull(),
-    }
-});
-
-s.fromId('1').then((res) => {
-    const d = res.unwrap();
-});
