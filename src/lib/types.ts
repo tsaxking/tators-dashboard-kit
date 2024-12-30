@@ -14,3 +14,7 @@ export enum DataAction {
     ReadVersionHistory = 'read-version-history',
     ReadArchive = 'read-archive'
 }
+
+export type SocketEvents = {
+    test: void;
+};

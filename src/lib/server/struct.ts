@@ -610,6 +610,7 @@ export class Struct<T extends Blank, Name extends string> {
             const { sse } = await import('./utils/sse');
             const { Session } = await import('./structs/session');
             const { Permissions } = await import('./structs/permissions');
+            const { Account } = await import('./structs/account');
 
             // Permission handling
             const emitToConnections = async (event: string, data: StructData<T, Name>) => {
@@ -623,6 +624,15 @@ export class Struct<T extends Blank, Name extends string> {
                     if (account.isErr()) return console.error(account.error);
                     const a = account.value;
                     if (!a) return;
+
+                    if ((await Account.Admins.fromProperty('accountId', a.id, false)).unwrap().length) {
+                        connection.send(`struct:${this.name}`, {
+                            event,
+                            data: data.data,
+                        });
+                        return;
+                    }
+
                     const roles = await Permissions.getRoles(a);
                     if (roles.isErr()) return console.error(roles.error);
                     const r = roles.value;
@@ -630,7 +640,10 @@ export class Struct<T extends Blank, Name extends string> {
                     const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
                     if (res.isErr()) return console.error(res.error);
                     const [result] = res.value;
-                    connection.send(event, result);
+                    connection.send(`struct:${this.name}`, {
+                        event,
+                        data: result,
+                    });
                 });
             };
 

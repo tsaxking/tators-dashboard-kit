@@ -1,4 +1,4 @@
-import { sse} from '$lib/server/utils/sse';
+import { sse } from '$lib/server/utils/sse';
 
 // setInterval(() => {
 // 	sse.send({
