@@ -1,11 +1,41 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { attemptAsync } from "$lib/ts-utils/check";
+import { attempt, attemptAsync } from "$lib/ts-utils/check";
 import { EventEmitter } from "$lib/ts-utils/event-emitter";
 import { match } from "$lib/ts-utils/match";
 import { Stream } from "$lib/ts-utils/stream";
 import { decode } from "$lib/ts-utils/text";
 import { DataAction, PropertyAction } from '$lib/types';
-import type { Writable } from "svelte/store";
+import type { Readable, Writable } from "svelte/store";
+
+// TODO: Batching?
+
+export class DataError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'DataError';
+    }
+}
+
+export class StructError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'StructError';
+    }
+}
+
+export class FatalDataError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'FatalDataError';
+    }
+}
+
+export class FatalStructError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'FatalStructError';
+    }
+}
 
 export interface Socket {
     on(event: string, lisener: (data: unknown) => void): void;
@@ -32,16 +62,21 @@ export type StructBuilder<T extends Blank> = {
     socket: Socket;
 };
 
-export type Structable<T extends Blank> = Partial<{
+export type PartialStructable<T extends Blank> = {
+    [K in keyof T]?: ColTsType<T[K]>;
+}
+
+export type Structable<T extends Blank> = {
     [K in keyof T]: ColTsType<T[K]>;
-}>
+};
 
-export class StructData<T extends Blank> implements Writable<Structable<T>> {
-    constructor(public readonly struct: Struct<T>, public data: Structable<T>) {}
 
-    private subscribers = new Set<(value: Structable<T>) => void>();
+export class StructData<T extends Blank> implements Writable< PartialStructable<T> & Structable<GlobalCols>> {
+    constructor(public readonly struct: Struct<T>, public data: PartialStructable<T> & Structable<GlobalCols>) {}
 
-    public subscribe(fn: (value: Structable<T>) => void): () => void {
+    private subscribers = new Set<(value: PartialStructable<T> & Structable<GlobalCols>) => void>();
+
+    public subscribe(fn: (value:  PartialStructable<T> & Structable<GlobalCols>) => void): () => void {
         this.subscribers.add(fn);
         fn(this.data);
         return () => {
@@ -50,13 +85,13 @@ export class StructData<T extends Blank> implements Writable<Structable<T>> {
     }
 
     // this is what will set in the store
-    public set(value: Structable<T>): void {
+    public set(value: PartialStructable<T> & Structable<GlobalCols>): void {
         this.data = value;
         this.subscribers.forEach((fn) => fn(value));
     }
 
     // this is what will send to the backend
-    public async update(fn: (value: Structable<T>) => Structable<T>) {
+    public async update(fn: (value: PartialStructable<T> & Structable<GlobalCols>) => PartialStructable<T> & Structable<GlobalCols>) {
         return attemptAsync(async () => {
             const prev = { ...this.data };
             (await this.struct.post(PropertyAction.Update, fn(this.data))).unwrap();
@@ -64,26 +99,89 @@ export class StructData<T extends Blank> implements Writable<Structable<T>> {
         });
     }
 
-    delete() {}
+    delete() {
+        return this.struct.post(DataAction.Delete, {
+            id: this.data.id,
+        });
+    }
 
-    setArchive(archive: boolean) {}
+    setArchive(archive: boolean) {
+        if (archive) {
+            return this.struct.post(DataAction.Archive, {
+                id: this.data.id,
+            });
+        }
+        return this.struct.post(DataAction.RestoreArchive, {
+            id: this.data.id,
+        });
+    }
 
-    getVersionHistory() {}
+    // getVersionHistory() {}
 
-    pull<Key extends keyof T>(...keys: Key[]) {}
+    pull<Key extends keyof T>(...keys: Key[]) {
+        const o = {} as Structable<{
+            [Property in Key]: T[Property];
+        }>;
 
-    getUniverses() {}
-    addUniverses(...universes: string[]) {}
-    removeUniverses(...universes: string[]) {}
-    setUniverses(...universes: string[]) {}
+        for (const k of keys) {
+            if (typeof this.data[k] === 'undefined') {
+                return console.error(`User does not have permissions to read ${this.struct.data.name}.${k as string}`);
+            }
+            (o as any)[k] = this.data[k];
+        }
 
-    getAttributes() {}
-    addAttributes(...attributes: string[]) {}
-    removeAttributes(...attributes: string[]) {}
-    setAttributes(...attributes: string[]) {}
+        class PartialReadable implements Readable<typeof o> {
+            constructor(public data: typeof o) {}
+
+            public readonly subscribers = new Set<(data: typeof o) => void>();
+
+            subscribe(fn: (data: typeof o) => void) {
+                this.subscribers.add(fn);
+                fn(this.data);
+                return () => {
+                    this.subscribers.delete(fn);
+                    if (this.subscribers.size === 0) {
+                        return u();
+                    }
+                };
+            }
+        }
+
+        const w = new PartialReadable(o);
+
+        const u = this.subscribe(d => {
+            Object.assign(o, d);
+        });
+
+        return w;
+    }
+
+    getUniverses() {
+        return attempt(() => {
+            const a = JSON.parse(this.data.universes);
+            if (!Array.isArray(a)) throw new DataError('Universes must be an array');
+            if (!a.every(i => typeof i === 'string')) throw new DataError('Universes must be an array of strings');
+            return a;
+        });
+    }
+    // addUniverses(...universes: string[]) {}
+    // removeUniverses(...universes: string[]) {}
+    // setUniverses(...universes: string[]) {}
+
+    getAttributes() {
+        return attempt(() => {
+            const a = JSON.parse(this.data.attributes);
+            if (!Array.isArray(a)) throw new DataError('Attributes must be an array');
+            if (!a.every(i => typeof i === 'string')) throw new DataError('Attributes must be an array of strings');
+            return a;
+        });
+    }
+    // addAttributes(...attributes: string[]) {}
+    // removeAttributes(...attributes: string[]) {}
+    // setAttributes(...attributes: string[]) {}
 }
 
-export class DataArr<T extends Blank> implements Writable<StructData<T>[]> {
+export class DataArr<T extends Blank> implements Readable<StructData<T>[]> {
     constructor(public readonly struct: Struct<T>, public data: StructData<T>[]) {}
 
     private subscribers = new Set<(value: StructData<T>[]) => void>();
@@ -93,24 +191,32 @@ export class DataArr<T extends Blank> implements Writable<StructData<T>[]> {
         fn(this.data);
         return () => {
             this.subscribers.delete(fn);
+            if (this.subscribers.size === 0) {
+                this._onAllUnsubscribe?.();
+            }
         };
     }
 
-    public set(value: StructData<T>[]): void {
-        this.data = value;
+    private apply(value: StructData<T>[]): void {
+        this.data = value.filter((v, i, a) => a.indexOf(v) === i);
         this.subscribers.forEach((fn) => fn(value));
     }
 
-    public update(fn: (value: StructData<T>[]) => StructData<T>[]): void {
-        this.set(fn(this.data));
-    }
+    // public update(fn: (value: StructData<T>[]) => StructData<T>[]): void {
+    //     this.set(fn(this.data));
+    // }
 
     public add(...values: StructData<T>[]): void {
-        this.set([...this.data, ...values]);
+        this.apply([...this.data, ...values]);
     }
 
     public remove(...values: StructData<T>[]): void {
-        this.set(this.data.filter((value) => !values.includes(value)));
+        this.apply(this.data.filter((value) => !values.includes(value)));
+    }
+
+    private _onAllUnsubscribe: (() => void) | undefined;
+    public onAllUnsubscribe(fn: () => void): void {
+        this._onAllUnsubscribe = fn;
     }
 }
 
@@ -136,6 +242,16 @@ type ReadTypes = {
         value: unknown;
     };
     universe: string;
+}
+
+type GlobalCols = {
+    id: 'string';
+    created: 'string';
+    updated: 'string';
+    archived: 'boolean';
+    universes: 'string';
+    attributes: 'string';
+    lifetime: 'number';
 }
 
 export class Struct<T extends Blank> {
@@ -169,14 +285,9 @@ export class Struct<T extends Blank> {
             }
             const { event, data: structData } = data as { 
                 event: 'create' | 'update' | 'archive' | 'delete' | 'restore'; 
-                data: Structable<T>; 
+                data:  PartialStructable<T> & Structable<GlobalCols>; 
             };
-
-            if (!Object.hasOwn(structData, 'id')) {
-                return console.error('Unable to identify data:', structData, 'No id provided');
-            }
-
-            const id = structData.id as string;
+            const { id } = structData;
             
             match(event)
                 .case('archive', () => {
@@ -225,7 +336,7 @@ export class Struct<T extends Blank> {
         });
     }
 
-    Generator(data: Structable<T>): StructData<T> {
+    Generator(data: PartialStructable<T> & Structable<GlobalCols>): StructData<T> {
         // TODO: Data validation
         const d = new StructData(this, data);
         
@@ -236,7 +347,7 @@ export class Struct<T extends Blank> {
         return d;
     }
 
-    validate(data: unknown): data is Structable<T> {
+    validate(data: unknown): data is PartialStructable<T> & Structable<GlobalCols> {
         if (typeof data !== 'object' || data === null) return false;
         for (const key in data) {
             if (!Object.hasOwn(this.data.structure, key)) return false;
@@ -311,8 +422,25 @@ export class Struct<T extends Blank> {
         if (arr) return arr;
         const newArr = new DataArr(this, []);
         this.writables.set('all', newArr);
-        getStream().pipe((d) => {
+
+        const add = (d: StructData<T>) => {
             newArr.add(d);
+        }
+        const remove = (d: StructData<T>) => {
+            newArr.remove(d);
+        }
+        this.on('new', add);
+        this.on('delete', remove);
+        this.on('archive', remove);
+        this.on('restore', add);
+
+        getStream().pipe(add);
+        newArr.onAllUnsubscribe(() => {
+            this.off('new', add);
+            this.off('delete', remove);
+            this.off('archive', remove);
+            this.off('restore', add);
+            this.writables.delete('all');
         });
         return newArr;
     }
@@ -326,9 +454,26 @@ export class Struct<T extends Blank> {
         if (arr) return arr;
         const newArr = new DataArr(this, []);
         this.writables.set('archived', newArr);
-        getStream().pipe((d) => {
+
+        const add = (d: StructData<T>) => {
             newArr.add(d);
+        }
+        const remove = (d: StructData<T>) => {
+            newArr.remove(d);
+        }
+        this.on('delete', remove);
+        this.on('archive', add);
+        this.on('restore', remove);
+
+        getStream().pipe(add);
+
+        newArr.onAllUnsubscribe(() => {
+            this.off('delete', remove);
+            this.off('archive', add);
+            this.off('restore', remove);
+            this.writables.delete('archived');
         });
+
         return newArr;
     }
 
@@ -339,8 +484,28 @@ export class Struct<T extends Blank> {
         if (asStream) return s;
         const arr = this.writables.get(`property:${key}:${JSON.stringify(value)}`) || new DataArr(this, []);
         this.writables.set(`property:${key}:${JSON.stringify(value)}`, arr);
+
+        const add = (d: StructData<T>) => {
+            if (d.data[key] === value) arr.add(d);
+        }
+        const remove = (d: StructData<T>) => {
+            arr.remove(d);
+        }
+        this.on('new', add);
+        this.on('archive', remove);
+        this.on('restore', add);
+        this.on('delete', remove);
+
         s.pipe((d) => {
             arr.add(d);
+        });
+
+        arr.onAllUnsubscribe(() => {
+            this.off('new', add);
+            this.off('archive', remove);
+            this.off('restore', add);
+            this.off('delete', remove);
+            this.writables.delete(`property:${key}:${JSON.stringify(value)}`);
         });
         return arr;
     }
@@ -352,8 +517,32 @@ export class Struct<T extends Blank> {
         if (asStream) return s;
         const arr = this.writables.get(`universe:${universe}`) || new DataArr(this, []);
         this.writables.set(`universe:${universe}`, arr);
+
+        const add = (d: StructData<T>) => {
+            // TODO: Check if this data is in the universe
+            arr.add(d);
+        }
+
+        const remove = (d: StructData<T>) => {
+            arr.remove(d);
+        }
+
+        this.on('new', add);
+        this.on('archive', remove);
+        this.on('restore', add);
+        this.on('delete', remove);
+
+
         s.pipe((d) => {
             arr.add(d);
+        });
+
+        arr.onAllUnsubscribe(() => {
+            this.off('new', add);
+            this.off('archive', remove);
+            this.off('restore', add);
+            this.off('delete', remove);
+            this.writables.delete(`universe:${universe}`);
         });
         return arr;
     }
@@ -368,16 +557,3 @@ export class Struct<T extends Blank> {
         });
     }
 };
-
-// const s = new Struct({
-//     name: 'test',
-//     structure: {
-//         name: 'string',
-//         age: 'number',
-//     },
-//     socket: {
-//         on(event, listener) {
-//             console.log(event, listener);
-//         },
-//     },
-// });

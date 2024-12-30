@@ -13,6 +13,7 @@ import type { RequestEvent } from '../../routes/struct/$types';
 import { PropertyAction, DataAction } from '$lib/types';
 import { encode, fromCamelCase, toSnakeCase } from '$lib/ts-utils/text';
 import { Stream } from '$lib/ts-utils/stream';
+import type { Account } from './structs/account';
 
 export class StructError extends Error {
     constructor(message: string) {
@@ -553,7 +554,7 @@ export class Struct<T extends Blank, Name extends string> {
     fromProperty<K extends keyof T>(key: K, value: TsType<T[K]['_']['dataType']>, asStream: true): StructStream<T, Name>;
     fromProperty<K extends keyof T>(key: K, value: TsType<T[K]['_']['dataType']>, asStream: false): Promise<Result<StructData<T, Name>[], Error>>;
     fromProperty<K extends keyof T>(key: K, value: TsType<T[K]['_']['dataType']>, asStream: boolean) {
-        const get = () => this.database.select().from(this.table).where(sql`${this.table[key] as any} = ${value}`);
+        const get = () => this.database.select().from(this.table).where(sql`${this.table[key] as any} = ${value} AND ${this.table.archived} = ${false}`);
         if (asStream) {
             const stream = new StructStream(this);
             (async () => {
@@ -574,7 +575,7 @@ export class Struct<T extends Blank, Name extends string> {
     fromUniverse(universe: string, asStream: true): StructStream<T, Name>;
     fromUniverse(universe: string, asStream: false): Promise<Result<StructData<T, Name>[], Error>>;
     fromUniverse(universe: string, asStream: boolean) {
-        const get = () => this.database.select().from(this.table).where(sql`${this.table.universes} LIKE ${`%${universe}%`}`);
+        const get = () => this.database.select().from(this.table).where(sql`${this.table.universes} LIKE ${`%${universe}%`} AND ${this.table.archived} = ${false}`);
         if (asStream) {
             const stream = new StructStream(this);
             (async () => {
@@ -731,6 +732,8 @@ export class Struct<T extends Blank, Name extends string> {
 
             const isAdmin = !!(await Account.Admins.fromProperty('accountId', account.id, false)).unwrap().length;
 
+            const bypass = this.bypasses.filter(b => b.action === event.action || b.action === '*').map(b => b.condition);
+
             if (event.action === PropertyAction.Read) {
                 if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
                 if (!Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
@@ -770,7 +773,7 @@ export class Struct<T extends Blank, Name extends string> {
                             streamer.pipe(d => controller.enqueue(`data: ${encode(JSON.stringify(d.data))}\n\n`));
                             return;
                         }
-                        const stream = Permissions.filterActionPipeline(roles, streamer as any, PropertyAction.Read);
+                        const stream = Permissions.filterActionPipeline(account, roles, streamer as any, PropertyAction.Read, bypass);
                         stream.pipe(d => controller.enqueue(`data: ${encode(JSON.stringify(d.data))}\n\n`));
                     },
                     cancel() {
@@ -797,15 +800,30 @@ export class Struct<T extends Blank, Name extends string> {
                 })
             }
 
+            const runBypass = (data?: StructData<T, Name>) => {
+                if (isAdmin) return true;
+                for (const fn of bypass) {
+                    const res = fn(account, data);
+                    if (res) return res;
+                }
+                return false;
+            };
+
             if (event.action === DataAction.Create) {
-                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
-                if (!this.validate(event.data, {
-                    optionals: ['id', 'created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
-                })) return error(new DataError('Invalid data'));
+                const create = async () => {
+                    if (!this.validate(event.data, {
+                        optionals: ['id', 'created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
+                    })) return error(new DataError('Invalid data'));
+    
+                    (await this.new(event.data as any)).unwrap();
+                    return new Response('Created', { status: 201 });
+                };
+                if (runBypass()) {
+                    return create();
+                }
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
 
-                (await this.new(event.data as any)).unwrap();
-
-                return new Response('Created', { status: 201 });
+                return create();
             }
 
             if (event.action === PropertyAction.Update) {
@@ -818,7 +836,7 @@ export class Struct<T extends Blank, Name extends string> {
                 const found = (await this.fromId(data.id)).unwrap();
                 if (!found) return error(new DataError('Data not found'));
 
-                if (isAdmin) {
+                if (runBypass()) {
                     await found.update(data);
                 } else {
                     const [res] = (await Permissions.filterAction(roles, [found as any], PropertyAction.Update)).unwrap();
@@ -830,41 +848,53 @@ export class Struct<T extends Blank, Name extends string> {
             }
 
             if (event.action === DataAction.Archive) {
-                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
-                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+                const archive = async () => {
+                    if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
-                const data = event.data as Structable<T & typeof globalCols>;
-                const found = (await this.fromId(data.id)).unwrap();
-                if (!found) return error(new DataError('Data not found'));
-
-                await found.setArchive(true);
-
-                return new Response('Archived', { status: 200 });
+                    const data = event.data as Structable<T & typeof globalCols>;
+                    const found = (await this.fromId(data.id)).unwrap();
+                    if (!found) return error(new DataError('Data not found'));
+    
+                    (await found.setArchive(true)).unwrap();
+    
+                    return new Response('Archived', { status: 200 });
+                }
+                if (runBypass()) return archive();
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                return archive();
             }
 
             if (event.action === DataAction.Delete) {
-                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
-                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+                const remove = async () => {
+                    if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
-                const data = event.data as Structable<T & typeof globalCols>;
-                const found = (await this.fromId(data.id)).unwrap();
-                if (!found) return error(new DataError('Data not found'));
+                    const data = event.data as Structable<T & typeof globalCols>;
+                    const found = (await this.fromId(data.id)).unwrap();
+                    if (!found) return error(new DataError('Data not found'));
+    
+                    (await found.delete()).unwrap();
+                    return new Response('Deleted', { status: 200 });
+                };
+                if (runBypass()) return remove();
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
 
-                await found.delete();
-
-                return new Response('Deleted', { status: 200 });
+                return remove();
             }
 
             if (event.action === DataAction.RestoreArchive) {
-                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
-                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
-                const data = event.data as Structable<T & typeof globalCols>;
-                const found = (await this.fromId(data.id)).unwrap();
-                if (!found) return error(new DataError('Data not found'));
-
-                await found.setArchive(false);
-
-                return new Response('Restored', { status: 200 });
+                const restore = async () => {
+                    if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+                    const data = event.data as Structable<T & typeof globalCols>;
+                    const found = (await this.fromId(data.id)).unwrap();
+                    if (!found) return error(new DataError('Data not found'));
+    
+                    await found.setArchive(false);
+    
+                    return new Response('Restored', { status: 200 });
+                };
+                if (runBypass()) return restore();
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                return restore();
             }
 
             return error(new StructError('Invalid action'));
@@ -926,4 +956,29 @@ export class Struct<T extends Blank, Name extends string> {
             return response;
         });
     }
+
+    private readonly bypasses: {
+        action: DataAction | PropertyAction | '*';
+        condition: (account: Account, data?: any) => boolean;
+    }[] = [];
+
+    bypass<Action extends DataAction | PropertyAction | '*'>(
+        action: Action,
+        condition: (account: Account, data?: Structable<T & typeof globalCols>) => boolean
+    ) {
+        this.bypasses.push({ action, condition });
+    }
+}
+
+interface Account {
+    data: {
+        id: string;
+        username: string;
+        firstName: string;
+        lastName: string;
+        verified: boolean;
+        email: string;
+    }
+
+    get id(): string;
 }

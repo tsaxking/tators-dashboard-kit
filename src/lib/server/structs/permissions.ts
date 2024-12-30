@@ -250,7 +250,7 @@ export namespace Permissions {
     export const filterActionPipeline = <
         S extends Struct<Blank, string>,
         Stream extends StructStream<S['data']['structure'], S['data']['name']>
-    >(roles: RoleData[], stream: Stream, action: PropertyAction) => {
+    >(account: Account.AccountData, roles: RoleData[], stream: Stream, action: PropertyAction, bypass: ((account: Account.AccountData, data?: StructData<Blank, string>) => boolean)[]) => {
         const newStream = new Stream<Partial<Structable<S['data']['structure']>>>();
 
         (async () => {
@@ -263,6 +263,10 @@ export namespace Permissions {
                 .filter(p => p.permission === action && p.struct === stream.struct.name);
 
             stream.pipe((d) => {
+                if (bypass.some(b => b(account, d))) {
+                    return newStream.add(d.data);
+                }
+
                 const dataUniverses = d.getUniverses().unwrap();
                 if (dataUniverses.some(du => universes.includes(du))) {
                     const { data } = d;
