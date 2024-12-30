@@ -1,13 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { pgTable, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
-import type { PgColumn, PgColumnBuilder, PgColumnBuilderBase, PgTableWithColumns } from 'drizzle-orm/pg-core';
-import { sql, type BuildColumns, type ColumnBuilderBase } from 'drizzle-orm';
+import type { PgColumnBuilderBase, PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { sql, type BuildColumns } from 'drizzle-orm';
 import { attempt, attemptAsync, resolveAll, type Result } from '$lib/ts-utils/check';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { DB } from './db';
 import { type ColumnDataType } from 'drizzle-orm';
 import { EventEmitter } from '$lib/ts-utils/event-emitter';
 import type { Loop } from '$lib/ts-utils/loop';
 import { uuid } from './utils/uuid';
+import type { RequestEvent } from '../../routes/struct/$types';
+// import { match } from '$lib/ts-utils/match';
 
 export class StructError extends Error {
     constructor(message: string) {
@@ -61,6 +63,10 @@ export type StructBuilder<T extends Blank, Name extends string> = {
     universeLimit?: number;
 };
 
+
+export type Data<T extends Struct<Blank, string>> = T['sample'];
+
+
 const globalCols = {
     id: text('id').primaryKey(),
     created: timestamp<'created', 'string'>('created').notNull(),
@@ -82,7 +88,7 @@ type Structable<T extends Blank> = {
     [K in keyof T]: TsType<T[K]['_']['dataType']>;
 }
 
-export class StructStream<T extends Blank, Name extends string> {
+export class StructStream<T extends Blank = Blank, Name extends string = string> {
     private readonly emitter = new EventEmitter<{
         data: StructData<T, Name>;
         end: void;
@@ -140,9 +146,7 @@ export class StructStream<T extends Blank, Name extends string> {
 }
 
 export class StructData<T extends Blank, Name extends string> {
-    constructor(public readonly data: Structable<T & typeof globalCols>, public readonly struct: Struct<T, Name>) {
-
-    }
+    constructor(public readonly data: Structable<T & typeof globalCols>, public readonly struct: Struct<T, Name>) {}
 
     get id() {
         return this.data.id;
@@ -162,9 +166,18 @@ export class StructData<T extends Blank, Name extends string> {
 
     update(data: Partial<Structable<T>>) {
         return attemptAsync(async () => {
-            const newData = { ...this.data, ...data };
+            const newData: any = { ...this.data, ...data };
+
+            // Remove global columns
+            delete newData.id;
+            delete newData.created;
+            delete newData.updated;
+            delete newData.archived;
+            delete newData.universes;
+            delete newData.attributes;
+            delete newData.lifetime;
             await this.struct.database.update(this.struct.table).set({
-                ...newData as any,
+                ...newData,
                 updated: new Date(),
             }).where(sql`${this.struct.table.id} = ${this.id}`);
         });
@@ -250,6 +263,16 @@ export class StructData<T extends Blank, Name extends string> {
             return (await this.setUniverses([...a, ...universes])).unwrap()
         });
     }
+
+    safe(omit?: (keyof T & keyof typeof globalCols)[]) {
+        const data = { ...this.data };
+        if (omit) {
+            for (const key of omit) {
+                delete data[key];
+            }
+        }
+        return data;
+    }
 }
 
 type StructEvents<T extends Blank, Name extends string> = {
@@ -263,6 +286,24 @@ type StructEvents<T extends Blank, Name extends string> = {
 
 type TsType<T extends ColumnDataType> = T extends 'string' ? string : T extends 'number' ? number : T extends 'boolean' ? boolean : T extends 'timestamp' ? Date : never;
 
+enum StructAction {
+    // Data specific
+    UPDATE = 'update',
+    ARCHIVE = 'archive',
+    DELETE = 'delete',
+    RESTORE = 'restore',
+    CREATE = 'create',
+    // ADD_ATTRIBUTES = 'add-attributes',
+    // REMOVE_ATTRIBUTES = 'remove-attributes',
+    // SET_ATTRIBUTES = 'set-attributes',
+    // ADD_UNIVERSES = 'add-universes',
+    // REMOVE_UNIVERSES = 'remove-universes',
+    // SET_UNIVERSES = 'set-universes',
+
+    // Struct specific
+    NEW = 'new',
+}
+
 export class Struct<T extends Blank, Name extends string> {
     public static async buildAll() {
         return resolveAll(await Promise.all([...Struct.structs.values()].map(s => s.build())));
@@ -270,6 +311,28 @@ export class Struct<T extends Blank, Name extends string> {
 
     public static readonly structs = new Map<string, Struct<Blank, string>>();
 
+    public static handler(event: RequestEvent): Promise<Result<Response>> {
+        return attemptAsync(async () => {
+            const body: unknown = await event.request.json();
+
+            if (typeof body !== 'object' || body === null) return new Response('Invalid body', { status: 400 });
+            if (!Object.hasOwn(body, 'struct')) return new Response('Missing struct', { status: 400 });
+            if (!Object.hasOwn(body, 'action')) return new Response('Missing action', { status: 400 });
+            if (!Object.hasOwn(body, 'data')) return new Response('Missing data', { status: 400 });
+
+            const B = body as { struct: string; action: StructAction; data: unknown };
+
+            const struct = Struct.structs.get(B.struct);
+            if (!struct) return new Response('Struct not found', { status: 404 });
+
+            const result = (await struct.eventHandler({ action: B.action, data: B.data, request: event })).unwrap();
+            if (result) return result;
+
+            return new Response('Not implemented', { status: 501 });
+        });
+    };
+
+    
     public readonly table: Table<T, Name>;
     public readonly eventEmitter = new EventEmitter<StructEvents<T, Name>>();
 
@@ -462,7 +525,180 @@ export class Struct<T extends Blank, Name extends string> {
         if (this.built) throw new FatalStructError(`Struct ${this.name} has already been built`);
         if (this.data.sample) throw new FatalStructError(`Struct ${this.name} is a sample struct and should never be built`);
         return attemptAsync(async () => {
+            // const { sse } = await import('./utils/sse');
+            // const { Session } = await import('./structs/session');
+
+            // Permission handling
+            // Return nothing if user does not have permission
+            // const each = async (event: string, fn: (session: typeof Session.Session.sample) => unknown) => {
+            //     sse.each(async connection => {
+            //         const session = await connection.getSession();
+            //         if (session.isErr()) return;
+            //         const s = session.unwrap();
+            //         if (!s) return;
+
+            //         try {
+            //             const result = await fn(s);
+            //             if (typeof result === 'undefined' || result === null) return;
+            //             connection.send(event, result);
+            //         } catch {
+            //             // Do nothing
+            //         }
+            //     });
+            // }
+
+            // this.on('create', data => {
+            //     each('create', s => {
+            //         return '';
+            //     });
+            // });
+
+            // this.on('update', data => {
+            //     each('update', s => {
+            //         return '';
+            //     });
+            // });
+
+            // this.on('archive', data => {
+            //     each('archive', s => {
+            //         return '';
+            //     });
+            // });
+
+            // this.on('delete', data => {
+            //     each('delete', s => {
+            //         return '';
+            //     });
+            // });
+
+            // this.on('restore', data => {
+            //     each('restore', s => {
+            //         return '';
+            //     });
+            // });
+
+            this.emit('build', undefined);
+
             this.built = true;
         });
+    }
+
+    eventHandler(event: {
+        action: StructAction;
+        data: unknown;
+        request: RequestEvent;
+    }) {
+        return attemptAsync<Response>(async () => {
+            const error = (error: Error) => new Response(error.message, { status: 400 });
+
+            const { Session } = await import('./structs/session');
+            const s = (await Session.getSession(event.request)).unwrap();
+            if (!s) return error(new StructError('Session not found'));
+
+            // match(event.action)
+            //     .case(StructAction.NEW, () => {})
+            //     .case(StructAction.UPDATE, () => {})
+            //     .case(StructAction.ARCHIVE, () => {})
+            //     .case(StructAction.DELETE, () => {})
+            //     .case(StructAction.RESTORE, () => {})
+            //     .default(() => {
+            //         throw new StructError('Invalid action');
+            //     })
+            //     .exec()
+            //     .unwrap();
+
+            if (event.action === StructAction.NEW) {
+                if (!this.validate(event.data, {
+                    optionals: ['id', 'created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
+                })) return error(new DataError('Invalid data'));
+
+                (await this.new(event.data as any)).unwrap();
+
+                return new Response('Created', { status: 201 });
+            }
+
+            if (event.action === StructAction.UPDATE) {
+                if (!this.validate(event.data, {
+                    not: ['created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
+                    optionals: Object.keys(this.data.structure) as string[],
+                })) return error(new DataError('Invalid data'));
+
+                const data = event.data as Structable<T & typeof globalCols>;
+                const found = (await this.fromId(data.id)).unwrap();
+                if (!found) return error(new DataError('Data not found'));
+
+                await found.update(data);
+
+                return new Response('Updated', { status: 200 });
+            }
+
+            if (event.action === StructAction.ARCHIVE) {
+                if (!this.validate(event.data, {
+                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
+                    optionals: ['archived'],
+                })) return error(new DataError('Invalid data'));
+
+                const data = event.data as Structable<T & typeof globalCols>;
+                const found = (await this.fromId(data.id)).unwrap();
+                if (!found) return error(new DataError('Data not found'));
+
+                await found.setArchive(true);
+
+                return new Response('Archived', { status: 200 });
+            }
+
+            if (event.action === StructAction.DELETE) {
+                if (!this.validate(event.data, {
+                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
+                    optionals: ['archived'],
+                })) return error(new DataError('Invalid data'));
+
+                const data = event.data as Structable<T & typeof globalCols>;
+                const found = (await this.fromId(data.id)).unwrap();
+                if (!found) return error(new DataError('Data not found'));
+
+                await found.delete();
+
+                return new Response('Deleted', { status: 200 });
+            }
+
+            if (event.action === StructAction.RESTORE) {
+                if (!this.validate(event.data, {
+                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
+                    optionals: ['archived'],
+                })) return error(new DataError('Invalid data'));
+
+                const data = event.data as Structable<T & typeof globalCols>;
+                const found = (await this.fromId(data.id)).unwrap();
+                if (!found) return error(new DataError('Data not found'));
+
+                await found.setArchive(false);
+
+                return new Response('Restored', { status: 200 });
+            }
+
+            return error(new StructError('Invalid action'));
+        });
+    }
+
+    validate(data: unknown, config?: {
+        // if it doesn't have it, ignore
+        // if it does, it must be the correct type
+        optionals?: string[];
+        not?: string[];
+    }) {
+        if (typeof data !== 'object' || data === null) return false;
+
+        for (const key in data) {
+            if (config?.not?.includes(key as any)) return false;
+            // if it's optional, it can be missing
+            // if it's optional but not missing, it must be the correct type
+            if (config?.optionals?.includes(key as any) && !Object.hasOwn(data, key)) continue;
+            if (!Object.hasOwn(data, key)) return false;
+            if (!Object.hasOwn(this.data.structure, key)) return false;
+            if (typeof (data as any)[key] !== this.data.structure[key]._.dataType) return false;
+        }
+
+        return true;
     }
 }

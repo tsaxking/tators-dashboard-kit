@@ -30,5 +30,11 @@ export default ts.config(
 				parser: ts.parser
 			}
 		}
+	},
+	{
+		rules: {
+			'@typescript-eslint/no-namespace': 'off',
+			'@typescript-eslint/no-this-alias': 'off',
+		}
 	}
 );
