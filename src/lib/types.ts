@@ -18,3 +18,10 @@ export enum DataAction {
 export type SocketEvents = {
     test: void;
 };
+
+export class ComponentRenderError extends Error {
+    constructor(public readonly component: string) {
+        super(`Error rendering component: ${component}`);
+        this.name = 'ComponentRenderError';
+    }
+}

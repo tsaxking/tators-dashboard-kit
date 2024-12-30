@@ -1,0 +1,82 @@
+@import url('./scss/bs-overwrite.scss');
+@import url('./scss/colors.scss');
+
+:root {
+    /* --bs-danger: #ad333f;
+    --bs-primary: #0c4888;
+    --bs-success: #1d6a46;
+    --bs-warning: #ad8c33;
+    --bs-info: #1690a8;
+    --bs-light: #bababa; */
+
+
+
+    /* --bs-primary: #00AEEF; */
+    /* --bs-primary: #9A31F7; */
+    /* --bs-primary: #00FFC8; */
+    /* --bs-primary: #17D47A; */
+    /* --bs-primary: #FFAC33; */
+
+    /* --bs-primary: #F3F738; */
+    /* --bs-primary: #FF387D; */
+    /* --bs-primary: #FF3A3A; */
+    /* --bs-primary: #E4E7EB; */
+    /* --bs-primary: #FF7F50; */
+
+    /* --bs-dark: #1F2326; */
+    /* --bs-dark: #2D2F36; */
+    /* --bs-dark: #121417; */
+    /* --bs-dark: #0B0E14; */
+    /* --bs-dark: #1B1F2F; */
+
+
+
+
+
+    --border-radius: 8px;
+
+    --navbar-height: 1.75rem;
+
+    --dashboard-card-title-height: 27.75px;
+}
+
+.modal {
+    /* --bs-modal-header-padding: 0.5rem !important; */
+    /* --bs-modal-header-padding-x: 0.5rem !important; */
+    /* --bs-modal-header-padding-y: 0.5rem !important; */
+    --bs-modal-padding: 0.5rem !important;
+    --bs-modal-footer-gap: 0px !important;
+    /* --bs-modal-title-line-height: .75 !important; */
+}
+
+.modal-content {
+    border: none !important;
+    /* border-radius: 0px !important; */
+}
+
+.modal-footer * {
+    margin: 0;
+}
+
+.modal-footer .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.btn,
+button,
+.form-control,
+.form-select,
+.list-group,
+.card,
+.modal-content {
+    border-radius: 2px !important;
+}
+
+
+.card *, .card {
+    border-color: var(--bs-dark) !important;
+}
+
+.card {
+    padding: 0 !important;
+}
