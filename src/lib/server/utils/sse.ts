@@ -12,6 +12,14 @@ export class Connection {
 	private readonly emitter = new SimpleEventEmitter<'connect' | 'destroy' | 'close'>();
 
 	private index = -1;
+	private readonly interval: NodeJS.Timeout;
+
+	private cache: {
+		event: string;
+		data: unknown;
+		id: number;
+		date: number;
+	}[] = [];
 
 	public on = this.emitter.on.bind(this.emitter);
 	public off = this.emitter.off.bind(this.emitter);
@@ -20,27 +28,43 @@ export class Connection {
 
 	constructor(private readonly controller: Stream, session: Session.SessionData) {
 		this.sessionId = session.id;
+
+		this.interval = setInterval(() => {
+			this.controller.enqueue(':keep-alive\n\n');
+			this.send('ping', null).unwrap();
+
+			const now = Date.now();
+			const cache = this.cache.filter((e) => now - e.date < 10000);
+			for (const { event, data, date } of cache) {
+				// if it has not acknoledged a ping after 20 seconds, the connection is dead
+				if (now - date > 20000 && event === 'ping') {
+					return this.close();
+				}
+				this.send(event, data);
+			}
+		}, 10000);
 	}
 
 	send(event: string, data: unknown) {
 		return attempt(() => {
-			this.controller.enqueue(`data: ${encode(JSON.stringify({ event, data, index: this.index++ }))}\n\n`);
+			this.controller.enqueue(`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`);
+			this.cache.push({ event, data, id: this.index, date: Date.now() });
+			return this.index;
 		});
 	}
 
 	close() {
+		this.send('close', null);
 		this.controller.close();
 		this.emit('close');
 	}
 
-	destroy() {
-		// this.controller.error(new Error("Connection destroyed"));
-		this.controller.close();
-		this.emit('destroy');
-	}
-
 	getSession() {
 		return Session.Session.fromId(this.sessionId);
+	}
+
+	ack(id: number) {
+		this.cache = this.cache.filter((e) => e.id > id);
 	}
 }
 
@@ -59,7 +83,11 @@ class SSE {
 	public once = this.emitter.once.bind(this.emitter);
 	private emit = this.emitter.emit.bind(this.emitter);
 
-	constructor() {}
+	constructor() {
+		process.on('exit', () => {
+			this.each(c => c.close());
+		});
+	}
 
 	connect(event: RequestEvent) {
 		const me = this;
@@ -75,6 +103,7 @@ class SSE {
 				cancel() {
 					if (connection) {
 						me.emit('disconnect', connection);
+						connection.close();
 						me.connections.delete(connection);
 					}
 				}
@@ -91,6 +120,10 @@ class SSE {
 
 	each(callback: (connection: Connection) => void) {
 		this.connections.forEach(callback);
+	}
+
+	fromSession(sessionId: string) {
+		return [...this.connections].find((connection) => connection.sessionId === sessionId);
 	}
 }
 
