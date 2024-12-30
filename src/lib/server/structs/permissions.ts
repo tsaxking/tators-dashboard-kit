@@ -5,6 +5,7 @@ import { attempt, attemptAsync, resolveAll, type Result } from "$lib/ts-utils/ch
 import { decode, encode } from "$lib/ts-utils/text";
 import type { Account } from "./account";
 import { PropertyAction, DataAction } from "$lib/types";
+import { Stream } from "$lib/ts-utils/stream";
 
 export namespace Permissions {
     export class DataPermission {
@@ -249,8 +250,8 @@ export namespace Permissions {
     export const filterActionPipeline = <
         S extends Struct<Blank, string>,
         Stream extends StructStream<S['data']['structure'], S['data']['name']>
-    >(roles: RoleData[], action: PropertyAction, stream: Stream) => {
-        const newStream = new StructStream(stream.struct);
+    >(roles: RoleData[], stream: Stream, action: PropertyAction) => {
+        const newStream = new Stream<Partial<Structable<S['data']['structure']>>>();
 
         (async () => {
             const universes = roles.map(r => r.data.universe);
@@ -261,7 +262,31 @@ export namespace Permissions {
                 .flat()
                 .filter(p => p.permission === action && p.struct === stream.struct.name);
 
-            stream.on('data', d => {});
+            stream.pipe((d) => {
+                const dataUniverses = d.getUniverses().unwrap();
+                if (dataUniverses.some(du => universes.includes(du))) {
+                    const { data } = d;
+                    const properties: string[] = permissions
+                        .map(p => p.property)
+                        .concat(
+                            'id',
+                            'created',
+                            'updated',
+                            'archived',
+                            'universes',
+                            'lifetime',
+                            'attributes'
+                        )
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .filter(Boolean) as string[];
+
+                    newStream.add(
+                        Object.fromEntries(
+                            properties.map(p => [p, data[p]])
+                        ) as Partial<Structable<S['data']['structure']>>
+                    );
+                }
+            });
         })();
 
         return newStream;

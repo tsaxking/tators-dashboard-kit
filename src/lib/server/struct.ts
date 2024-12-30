@@ -12,6 +12,7 @@ import type { RequestEvent } from '../../routes/struct/$types';
 // import { match } from '$lib/ts-utils/match';
 import { PropertyAction, DataAction } from '$lib/types';
 import { encode, fromCamelCase, toSnakeCase } from '$lib/ts-utils/text';
+import { Stream } from '$lib/ts-utils/stream';
 
 export class StructError extends Error {
     constructor(message: string) {
@@ -101,60 +102,9 @@ export type Structable<T extends Blank> = {
     [K in keyof T]: TsType<T[K]['_']['dataType']>;
 }
 
-export class StructStream<T extends Blank = Blank, Name extends string = string> {
-    private readonly emitter = new EventEmitter<{
-        data: StructData<T, Name>;
-        end: void;
-        error: Error;
-    }>();
-
-    public on = this.emitter.on.bind(this.emitter);
-    public once = this.emitter.once.bind(this.emitter);
-    public off = this.emitter.off.bind(this.emitter);
-    public emit = this.emitter.emit.bind(this.emitter);
-
-    private index = 0;
-
-    constructor(public readonly struct: Struct<T, Name>) {}
-
-    pipe(fn: (data: StructData<T, Name>, index: number) => void) {
-        return attemptAsync(async () => {
-            return new Promise<void>((res, rej) => {
-                const run = async (data: StructData<T, Name>) => {
-                    fn(data, this.index);
-                };
-
-                const end = (error?: Error) => {
-                    this.off('data', run);
-                    if (error) rej(error);
-                    else res();
-                };
-
-                this.on('data', run);
-
-                this.on('end', () => end());
-                this.on('error', end);
-            });
-        });
-    }
-
-    add(data: StructData<T, Name>) {
-        this.index++;
-        this.emit('data', data);
-    }
-
-    end() {
-        this.emit('end', undefined);
-        this.emitter.destroyEvents();
-    }
-
-    await() {
-        return attemptAsync(async () => new Promise<StructData<T, Name>[]>((res, rej) => {
-            const data: StructData<T, Name>[] = [];
-            this.on('data', d => data.push(d));
-            this.on('end', () => res(data));
-            this.on('error', rej);
-        }));
+export class StructStream<T extends Blank = Blank, Name extends string = string> extends Stream<StructData<T, Name>> {
+    constructor(public readonly struct: Struct<T, Name>) {
+        super();
     }
 }
 
@@ -726,6 +676,7 @@ export class Struct<T extends Blank, Name extends string> {
     }) {
         return attemptAsync<Response>(async () => {
             const { Permissions } = await import('./structs/permissions');
+            const { Account } = await import('./structs/account');
             const error = (error: Error) => new Response(error.message, { status: 400 });
 
             const { Session } = await import('./structs/session');
@@ -739,40 +690,7 @@ export class Struct<T extends Blank, Name extends string> {
 
             const invalidPermissions = new Response('Invalid permissions', { status: 403 });
 
-            // if (event.action === PropertyAction.Read) {
-            //     if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
-            //     if (!Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
-            //     let data: (StructData<T, Name> | undefined)[] = [];
-            //     const type = (event.data as any).type as 'all' | 'archived' | 'from-id' | 'property' | 'universe';
-
-            //     switch (type) {
-            //         case 'all':
-            //             data = (await this.all(false)).unwrap();
-            //             break;
-            //         case 'archived':
-            //             data = (await this.archived(false)).unwrap();
-            //             break;
-            //         case 'from-id':
-            //             if (!Object.hasOwn((event.data as any).args, 'id')) return error(new DataError('Missing Read id'));
-            //             data = [(await this.fromId((event.data as any).args.id)).unwrap()];
-            //             break;
-            //         case 'property':
-            //             if (!Object.hasOwn((event.data as any).args, 'key')) return error(new DataError('Missing Read key'));
-            //             if (!Object.hasOwn((event.data as any).args, 'value')) return error(new DataError('Missing Read value'));
-            //             data = (await this.fromProperty((event.data as any).args.key, (event.data as any).args.value, false)).unwrap();
-            //             break;
-            //         case 'universe':
-            //             if (!Object.hasOwn((event.data as any).args, 'universe')) return error(new DataError('Missing Read universe'));
-            //             data = (await this.fromUniverse((event.data as any).args.universe, false)).unwrap();
-            //             break;
-            //         default:
-            //             return error(new DataError('Invalid Read type'));
-            //     }
-
-            //     const res = (await Permissions.filterAction(roles, data as any, PropertyAction.Read)).unwrap();
-            
-            //     return new Response(JSON.stringify(res), { status: 200 });
-            // }
+            const isAdmin = !!(await Account.Admins.fromProperty('accountId', account.id, false)).unwrap().length;
 
             if (event.action === PropertyAction.Read) {
                 if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
@@ -809,10 +727,12 @@ export class Struct<T extends Blank, Name extends string> {
 
                 const readable = new ReadableStream({
                     start(controller) {
-                        streamer.pipe(async (data) => {
-                            const filtered = (await Permissions.filterAction(roles, [data as any], PropertyAction.Read)).unwrap();
-                            controller.enqueue(`data: ${encode(JSON.stringify(data.data))}`)
-                        });
+                        if (isAdmin) {
+                            streamer.pipe(d => controller.enqueue(`data: ${encode(JSON.stringify(d.data))}\n\n`));
+                            return;
+                        }
+                        const stream = Permissions.filterActionPipeline(roles, streamer as any, PropertyAction.Read);
+                        stream.pipe(d => controller.enqueue(`data: ${encode(JSON.stringify(d.data))}\n\n`));
                     },
                     cancel() {
                         streamer.off('end');
@@ -839,7 +759,7 @@ export class Struct<T extends Blank, Name extends string> {
             }
 
             if (event.action === DataAction.Create) {
-                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
                 if (!this.validate(event.data, {
                     optionals: ['id', 'created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
                 })) return error(new DataError('Invalid data'));
@@ -859,17 +779,19 @@ export class Struct<T extends Blank, Name extends string> {
                 const found = (await this.fromId(data.id)).unwrap();
                 if (!found) return error(new DataError('Data not found'));
 
-                const [res] = (await Permissions.filterAction(roles, [found as any], PropertyAction.Update)).unwrap();
-
-                if (!res) return invalidPermissions;
-
-                await found.update(res as any);
+                if (isAdmin) {
+                    await found.update(data);
+                } else {
+                    const [res] = (await Permissions.filterAction(roles, [found as any], PropertyAction.Update)).unwrap();
+                    if (!res) return invalidPermissions;
+                    await found.update(Object.fromEntries(Object.entries(data).filter(([k]) => res[k])) as any);
+                }
 
                 return new Response('Updated', { status: 200 });
             }
 
             if (event.action === DataAction.Archive) {
-                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
                 if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
                 const data = event.data as Structable<T & typeof globalCols>;
@@ -882,7 +804,7 @@ export class Struct<T extends Blank, Name extends string> {
             }
 
             if (event.action === DataAction.Delete) {
-                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
                 if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
                 const data = event.data as Structable<T & typeof globalCols>;
@@ -895,7 +817,7 @@ export class Struct<T extends Blank, Name extends string> {
             }
 
             if (event.action === DataAction.RestoreArchive) {
-                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!isAdmin && !Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
                 if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
                 const data = event.data as Structable<T & typeof globalCols>;
                 const found = (await this.fromId(data.id)).unwrap();
