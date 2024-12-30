@@ -3,6 +3,7 @@ import { attemptAsync } from "$lib/ts-utils/check";
 import { DB } from "../db";
 import { Struct } from "../struct";
 import { integer, text } from 'drizzle-orm/pg-core';
+import { Account } from "./account";
 
 interface RequestEvent {
     cookies: {
@@ -66,6 +67,13 @@ export namespace Session {
                 return create();
             }
 
+            return s;
+        });
+    };
+
+    export const getAccount = (session: SessionData) => {
+        return attemptAsync(async () => {
+            const s = (await Account.Account.fromId(session.data.accountId)).unwrap();
             return s;
         });
     };

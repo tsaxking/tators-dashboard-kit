@@ -6,10 +6,12 @@ import { attempt, attemptAsync, resolveAll, type Result } from '$lib/ts-utils/ch
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type ColumnDataType } from 'drizzle-orm';
 import { EventEmitter } from '$lib/ts-utils/event-emitter';
-import type { Loop } from '$lib/ts-utils/loop';
+import { Loop } from '$lib/ts-utils/loop';
 import { uuid } from './utils/uuid';
 import type { RequestEvent } from '../../routes/struct/$types';
 // import { match } from '$lib/ts-utils/match';
+import { PropertyAction, DataAction } from '$lib/types';
+import { encode, fromCamelCase, toSnakeCase } from '$lib/ts-utils/text';
 
 export class StructError extends Error {
     constructor(message: string) {
@@ -61,6 +63,17 @@ export type StructBuilder<T extends Blank, Name extends string> = {
         amount: number;
     };
     universeLimit?: number;
+    // This is so the struct isn't actually saved in the database, it 'reflects' a different server's data
+    // If there are merge conflicts, it will always prioritize the other server's data
+    // It will still save in the local database for optimization purposes
+    // If there are type conflicts, they are incompatible, so it will throw an error
+    reflect?: {
+        webhook: string;
+        headers: Record<string, string>;
+        // How often it should sync with the other server
+        // it will first send a hash of the data, and if the other server doesn't have that hash, the other server will pipe the data
+        interval: number;
+    };
 };
 
 
@@ -80,11 +93,11 @@ const globalCols = {
 type Table<T extends Blank, TableName extends string> = PgTableWithColumns<{
     name: TableName;
     schema: undefined;
-    columns: BuildColumns<TableName, T & typeof globalCols, 'pg'>;
+    columns: BuildColumns<TableName, T, 'pg'>;
     dialect: "pg";
 }>;
 
-type Structable<T extends Blank> = {
+export type Structable<T extends Blank> = {
     [K in keyof T]: TsType<T[K]['_']['dataType']>;
 }
 
@@ -145,6 +158,61 @@ export class StructStream<T extends Blank = Blank, Name extends string = string>
     }
 }
 
+const versionGlobalCols = {
+    vhId: text('vh_id').primaryKey(),
+    id: text('id').notNull(), // Used to overwrite the other primary key
+    vhCreated: timestamp<'vh_created', 'string'>('vh_created').notNull(),
+};
+
+export class DataVersion<T extends Blank, Name extends string> {
+    constructor(public readonly struct: Struct<T, Name>, public readonly data: Structable<T & typeof globalCols & typeof versionGlobalCols>) {}
+
+    get vhId() {
+        return this.data.vhId;
+    }
+
+    get id() {
+        return this.data.id;
+    }
+
+    get created() {
+        return new Date(this.data.created);
+    }
+
+    get updated() {
+        return new Date(this.data.updated);
+    }
+
+    get archived() {
+        return this.data.archived;
+    }
+
+    get vhCreated() {
+        return new Date(this.data.vhCreated);
+    }
+
+    get database() {
+        return this.struct.database;
+    }
+
+    delete() {
+        return attemptAsync(async () => {
+            if (!this.struct.versionTable) throw new StructError(`Struct ${this.struct.name} does not have a version table`);
+            await this.database.delete(this.struct.versionTable).where(sql`${this.struct.versionTable.vhId} = ${this.vhId}`);
+            this.struct.emit('delete-version', this);
+        });
+    }
+
+    restore() {
+        return attemptAsync(async () => {
+            const data = (await this.struct.fromId(this.id)).unwrap();
+            if (!data) this.struct.new(this.data);
+            else await data.update(this.data);
+            this.struct.emit('restore-version', this);
+        });
+    }
+}
+
 export class StructData<T extends Blank, Name extends string> {
     constructor(public readonly data: Structable<T & typeof globalCols>, public readonly struct: Struct<T, Name>) {}
 
@@ -164,8 +232,17 @@ export class StructData<T extends Blank, Name extends string> {
         return this.data.archived;
     }
 
+    get database() {
+        return this.struct.database;
+    }
+
+    get lifetime() {
+        return this.data.lifetime;
+    }
+
     update(data: Partial<Structable<T>>) {
         return attemptAsync(async () => {
+            this.makeVersion();
             const newData: any = { ...this.data, ...data };
 
             // Remove global columns
@@ -176,7 +253,7 @@ export class StructData<T extends Blank, Name extends string> {
             delete newData.universes;
             delete newData.attributes;
             delete newData.lifetime;
-            await this.struct.database.update(this.struct.table).set({
+            await this.database.update(this.struct.table).set({
                 ...newData,
                 updated: new Date(),
             }).where(sql`${this.struct.table.id} = ${this.id}`);
@@ -194,7 +271,47 @@ export class StructData<T extends Blank, Name extends string> {
 
     delete() {
         return attemptAsync(async () => {
-            await this.struct.database.delete(this.struct.table).where(sql`${this.struct.table.id} = ${this.id}`);
+            this.makeVersion();
+            await this.database.delete(this.struct.table).where(sql`${this.struct.table.id} = ${this.id}`);
+        });
+    }
+
+    makeVersion() {
+        return attemptAsync(async () => {
+            if (!this.struct.versionTable) throw new StructError(`Struct ${this.struct.name} does not have a version table`);
+            const vhId = uuid();
+            const vhCreated = new Date();
+            const vhData = { ...this.data, vhId, vhCreated } as any;
+            await this.database.insert(this.struct.versionTable).values(vhData);
+
+            const prev = (await this.getVersions()).unwrap();
+            if (this.struct.data.versionHistory) {
+                if (this.struct.data.versionHistory.type === 'days') {
+                    const days = this.struct.data.versionHistory.amount;
+                    const date = new Date();
+                    date.setDate(date.getDate() - days);
+                    const toDelete = prev.filter(v => v.vhCreated < date);
+                    for (const v of toDelete) {
+                        await v.delete();
+                    }
+                } else if (this.struct.data.versionHistory.type === 'versions') {
+                    const amount = this.struct.data.versionHistory.amount;
+                    const toDelete = prev.slice(0, prev.length - amount);
+                    for (const v of toDelete) {
+                        await v.delete();
+                    }
+                }
+            }
+
+            return new DataVersion(this.struct, vhData);
+        });
+    }
+
+    getVersions() {
+        return attemptAsync(async () => {
+            if (!this.struct.versionTable) throw new StructError(`Struct ${this.struct.name} does not have a version table`);
+            const data = await this.database.select().from(this.struct.versionTable).where(sql`${this.struct.versionTable.id} = ${this.id}`);
+            return data.map(d => new DataVersion(this.struct, d as any));
         });
     }
 
@@ -211,7 +328,7 @@ export class StructData<T extends Blank, Name extends string> {
             attributes = attributes
                 .filter(i => typeof i === 'string')
                 .filter((v, i, a) => a.indexOf(v) === i);
-            return await this.struct.database.update(this.struct.table).set({
+            return await this.database.update(this.struct.table).set({
                 attributes: JSON.stringify(attributes),
                 updated: new Date(),
             } as any).where(sql`${this.struct.table.id} = ${this.id}`);
@@ -244,7 +361,7 @@ export class StructData<T extends Blank, Name extends string> {
             universes = universes
                 .filter(i => typeof i === 'string')
                 .filter((v, i, a) => a.indexOf(v) === i);
-            return await this.struct.database.update(this.struct.table).set({
+            return await this.database.update(this.struct.table).set({
                 universes: JSON.stringify(universes),
                 updated: new Date(),
             } as any).where(sql`${this.struct.table.id} = ${this.id}`);
@@ -282,27 +399,12 @@ type StructEvents<T extends Blank, Name extends string> = {
     restore: StructData<T, Name>;
     create: StructData<T, Name>;
     build: void;
+
+    'delete-version': DataVersion<T, Name>;
+    'restore-version': DataVersion<T, Name>;
 };
 
 type TsType<T extends ColumnDataType> = T extends 'string' ? string : T extends 'number' ? number : T extends 'boolean' ? boolean : T extends 'timestamp' ? Date : never;
-
-enum StructAction {
-    // Data specific
-    UPDATE = 'update',
-    ARCHIVE = 'archive',
-    DELETE = 'delete',
-    RESTORE = 'restore',
-    CREATE = 'create',
-    // ADD_ATTRIBUTES = 'add-attributes',
-    // REMOVE_ATTRIBUTES = 'remove-attributes',
-    // SET_ATTRIBUTES = 'set-attributes',
-    // ADD_UNIVERSES = 'add-universes',
-    // REMOVE_UNIVERSES = 'remove-universes',
-    // SET_UNIVERSES = 'set-universes',
-
-    // Struct specific
-    NEW = 'new',
-}
 
 export class Struct<T extends Blank, Name extends string> {
     public static async buildAll() {
@@ -320,7 +422,7 @@ export class Struct<T extends Blank, Name extends string> {
             if (!Object.hasOwn(body, 'action')) return new Response('Missing action', { status: 400 });
             if (!Object.hasOwn(body, 'data')) return new Response('Missing data', { status: 400 });
 
-            const B = body as { struct: string; action: StructAction; data: unknown };
+            const B = body as { struct: string; action: DataAction | PropertyAction; data: unknown };
 
             const struct = Struct.structs.get(B.struct);
             if (!struct) return new Response('Struct not found', { status: 404 });
@@ -332,8 +434,27 @@ export class Struct<T extends Blank, Name extends string> {
         });
     };
 
+    public static generateLifetimeLoop(time: number) {
+        return new Loop(async () => {
+            Struct.forEach(async s => {
+                s.getLifetimeItems(true).pipe(async d => {
+                    if (d.lifetime === 0) return;
+                    if (d.created.getTime() + d.lifetime < Date.now()) {
+                        (await d.delete()).unwrap();
+                    }
+                });
+            });
+        }, time)
+    }
+
+    public static forEach(fn: (struct: Struct<Blank, string>) => void) {
+        for (const s of Struct.structs.values()) {
+            fn(s);
+        }
+    }
     
-    public readonly table: Table<T, Name>;
+    public readonly table: Table<T & typeof globalCols, Name>;
+    public readonly versionTable?: Table<T & typeof globalCols & typeof versionGlobalCols, Name>;
     public readonly eventEmitter = new EventEmitter<StructEvents<T, Name>>();
 
     public on = this.eventEmitter.on.bind(this.eventEmitter);
@@ -347,10 +468,20 @@ export class Struct<T extends Blank, Name extends string> {
     constructor(public readonly data: StructBuilder<T, Name>) {
         Struct.structs.set(data.name, this as any);
 
-        this.table = pgTable(data.name, {
+        const snaked = toSnakeCase(fromCamelCase(data.name));
+
+        this.table = pgTable(snaked, {
             ...globalCols,
             ...data.structure,
-        });
+        }) as any;
+
+        if (data.versionHistory) {
+            this.versionTable = pgTable(`${snaked}_history`, {
+                ...globalCols,
+                ...versionGlobalCols,
+                ...data.structure,
+            }) as any;
+        }
     }
 
     get database() {
@@ -368,6 +499,7 @@ export class Struct<T extends Blank, Name extends string> {
     new(data: Structable<T>) {
         return attemptAsync(async () => {
             const newData: Structable<T & typeof globalCols> = {
+                ...data,
                 id: uuid(),
                 created: new Date(),
                 updated: new Date(),
@@ -375,7 +507,6 @@ export class Struct<T extends Blank, Name extends string> {
                 universes: '',
                 attributes: '',
                 lifetime: 0,
-                ...data,
             };
 
             await this.database.insert(this.table).values(newData as any);
@@ -400,6 +531,7 @@ export class Struct<T extends Blank, Name extends string> {
         });
     }
 
+    // TODO: Integrate limits
     all(asStream: true, includeArchived?: boolean): StructStream<T, Name>;
     all(asStream: false, includeArchived?: boolean): Promise<Result<StructData<T, Name>[], Error>>;
     all(asStream: boolean, includeArchived = false){
@@ -525,89 +657,189 @@ export class Struct<T extends Blank, Name extends string> {
         if (this.built) throw new FatalStructError(`Struct ${this.name} has already been built`);
         if (this.data.sample) throw new FatalStructError(`Struct ${this.name} is a sample struct and should never be built`);
         return attemptAsync(async () => {
-            // const { sse } = await import('./utils/sse');
-            // const { Session } = await import('./structs/session');
+            const { sse } = await import('./utils/sse');
+            const { Session } = await import('./structs/session');
+            const { Permissions } = await import('./structs/permissions');
 
             // Permission handling
-            // Return nothing if user does not have permission
-            // const each = async (event: string, fn: (session: typeof Session.Session.sample) => unknown) => {
-            //     sse.each(async connection => {
-            //         const session = await connection.getSession();
-            //         if (session.isErr()) return;
-            //         const s = session.unwrap();
-            //         if (!s) return;
+            const emitToConnections = async (event: string, data: StructData<T, Name>) => {
+                sse.each(async connection => {
+                    const session = await connection.getSession();
+                    if (session.isErr()) return console.error(session.error);
+                    const s = session.value;
+                    if (!s) return;
 
-            //         try {
-            //             const result = await fn(s);
-            //             if (typeof result === 'undefined' || result === null) return;
-            //             connection.send(event, result);
-            //         } catch {
-            //             // Do nothing
-            //         }
-            //     });
-            // }
+                    const account = await Session.getAccount(s);
+                    if (account.isErr()) return console.error(account.error);
+                    const a = account.value;
+                    if (!a) return;
+                    const roles = await Permissions.getRoles(a);
+                    if (roles.isErr()) return console.error(roles.error);
+                    const r = roles.value;
 
-            // this.on('create', data => {
-            //     each('create', s => {
-            //         return '';
-            //     });
-            // });
+                    const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
+                    if (res.isErr()) return console.error(res.error);
+                    const [result] = res.value;
+                    connection.send(event, result);
+                });
+            };
 
-            // this.on('update', data => {
-            //     each('update', s => {
-            //         return '';
-            //     });
-            // });
+            this.on('create', data => {
+                emitToConnections('create', data);
+            });
 
-            // this.on('archive', data => {
-            //     each('archive', s => {
-            //         return '';
-            //     });
-            // });
+            this.on('update', data => {
+                emitToConnections('update', data);
+            });
 
-            // this.on('delete', data => {
-            //     each('delete', s => {
-            //         return '';
-            //     });
-            // });
+            this.on('archive', data => {
+                emitToConnections('archive', data);
+            });
 
-            // this.on('restore', data => {
-            //     each('restore', s => {
-            //         return '';
-            //     });
-            // });
+            this.on('delete', data => {
+                emitToConnections('delete', data);
+            });
+
+            this.on('restore', data => {
+                emitToConnections('restore', data);
+            });
 
             this.emit('build', undefined);
 
             this.built = true;
+
+            resolveAll(await Promise.all(this.defaults.map(d => {
+                return attemptAsync(async () => {
+                    const exists = (await this.fromId(d.id)).unwrap();
+                    if (exists) return;
+                    if (!this.validate(d)) throw new FatalDataError('Invalid default data');
+                    this.database.insert(this.table).values(d as any);
+                });
+            }))).unwrap();
         });
     }
 
     eventHandler(event: {
-        action: StructAction;
+        action: DataAction | PropertyAction;
         data: unknown;
         request: RequestEvent;
     }) {
         return attemptAsync<Response>(async () => {
+            const { Permissions } = await import('./structs/permissions');
             const error = (error: Error) => new Response(error.message, { status: 400 });
 
             const { Session } = await import('./structs/session');
             const s = (await Session.getSession(event.request)).unwrap();
             if (!s) return error(new StructError('Session not found'));
 
-            // match(event.action)
-            //     .case(StructAction.NEW, () => {})
-            //     .case(StructAction.UPDATE, () => {})
-            //     .case(StructAction.ARCHIVE, () => {})
-            //     .case(StructAction.DELETE, () => {})
-            //     .case(StructAction.RESTORE, () => {})
-            //     .default(() => {
-            //         throw new StructError('Invalid action');
-            //     })
-            //     .exec()
-            //     .unwrap();
+            const account = (await Session.getAccount(s)).unwrap();
+            if (!account) return error(new StructError('Not logged in'));
 
-            if (event.action === StructAction.NEW) {
+            const roles = (await Permissions.getRoles(account)).unwrap();
+
+            const invalidPermissions = new Response('Invalid permissions', { status: 403 });
+
+            // if (event.action === PropertyAction.Read) {
+            //     if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
+            //     if (!Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
+            //     let data: (StructData<T, Name> | undefined)[] = [];
+            //     const type = (event.data as any).type as 'all' | 'archived' | 'from-id' | 'property' | 'universe';
+
+            //     switch (type) {
+            //         case 'all':
+            //             data = (await this.all(false)).unwrap();
+            //             break;
+            //         case 'archived':
+            //             data = (await this.archived(false)).unwrap();
+            //             break;
+            //         case 'from-id':
+            //             if (!Object.hasOwn((event.data as any).args, 'id')) return error(new DataError('Missing Read id'));
+            //             data = [(await this.fromId((event.data as any).args.id)).unwrap()];
+            //             break;
+            //         case 'property':
+            //             if (!Object.hasOwn((event.data as any).args, 'key')) return error(new DataError('Missing Read key'));
+            //             if (!Object.hasOwn((event.data as any).args, 'value')) return error(new DataError('Missing Read value'));
+            //             data = (await this.fromProperty((event.data as any).args.key, (event.data as any).args.value, false)).unwrap();
+            //             break;
+            //         case 'universe':
+            //             if (!Object.hasOwn((event.data as any).args, 'universe')) return error(new DataError('Missing Read universe'));
+            //             data = (await this.fromUniverse((event.data as any).args.universe, false)).unwrap();
+            //             break;
+            //         default:
+            //             return error(new DataError('Invalid Read type'));
+            //     }
+
+            //     const res = (await Permissions.filterAction(roles, data as any, PropertyAction.Read)).unwrap();
+            
+            //     return new Response(JSON.stringify(res), { status: 200 });
+            // }
+
+            if (event.action === PropertyAction.Read) {
+                if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
+                if (!Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
+
+                let streamer: StructStream<T, Name>;
+                const type = (event.data as any).type as 'all' | 'archived' | 'from-id' | 'property' | 'universe';
+                switch (type) {
+                    case 'all':
+                        streamer = this.all(true, false);
+                        break;
+                    case 'archived':
+                        streamer = this.archived(true);
+                        break;
+                    case 'from-id':
+                        if (!Object.hasOwn((event.data as any).args, 'id')) return error(new DataError('Missing Read id'));
+                        {
+                            const data = (await this.fromId((event.data as any).args.id)).unwrap();
+                            if (!data) return error(new DataError('Data not found'));
+                            return new Response(JSON.stringify(data.data), { status: 200 });
+                        }
+                    case 'property':
+                        if (!Object.hasOwn((event.data as any).args, 'key')) return error(new DataError('Missing Read key'));
+                        if (!Object.hasOwn((event.data as any).args, 'value')) return error(new DataError('Missing Read value'));
+                        streamer = this.fromProperty((event.data as any).args.key, (event.data as any).args.value, true);
+                        break;
+                    case 'universe':
+                        if (!Object.hasOwn((event.data as any).args, 'universe')) return error(new DataError('Missing Read universe'));
+                        streamer = this.fromUniverse((event.data as any).args.universe, true);
+                        break;
+                    default:
+                        return error(new DataError('Invalid Read type'));
+                }
+
+                const readable = new ReadableStream({
+                    start(controller) {
+                        streamer.pipe(async (data) => {
+                            const filtered = (await Permissions.filterAction(roles, [data as any], PropertyAction.Read)).unwrap();
+                            controller.enqueue(`data: ${encode(JSON.stringify(data.data))}`)
+                        });
+                    },
+                    cancel() {
+                        streamer.off('end');
+                        streamer.off('data');
+                        streamer.off('error');
+                    }
+                });
+
+                streamer.on('end', () => {
+                    readable.cancel();
+                });
+
+                streamer.on('error', e => {
+                    readable.cancel();
+                    console.error(e);
+                });
+
+                return new Response(readable, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+            }
+
+            if (event.action === DataAction.Create) {
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
                 if (!this.validate(event.data, {
                     optionals: ['id', 'created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
                 })) return error(new DataError('Invalid data'));
@@ -617,7 +849,7 @@ export class Struct<T extends Blank, Name extends string> {
                 return new Response('Created', { status: 201 });
             }
 
-            if (event.action === StructAction.UPDATE) {
+            if (event.action === PropertyAction.Update) {
                 if (!this.validate(event.data, {
                     not: ['created', 'updated', 'archived', 'universes', 'attributes', 'lifetime'],
                     optionals: Object.keys(this.data.structure) as string[],
@@ -627,16 +859,18 @@ export class Struct<T extends Blank, Name extends string> {
                 const found = (await this.fromId(data.id)).unwrap();
                 if (!found) return error(new DataError('Data not found'));
 
-                await found.update(data);
+                const [res] = (await Permissions.filterAction(roles, [found as any], PropertyAction.Update)).unwrap();
+
+                if (!res) return invalidPermissions;
+
+                await found.update(res as any);
 
                 return new Response('Updated', { status: 200 });
             }
 
-            if (event.action === StructAction.ARCHIVE) {
-                if (!this.validate(event.data, {
-                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
-                    optionals: ['archived'],
-                })) return error(new DataError('Invalid data'));
+            if (event.action === DataAction.Archive) {
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
                 const data = event.data as Structable<T & typeof globalCols>;
                 const found = (await this.fromId(data.id)).unwrap();
@@ -647,11 +881,9 @@ export class Struct<T extends Blank, Name extends string> {
                 return new Response('Archived', { status: 200 });
             }
 
-            if (event.action === StructAction.DELETE) {
-                if (!this.validate(event.data, {
-                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
-                    optionals: ['archived'],
-                })) return error(new DataError('Invalid data'));
+            if (event.action === DataAction.Delete) {
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
 
                 const data = event.data as Structable<T & typeof globalCols>;
                 const found = (await this.fromId(data.id)).unwrap();
@@ -662,12 +894,9 @@ export class Struct<T extends Blank, Name extends string> {
                 return new Response('Deleted', { status: 200 });
             }
 
-            if (event.action === StructAction.RESTORE) {
-                if (!this.validate(event.data, {
-                    not: ['created', 'updated', 'universes', 'attributes', 'lifetime'],
-                    optionals: ['archived'],
-                })) return error(new DataError('Invalid data'));
-
+            if (event.action === DataAction.RestoreArchive) {
+                if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap()) return invalidPermissions;
+                if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
                 const data = event.data as Structable<T & typeof globalCols>;
                 const found = (await this.fromId(data.id)).unwrap();
                 if (!found) return error(new DataError('Data not found'));
@@ -688,17 +917,52 @@ export class Struct<T extends Blank, Name extends string> {
         not?: string[];
     }) {
         if (typeof data !== 'object' || data === null) return false;
+        
+        const keys = Object.keys(data);
 
-        for (const key in data) {
-            if (config?.not?.includes(key as any)) return false;
-            // if it's optional, it can be missing
-            // if it's optional but not missing, it must be the correct type
-            if (config?.optionals?.includes(key as any) && !Object.hasOwn(data, key)) continue;
-            if (!Object.hasOwn(data, key)) return false;
-            if (!Object.hasOwn(this.data.structure, key)) return false;
-            if (typeof (data as any)[key] !== this.data.structure[key]._.dataType) return false;
+        for (const main in this.data.structure) {
+            if (config?.not?.includes(main as any) && keys.includes(main)) return false;
+            if (config?.optionals?.includes(main) && !keys.includes(main)) continue;
+            if (!keys.includes(main)) return false;
+            if (typeof (data as any)[main] !== this.data.structure[main]._.dataType) return false;
         }
 
         return true;
+    }
+
+    hash() {
+        return attemptAsync(async () => {
+            const data = (await this.all(false)).unwrap()
+                .sort((a, b) => a.id.localeCompare(b.id))
+                .map(d => JSON.stringify(d.data))
+                .join('');
+
+            const encoder = new TextEncoder();
+            const buffer = encoder.encode(data);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        });
+    }
+
+    reflect(path: string, body: unknown) {
+        const { reflect } = this.data;
+        if (!reflect) throw new FatalStructError('Cannot reflect a struct that does not have a reflect config');
+        return attemptAsync(async () => {
+            const { webhook, headers } = reflect;
+            if (!path.startsWith('/')) throw new FatalStructError('Path must start with /');
+            const response = await fetch(webhook + path, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...headers,
+                },
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) throw new Error('Failed to reflect');
+
+            return response;
+        });
     }
 }
