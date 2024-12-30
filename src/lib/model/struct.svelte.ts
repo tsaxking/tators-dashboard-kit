@@ -56,9 +56,31 @@ export class StructData<T extends Blank> implements Writable<Structable<T>> {
     }
 
     // this is what will send to the backend
-    public update(fn: (value: Structable<T>) => Structable<T>): void {
-        this.struct.post(PropertyAction.Update, fn(this.data));
+    public async update(fn: (value: Structable<T>) => Structable<T>) {
+        return attemptAsync(async () => {
+            const prev = { ...this.data };
+            (await this.struct.post(PropertyAction.Update, fn(this.data))).unwrap();
+            return () => this.update(() => prev);
+        });
     }
+
+    delete() {}
+
+    setArchive(archive: boolean) {}
+
+    getVersionHistory() {}
+
+    pull<Key extends keyof T>(...keys: Key[]) {}
+
+    getUniverses() {}
+    addUniverses(...universes: string[]) {}
+    removeUniverses(...universes: string[]) {}
+    setUniverses(...universes: string[]) {}
+
+    getAttributes() {}
+    addAttributes(...attributes: string[]) {}
+    removeAttributes(...attributes: string[]) {}
+    setAttributes(...attributes: string[]) {}
 }
 
 export class DataArr<T extends Blank> implements Writable<StructData<T>[]> {
@@ -214,9 +236,17 @@ export class Struct<T extends Blank> {
         return d;
     }
 
-    // validate(data: unknown): data is Structable<T> {
-        
-    // }
+    validate(data: unknown): data is Structable<T> {
+        if (typeof data !== 'object' || data === null) return false;
+        for (const key in data) {
+            if (!Object.hasOwn(this.data.structure, key)) return false;
+            const type = this.data.structure[key];
+            const value = (data as any)[key];
+            if (typeof value !== type) return false;
+        }
+
+        return true;
+    }
 
 
     post(action: DataAction | PropertyAction, data: unknown) {
@@ -326,6 +356,16 @@ export class Struct<T extends Blank> {
             arr.add(d);
         });
         return arr;
+    }
+
+    fromId(id: string) {
+        return attemptAsync(async () => {
+            const has = this.cache.get(id);
+            if (has) return has;
+            const res = await this.post(PropertyAction.Read, { type: 'id', data: id });
+            const data = await res.unwrap().json();
+            return this.Generator(data);
+        });
     }
 };
 

@@ -342,6 +342,32 @@ export class StructData<T extends Blank, Name extends string> {
     }
 }
 
+export const toJson = <T extends Blank>(struct: Struct<T, string>, data: Structable<T & typeof globalCols>) => {
+    return attempt<Structable<T>>(() => {
+        const obj: any = {};
+
+        for (const key in data) {
+            const type = struct.data.structure[key]._.dataType;
+            switch (type) {
+                case 'string':
+                case 'number':
+                case 'boolean':
+                    obj[key] = data[key];
+                    break;
+                case 'date':
+                    if (data[key] instanceof Date) {
+                        obj[key] = data[key].toISOString();
+                    }
+                    break;
+                default:
+                    throw new DataError(`Invalid data type: ${type} in ${key} of ${struct.name}`);
+            }
+        }
+
+        return obj;
+    });
+};
+
 type StructEvents<T extends Blank, Name extends string> = {
     update: StructData<T, Name>;
     archive: StructData<T, Name>;
