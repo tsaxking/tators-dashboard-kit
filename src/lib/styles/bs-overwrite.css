@@ -1,42 +1,8 @@
 @import url('./scss/bs-overwrite.scss');
-@import url('./scss/colors.scss');
 
 :root {
-    /* --bs-danger: #ad333f;
-    --bs-primary: #0c4888;
-    --bs-success: #1d6a46;
-    --bs-warning: #ad8c33;
-    --bs-info: #1690a8;
-    --bs-light: #bababa; */
-
-
-
-    /* --bs-primary: #00AEEF; */
-    /* --bs-primary: #9A31F7; */
-    /* --bs-primary: #00FFC8; */
-    /* --bs-primary: #17D47A; */
-    /* --bs-primary: #FFAC33; */
-
-    /* --bs-primary: #F3F738; */
-    /* --bs-primary: #FF387D; */
-    /* --bs-primary: #FF3A3A; */
-    /* --bs-primary: #E4E7EB; */
-    /* --bs-primary: #FF7F50; */
-
-    /* --bs-dark: #1F2326; */
-    /* --bs-dark: #2D2F36; */
-    /* --bs-dark: #121417; */
-    /* --bs-dark: #0B0E14; */
-    /* --bs-dark: #1B1F2F; */
-
-
-
-
-
     --border-radius: 8px;
-
     --navbar-height: 1.75rem;
-
     --dashboard-card-title-height: 27.75px;
 }
 
@@ -73,10 +39,17 @@ button,
 }
 
 
-.card *, .card {
-    border-color: var(--bs-dark) !important;
+* {
+    border: none !important;
 }
 
 .card {
-    padding: 0 !important;
+    /* padding: 0 !important; */
 }
+
+:root {
+    --bs-btn-font-weight: 500;
+    --bs-btn-padding-y: 0.5rem;
+    --bs-btn-padding-x: 1rem;
+    --bs-btn-border-radius: 0.3rem;
+  }

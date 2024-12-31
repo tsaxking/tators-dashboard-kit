@@ -5,10 +5,13 @@
         title: string;
         color?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
         body: Snippet;
+        classes?: string;
+        glowColor?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
     }
 
-    const { title, body, color }: Props = $props();
+    const { title, body, color, classes = '', glowColor }: Props = $props();
 
+    const glowColorProxy = glowColor ? `glow glow-${glowColor}` : 'shadow';
     const colorProxy = color ? `bg-${color}` : '';
 
     let minimized = $state(false);
@@ -23,7 +26,7 @@
     export const show = () => hidden = false;
 </script>
 
-<div class="card toggle-hide {colorProxy}" class:hide={hidden}>
+<div class="card toggle-hide {classes} {colorProxy} {glowColorProxy}" class:hide={hidden}>
     <div class="card-header">
         <h5 class="card-title">
             {title}
