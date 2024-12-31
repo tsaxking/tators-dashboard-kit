@@ -379,6 +379,7 @@ export namespace Permissions {
     //     };
 }
 
+// for drizzle
 export const _universeTable = Permissions.Universe.table;
 export const _roleTable = Permissions.Role.table;
 export const _roleAccountTable = Permissions.RoleAccount.table;

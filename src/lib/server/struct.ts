@@ -13,7 +13,6 @@ import type { RequestEvent } from '../../routes/struct/$types';
 import { PropertyAction, DataAction } from '../types';
 import { encode } from '../ts-utils/text';
 import { Stream } from '../ts-utils/stream';
-import type { Account } from './structs/account';
 
 export class StructError extends Error {
     constructor(message: string) {
