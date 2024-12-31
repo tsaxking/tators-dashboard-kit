@@ -74,6 +74,19 @@ export type StructBuilder<T extends Blank, Name extends string> = {
         // it will first send a hash of the data, and if the other server doesn't have that hash, the other server will pipe the data
         interval: number;
     };
+
+/*
+Rules for reflections:
+- The API key has defined read/write access control for each struct on the other server
+- Any reflected table will have an added "last_read" column
+- If the data hasn't been read in the last hour, it will be deleted as long as the connection between the two servers is stable (no disconnect in the last 24 hours)
+- If the connection is lost, the data will be kept until the connection is restored
+- Any events that happen while the connection is lost will be saved to a streamable file queue and once the connection is restored, the data will be sent to the other server
+- The other server will then read the queue, and if it has conflicting events, it will prioritize the events from itself over the microservice
+- To ensure data integrity, any time the connection is restore, it will send a hash table to the other server. If the other server doesn't have that hash, it will update the data
+- The entire system is event based, any time state has changed, it will be emitted to the other server
+- All events have a timestamp, so if the main server can sort incomming events by timestamp and apply them in order
+*/
 };
 
 
@@ -635,68 +648,71 @@ export class Struct<T extends Blank = any, Name extends string = any> {
         if (this.data.sample) throw new FatalStructError(`Struct ${this.name} is a sample struct and should never be built`);
         return attemptAsync(async () => {
             this._database = database;
-            const { sse } = await import('./utils/sse');
-            const { Session } = await import('./structs/session');
-            const { Permissions } = await import('./structs/permissions');
-            const { Account } = await import('./structs/account');
-            // Permission handling
-            const emitToConnections = async (event: string, data: StructData<T, Name>) => {
-                sse.each(async connection => {
-                    const session = await connection.getSession();
-                    if (session.isErr()) return console.error(session.error);
-                    const s = session.value;
-                    if (!s) return;
 
-                    const account = await Session.getAccount(s);
-                    if (account.isErr()) return console.error(account.error);
-                    const a = account.value;
-                    if (!a) return;
+            if (this.data.frontend !== false) {
+                const { sse } = await import('./utils/sse');
+                const { Session } = await import('./structs/session');
+                const { Permissions } = await import('./structs/permissions');
+                const { Account } = await import('./structs/account');
+                // Permission handling
+                const emitToConnections = async (event: string, data: StructData<T, Name>) => {
+                    sse.each(async connection => {
+                        const session = await connection.getSession();
+                        if (session.isErr()) return console.error(session.error);
+                        const s = session.value;
+                        if (!s) return;
 
-                    if ((await Account.Admins.fromProperty('accountId', a.id, false)).unwrap().length) {
+                        const account = await Session.getAccount(s);
+                        if (account.isErr()) return console.error(account.error);
+                        const a = account.value;
+                        if (!a) return;
+
+                        if ((await Account.Admins.fromProperty('accountId', a.id, false)).unwrap().length) {
+                            connection.send(`struct:${this.name}`, {
+                                event,
+                                data: data.data,
+                            });
+                            return;
+                        }
+
+                        const roles = await Permissions.getRoles(a);
+                        if (roles.isErr()) return console.error(roles.error);
+                        const r = roles.value;
+
+                        const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
+                        if (res.isErr()) return console.error(res.error);
+                        const [result] = res.value;
                         connection.send(`struct:${this.name}`, {
                             event,
-                            data: data.data,
+                            data: result,
                         });
-                        return;
-                    }
-
-                    const roles = await Permissions.getRoles(a);
-                    if (roles.isErr()) return console.error(roles.error);
-                    const r = roles.value;
-
-                    const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
-                    if (res.isErr()) return console.error(res.error);
-                    const [result] = res.value;
-                    connection.send(`struct:${this.name}`, {
-                        event,
-                        data: result,
                     });
+                };
+
+                this.on('create', data => {
+                    emitToConnections('create', data);
                 });
-            };
 
-            this.on('create', data => {
-                emitToConnections('create', data);
-            });
+                this.on('update', data => {
+                    emitToConnections('update', data);
+                });
 
-            this.on('update', data => {
-                emitToConnections('update', data);
-            });
+                this.on('archive', data => {
+                    emitToConnections('archive', data);
+                });
 
-            this.on('archive', data => {
-                emitToConnections('archive', data);
-            });
+                this.on('delete', data => {
+                    emitToConnections('delete', data);
+                });
 
-            this.on('delete', data => {
-                emitToConnections('delete', data);
-            });
+                this.on('restore', data => {
+                    emitToConnections('restore', data);
+                });
 
-            this.on('restore', data => {
-                emitToConnections('restore', data);
-            });
+                this.emit('build', undefined);
 
-            this.emit('build', undefined);
-
-            this.built = true;
+                this.built = true;
+            }
 
             resolveAll(await Promise.all(this.defaults.map(d => {
                 return attemptAsync(async () => {
