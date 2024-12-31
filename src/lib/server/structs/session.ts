@@ -1,9 +1,9 @@
-import { DOMAIN, SESSION_DURATION } from "$env/static/private";
-import { attemptAsync } from "$lib/ts-utils/check";
-import { DB } from "../db";
+import { attemptAsync } from "../../ts-utils/check";
 import { Struct } from "../struct";
 import { integer, text } from 'drizzle-orm/pg-core';
 import { Account } from "./account";
+
+const { DOMAIN, SESSION_DURATION } = process.env;
 
 interface RequestEvent {
     cookies: {
@@ -20,8 +20,7 @@ interface RequestEvent {
 
 export namespace Session {
     export const Session = new Struct({
-        database: DB,
-        name: 'Session',
+        name: 'session',
         structure: {
             accountId: text('account_id').notNull(),
             ip: text('ip').notNull(),
@@ -48,10 +47,10 @@ export namespace Session {
 
                 event.cookies.set('ssid', session.id, {
                     httpOnly: true,
-                    domain: DOMAIN,
+                    domain: DOMAIN || '',
                     sameSite: 'none',
                     path: '/*',
-                    expires: new Date(Date.now() + SESSION_DURATION),
+                    expires: new Date(Date.now() + Number(SESSION_DURATION)),
                 });
 
                 return session;
@@ -78,3 +77,6 @@ export namespace Session {
         });
     };
 }
+
+// for drizzle
+export const _sessionTable = Session.Session.table;

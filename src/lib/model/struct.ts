@@ -6,6 +6,7 @@ import { Stream } from "$lib/ts-utils/stream";
 import { decode } from "$lib/ts-utils/text";
 import { DataAction, PropertyAction } from '$lib/types';
 import type { Readable, Writable } from "svelte/store";
+import { type ColType } from "$lib/utils/struct";
 
 // TODO: Batching?
 
@@ -41,7 +42,6 @@ export interface Socket {
     on(event: string, lisener: (data: unknown) => void): void;
 }
 
-export type ColType = 'string' | 'number' | 'boolean' | 'array' | 'json' | 'date' | 'bigint' | 'custom' | 'buffer';
 
 export type ColTsType<t extends ColType> = t extends 'string' ? string :
     t extends 'number' ? number :

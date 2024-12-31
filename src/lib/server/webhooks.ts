@@ -1,5 +1,6 @@
 import { type Handle } from "@sveltejs/kit";
 import { Struct } from "./struct";
+import { match } from "../ts-utils/match";
 
 type Proof = 'string' | 'number' | 'boolean' | ((data: unknown) => boolean);
 
@@ -39,7 +40,9 @@ export const post: Handle = async ({ event, resolve }) => {
                 return new Response('Invalid struct', { status: 400 });
             }
             const body = await event.request.json() as unknown;
-            switch (action) {}
+            match(action)
+                .exec()
+                .unwrap();
         } catch (error) {
             return new Response((error as Error).message, { status: 500 });
         }

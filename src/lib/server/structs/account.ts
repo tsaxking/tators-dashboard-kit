@@ -1,12 +1,10 @@
 import { boolean, text } from "drizzle-orm/pg-core";
-import { DB } from "../db";
 import { Struct } from "../struct";
 import { uuid } from "../utils/uuid";
 
 export namespace Account {
     export const Account = new Struct({
-        database: DB,
-        name: 'Account',
+        name: 'account',
         structure: {
             username: text('username').notNull().unique(),
             key: text('key').notNull().unique(),
@@ -30,8 +28,7 @@ export namespace Account {
     });
 
     export const Admins = new Struct({
-        database: DB,
-        name: 'Admins',
+        name: 'admins',
         structure: {
             accountId: text('account_id').notNull().unique(),
         },
@@ -39,3 +36,7 @@ export namespace Account {
     
     export type AccountData = typeof Account.sample;
 }
+
+// for drizzle
+export const _accountTable = Account.Account.table;
+export const _adminsTable = Account.Admins.table;

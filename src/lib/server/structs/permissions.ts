@@ -1,11 +1,10 @@
 import { text } from "drizzle-orm/pg-core";
-import { DB } from "../db";
 import { DataError, Struct, StructData, StructStream, type Blank, type Structable } from "../struct";
-import { attempt, attemptAsync, resolveAll, type Result } from "$lib/ts-utils/check";
-import { decode, encode } from "$lib/ts-utils/text";
+import { attempt, attemptAsync, resolveAll, type Result } from "../../ts-utils/check";
+import { decode, encode } from "../../ts-utils/text";
 import type { Account } from "./account";
-import { PropertyAction, DataAction } from "$lib/types";
-import { Stream } from "$lib/ts-utils/stream";
+import { PropertyAction, DataAction } from "../../types";
+import { Stream } from "../../ts-utils/stream";
 
 export namespace Permissions {
     export class DataPermission {
@@ -56,19 +55,25 @@ export namespace Permissions {
     }
 
     export const Universe = new Struct({
-        database: DB,
-        name: 'Universe',
+        name: 'universe',
         structure: {
             name: text('name').notNull(),
             description: text('description').notNull(),
         },
     });
 
+    Universe.on('delete', u => {
+        Struct.each(s => {
+            s.each(d => {
+                d.removeUniverses(u.id);
+            });
+        });
+    });
+
     export type UniverseData = typeof Universe.sample;
 
     export const Role = new Struct({
-        database: DB,
-        name: 'Role',
+        name: 'role',
         structure: {
             name: text('name').notNull(),
             universe: text('universe').notNull(),
@@ -80,8 +85,7 @@ export namespace Permissions {
     export type RoleData = typeof Role.sample;
 
     export const RoleAccount = new Struct({
-        database: DB,
-        name: 'RoleAccount',
+        name: 'role_account',
         structure: {
             role: text('role').notNull(),
             account: text('account').notNull(),
@@ -374,3 +378,7 @@ export namespace Permissions {
     //         next();
     //     };
 }
+
+export const _universeTable = Permissions.Universe.table;
+export const _roleTable = Permissions.Role.table;
+export const _roleAccountTable = Permissions.RoleAccount.table;

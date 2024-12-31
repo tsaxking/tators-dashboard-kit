@@ -2,17 +2,17 @@
 import { pgTable, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 import type { PgColumnBuilderBase, PgTableWithColumns } from 'drizzle-orm/pg-core';
 import { sql, type BuildColumns } from 'drizzle-orm';
-import { attempt, attemptAsync, resolveAll, type Result } from '$lib/ts-utils/check';
+import { attempt, attemptAsync, resolveAll, type Result } from '../ts-utils/check';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { type ColumnDataType } from 'drizzle-orm';
-import { EventEmitter } from '$lib/ts-utils/event-emitter';
-import { Loop } from '$lib/ts-utils/loop';
+import { EventEmitter } from '../ts-utils/event-emitter';
+import { Loop } from '../ts-utils/loop';
 import { uuid } from './utils/uuid';
 import type { RequestEvent } from '../../routes/struct/$types';
-// import { match } from '$lib/ts-utils/match';
-import { PropertyAction, DataAction } from '$lib/types';
-import { encode, fromCamelCase, toSnakeCase } from '$lib/ts-utils/text';
-import { Stream } from '$lib/ts-utils/stream';
+// import { match } from '../ts-utils/match';
+import { PropertyAction, DataAction } from '../types';
+import { encode } from '../ts-utils/text';
+import { Stream } from '../ts-utils/stream';
 import type { Account } from './structs/account';
 
 export class StructError extends Error {
@@ -46,7 +46,6 @@ export class FatalDataError extends Error {
 export type Blank = Record<string, PgColumnBuilderBase>;
 
 export type StructBuilder<T extends Blank, Name extends string> = {
-    database: PostgresJsDatabase;
     name: Name;
     structure: T;
     sample?: boolean;
@@ -100,7 +99,7 @@ type Table<T extends Blank, TableName extends string> = PgTableWithColumns<{
 }>;
 
 export type Structable<T extends Blank> = {
-    [K in keyof T]: TsType<T[K]['_']['dataType']>;
+    [K in keyof T]: TsType<T[K]['_']['dataType']>;// | TsType<T[K]['config']['dataType']>;
 }
 
 export class StructStream<T extends Blank = Blank, Name extends string = string> extends Stream<StructData<T, Name>> {
@@ -348,7 +347,8 @@ export const toJson = <T extends Blank>(struct: Struct<T, string>, data: Structa
         const obj: any = {};
 
         for (const key in data) {
-            const type = struct.data.structure[key]._.dataType;
+            // drizzle's type during compile and runtime are different, '_' at compile is 'config' at runtime
+            const type = (struct.data.structure[key] as any).config.dataType as ColumnDataType;
             switch (type) {
                 case 'string':
                 case 'number':
@@ -384,8 +384,8 @@ type StructEvents<T extends Blank, Name extends string> = {
 type TsType<T extends ColumnDataType> = T extends 'string' ? string : T extends 'number' ? number : T extends 'boolean' ? boolean : T extends 'timestamp' ? Date : never;
 
 export class Struct<T extends Blank, Name extends string> {
-    public static async buildAll() {
-        return resolveAll(await Promise.all([...Struct.structs.values()].map(s => s.build())));
+    public static async buildAll(database: PostgresJsDatabase) {
+        return resolveAll(await Promise.all([...Struct.structs.values()].map(s => s.build(database))));
     }
 
     public static readonly structs = new Map<string, Struct<Blank, string>>();
@@ -413,7 +413,7 @@ export class Struct<T extends Blank, Name extends string> {
 
     public static generateLifetimeLoop(time: number) {
         return new Loop(async () => {
-            Struct.forEach(async s => {
+            Struct.each(async s => {
                 s.getLifetimeItems(true).pipe(async d => {
                     if (d.lifetime === 0) return;
                     if (d.created.getTime() + d.lifetime < Date.now()) {
@@ -424,7 +424,7 @@ export class Struct<T extends Blank, Name extends string> {
         }, time)
     }
 
-    public static forEach(fn: (struct: Struct<Blank, string>) => void) {
+    public static each(fn: (struct: Struct<Blank, string>) => void) {
         for (const s of Struct.structs.values()) {
             fn(s);
         }
@@ -445,15 +445,13 @@ export class Struct<T extends Blank, Name extends string> {
     constructor(public readonly data: StructBuilder<T, Name>) {
         Struct.structs.set(data.name, this as any);
 
-        const snaked = toSnakeCase(fromCamelCase(data.name));
-
-        this.table = pgTable(snaked, {
+        this.table = pgTable(data.name, {
             ...globalCols,
             ...data.structure,
         }) as any;
 
         if (data.versionHistory) {
-            this.versionTable = pgTable(`${snaked}_history`, {
+            this.versionTable = pgTable(`${data.name}_history`, {
                 ...globalCols,
                 ...versionGlobalCols,
                 ...data.structure,
@@ -461,8 +459,11 @@ export class Struct<T extends Blank, Name extends string> {
         }
     }
 
-    get database() {
-        return this.data.database;
+    private _database?: PostgresJsDatabase;
+
+    get database(): PostgresJsDatabase {
+        if (!this._database) throw new FatalStructError('Struct database not set');
+        return this._database;
     }
 
     get name() {
@@ -626,19 +627,19 @@ export class Struct<T extends Blank, Name extends string> {
         }
     }
 
-    forEach(fn: (data: StructData<T, Name>, i: number) => void) {
+    each(fn: (data: StructData<T, Name>, i: number) => void) {
         return this.all(true).pipe(fn);
     }
 
-    build() {
+    build(database: PostgresJsDatabase) {
         if (this.built) throw new FatalStructError(`Struct ${this.name} has already been built`);
         if (this.data.sample) throw new FatalStructError(`Struct ${this.name} is a sample struct and should never be built`);
         return attemptAsync(async () => {
+            this._database = database;
             const { sse } = await import('./utils/sse');
             const { Session } = await import('./structs/session');
             const { Permissions } = await import('./structs/permissions');
             const { Account } = await import('./structs/account');
-
             // Permission handling
             const emitToConnections = async (event: string, data: StructData<T, Name>) => {
                 sse.each(async connection => {
@@ -915,7 +916,8 @@ export class Struct<T extends Blank, Name extends string> {
             if (config?.not?.includes(main as any) && keys.includes(main)) return false;
             if (config?.optionals?.includes(main) && !keys.includes(main)) continue;
             if (!keys.includes(main)) return false;
-            if (typeof (data as any)[main] !== this.data.structure[main]._.dataType) return false;
+            // drizzle's type during compile and runtime are different, '_' at compile is 'config' at runtime
+            if (typeof (data as any)[main] !== ((this.data.structure[main] as any).config.dataType as ColumnDataType)) return false;
         }
 
         return true;
