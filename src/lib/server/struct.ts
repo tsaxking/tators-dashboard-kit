@@ -163,8 +163,8 @@ export class DataVersion<T extends Blank, Name extends string> {
     }
 }
 
-export class StructData<T extends Blank, Name extends string> {
-    constructor(public readonly data: Structable<T & typeof globalCols>, public readonly struct: Struct<T, Name>) {}
+export class StructData<T extends Blank = any, Name extends string = any> {
+    constructor(public readonly data: Readonly<Structable<T & typeof globalCols>>, public readonly struct: Struct<T, Name>) {}
 
     get id() {
         return this.data.id;
@@ -383,7 +383,7 @@ type StructEvents<T extends Blank, Name extends string> = {
 
 type TsType<T extends ColumnDataType> = T extends 'string' ? string : T extends 'number' ? number : T extends 'boolean' ? boolean : T extends 'timestamp' ? Date : never;
 
-export class Struct<T extends Blank, Name extends string> {
+export class Struct<T extends Blank = any, Name extends string = any> {
     public static async buildAll(database: PostgresJsDatabase) {
         return resolveAll(await Promise.all([...Struct.structs.values()].map(s => s.build(database))));
     }

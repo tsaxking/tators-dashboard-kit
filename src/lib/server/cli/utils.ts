@@ -4,10 +4,15 @@ import FuzzySearch from 'fuzzy-search';
 import Table from 'cli-table';
 import { Colors } from "./colors";
 
-export const prompt = async (config: {
+type GlobalConfig = {
     message: string;
+    clear?: boolean;
+}
+
+export const prompt = async (config: GlobalConfig & {
     default?: string;
 }) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     const res = await inquirer.input({
         message: config.message,
     });
@@ -18,11 +23,11 @@ export const prompt = async (config: {
     return res;
 });
 
-export const repeatPrompt = async (config: {
-    message: string;
+export const repeatPrompt = async (config: GlobalConfig & {
     validate?: (output: string) => boolean;
     allowBlank?: boolean;
 }) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     let firstTime = true;
     const run = async () => {
         const res = await inquirer.input({
@@ -49,12 +54,12 @@ type Option<T> = {
     name: string;
 }
 
-export const select = async <T = unknown>(config: {
-    message: string;
+export const select = async <T = unknown>(config: GlobalConfig & {
     options: Option<T>[];
     exit?: boolean;
     cancel?: boolean;
 }) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     const choices: {
         name: string;
         value: T | undefined | 'exit';
@@ -80,7 +85,7 @@ export const select = async <T = unknown>(config: {
     const res = await inquirer.select<T | undefined | 'exit'>({
         message: config.message,
         choices,
-        loop: true,
+        // loop: true,
     });
 
     if (res === 'exit') {
@@ -90,34 +95,35 @@ export const select = async <T = unknown>(config: {
     return res;
 });
 
-export const multiSelect = async <T = unknown>(config: {
-    message: string;
+export const multiSelect = async <T = unknown>(config: GlobalConfig & {
     options: Option<T>[];
 }) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     return inquirer.checkbox({
         message: config.message,
         choices: config.options.map(o => ({
             name: o.name,
             value: o.value,
         })),
-        loop: true,
+        // loop: true,
     });
 });
 
-export const confirm = async (message: string) => attemptAsync(async () => {
+export const confirm = async (config: GlobalConfig) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     return inquirer.confirm({
-        message,
+        message: config.message,
     });
 });
 
-export const password = async (message: string) => attemptAsync(async () => {
+export const password = async (config: GlobalConfig) => attemptAsync(async () => {
+    if (config.clear) console.clear();
     return inquirer.password({
-        message,
+        message: config.message,
     });
 });
 
-export const search = async <T = unknown>(config: {
-    message: string;
+export const search = async <T = unknown>(config: GlobalConfig & {
     options: Option<T>[];
 }) => attemptAsync(async () => {
     return inquirer.search({
@@ -132,11 +138,11 @@ export const search = async <T = unknown>(config: {
     });
 });
 
-export const selectFromTable = async <T extends Record<string, unknown>>(config: {
-    message: string;
+export const selectFromTable = async <T extends Record<string, unknown>>(config: GlobalConfig & {
     options: T[];
     omit?: (keyof T)[];
 }) => attemptAsync(async () => new Promise<number | undefined>((res) => {
+    if (config.clear) console.clear();
     if (!config.options.length) {
         console.log('No options available');
         return res(undefined);
@@ -197,42 +203,54 @@ export const selectFromTable = async <T extends Record<string, unknown>>(config:
     run(selected);
 }));
 
+
+let id = -1;
 export class Folder {
-    public icon = '📁';
+    public static home?: Folder;
+
+    private parent?: Folder;
+    private id = id -=- 1; // :) shhhhh.... don't tell anyone
 
     constructor(
         public readonly name: string,
         public readonly description: string,
+        public readonly icon: string,
         public readonly actions: (Action | Folder)[],
-        public readonly home: Folder,
-        public readonly parent?: Folder,
-    ) {}
+    ) {
+        for (const a of this.actions) {
+            if (a instanceof Folder) {
+                a.setParent(this);
+            }
+        }
+    }
 
     public action() {
         return attemptAsync(async () => {
-            const extras = [
+            const extras: (Action|Folder)[] = [
                 this.exit,
             ];
             if (this.parent) {
-                extras.unshift(this.parent.toAction('🔙'));
+                extras.unshift(this.parent);
             }
-            if (!Object.is(this, this.home)) {
-                extras.unshift(this.home.toAction('🏠'));
+            if (Folder.home && this.parent?.id !== Folder.home.id) {
+                if (this.id !== Folder.home.id) {
+                    extras.unshift(Folder.home);
+                }
             }
             const selected =  (await select({
                 message: this.name,
+                clear: true,
                 options: [
                     ...this.actions,
                     ...extras,
                 ].map(a => ({
                     name: `${a.icon} ${a.name}: ${Colors.Dim}${a.description}${Colors.Reset}`,
-                    value: a.action,
+                    value: () => a.action(),
                 })),
             })).unwrap();
 
             if (selected) {
-                await selected();
-                this.home.action();
+                (await selected()).unwrap();
             }
 
             return;
@@ -246,9 +264,9 @@ export class Folder {
             process.exit(0);
         });
     }
-
-    toAction(icon: string) {
-        return new Action(this.name, this.description, icon, this.action.bind(this));
+    
+    setParent(parent: Folder) {
+        this.parent = parent;
     }
 };
 
@@ -257,6 +275,13 @@ export class Action {
         public readonly name: string,
         public readonly description: string,
         public readonly icon: string,
-        public readonly action: () => unknown,
+        public readonly _action: () => unknown,
     ) {}
+
+    public action() {
+        return attemptAsync(async () => {
+            await this._action();
+            if (Folder.home) await Folder.home.action();
+        });
+    }
 };

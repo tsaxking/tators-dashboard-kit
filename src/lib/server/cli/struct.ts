@@ -8,11 +8,11 @@ import { checkStrType, returnType } from "../../utils/struct";
 import { Permissions } from "../structs/permissions";
 
 export const openStructs = () => attemptAsync(async () => {
-    const readFile = async (file: string): Promise<Struct<Blank, string>[]> => {
+    const readFile = async (file: string): Promise<Struct[]> => {
         try {
             const data = await import(file);
 
-            const structs: Struct<Blank, string>[] = [];
+            const structs: Struct[] = [];
 
             const open = (obj: Record<string, unknown>) => {
                 for (const key in obj) {
@@ -34,7 +34,7 @@ export const openStructs = () => attemptAsync(async () => {
         }
     }
     
-    const readdir = async (dir: string): Promise<Struct<Blank, string>[]> => {
+    const readdir = async (dir: string): Promise<Struct[]> => {
         const contents = await fs.promises.readdir(dir);
         const res = await Promise.all(
             contents.map(async object => {
@@ -53,8 +53,9 @@ export const openStructs = () => attemptAsync(async () => {
     return res.sort((a, b) => a.name.localeCompare(b.name)).filter(s => !s.data.sample);
 });
 
-export const selectStruct = (structs: Struct<Blank, string>[], message?: string) =>
+export const selectStruct = (structs: Struct[], message?: string) =>
     select({
+        clear: true,
         message: message || 'Select a struct',
         options: structs.map(s => ({
             name: s.name,
@@ -62,16 +63,17 @@ export const selectStruct = (structs: Struct<Blank, string>[], message?: string)
         })),
     });
 
-export const selectData = <T extends StructData<Blank, string>>(data: T[], message?: string, options?: {
+export const selectData = <T extends StructData>(data: T[], message?: string, options?: {
     omit?: (keyof T['data'])[],
 }) =>
     selectFromTable({
+        clear: true,
         message: message || 'Select a data',
         options: data.map(d => d.data),
         omit: options?.omit as string[],
 });
 
-export const selectDataPipe = <S extends Struct<Blank, string>>(struct: S, data: StructData<S['data']['structure'], S['data']['name']>[], next?: Next) => attemptAsync(async () => {
+export const selectDataPipe = <S extends Struct>(struct: S, data: StructData<S['data']['structure'], S['data']['name']>[], next?: Next) => attemptAsync(async () => {
     const res = (await selectData(data, `Select from ${struct.name}`)).unwrap();
     if (res === undefined) {
         return doNext('No data selected', undefined, next);
@@ -89,7 +91,7 @@ const doNext = (message: string, error?: Error, next?: Next) => {
 }
 
 export const structActions = {
-    new: async <T extends Struct<Blank, string>>(struct: T, next?: Next, additions?: Partial<Structable<T['data']['structure']>>) => attemptAsync(async () => {
+    new: async <T extends Struct>(struct: T, next?: Next, additions?: Partial<Structable<T['data']['structure']>>) => attemptAsync(async () => {
         const properties = Object.entries(struct.data.structure);
 
         console.log(
@@ -129,7 +131,7 @@ otherwise dates will not work.
             console.error(res.error);
             return async () => {
                 console.log('Failed to create new data');
-                const confirmed = (await confirm('Try again?')).unwrap();
+                const confirmed = (await confirm({message: 'Try again?'})).unwrap();
                 if (confirmed) {
                     await structActions.new(struct);
                 } else {
@@ -140,12 +142,13 @@ otherwise dates will not work.
 
         return doNext('New data created', undefined, next);
     }),
-    all: async <T extends Struct<Blank, string>>(struct: T, next?: Next) => attemptAsync(async () => {
+    all: async <T extends Struct>(struct: T, next?: Next) => attemptAsync(async () => {
         const all = (await struct.all(false)).unwrap();
         return selectDataPipe(struct, all, next);
     }),
-    fromProperty: async <T extends Struct<Blank, string>>(struct: T, next?: Next) => attemptAsync(async () => {
+    fromProperty: async <T extends Struct>(struct: T, next?: Next) => attemptAsync(async () => {
         const res = (await select({
+            clear: true,
             message: `Select a property from ${struct.name}`,
             options: Object.keys(struct.data.structure).map(k => ({
                 name: k,
@@ -158,6 +161,7 @@ otherwise dates will not work.
         }
 
         const value = (await repeatPrompt({
+            clear: true,
             message: `Enter a value for ${res} (${struct.data.structure[res]})`,
             validate: (str) => checkStrType(str, (struct.data.structure[res] as any).config.dataType),
         })).unwrap();
@@ -165,7 +169,7 @@ otherwise dates will not work.
         const data = (await struct.fromProperty(res, value, false)).unwrap();
         return selectDataPipe(struct, data, next);
     }),
-    fromUniverse: async <T extends Struct<Blank, string>>(struct: T, next?: Next) => attemptAsync(async () => {
+    fromUniverse: async <T extends Struct>(struct: T, next?: Next) => attemptAsync(async () => {
         const universes = (await Permissions.Universe.all(false)).unwrap();
         const res = (await select({
             message: 'Select a universe',
@@ -182,12 +186,12 @@ otherwise dates will not work.
         const data = (await struct.fromUniverse(res.id, false)).unwrap();
         return selectDataPipe(struct, data, next);
     }),
-    archived: async <T extends Struct<Blank, string>>(struct: T, next?: Next) => attemptAsync(async () => {
+    archived: async <T extends Struct>(struct: T, next?: Next) => attemptAsync(async () => {
         const data = (await struct.archived(false)).unwrap();
         return selectDataPipe(struct, data, next);
     }),
-    clear: async <T extends Struct<Blank, string>>(struct: T, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to clear all data?')).unwrap()) {
+    clear: async <T extends Struct>(struct: T, next?: Next) => attemptAsync(async () => {
+        if ((await confirm({message: 'Are you sure you want to clear all data?'})).unwrap()) {
             const res = await struct.clear();
             if (res.isErr()) {
                 console.error(res.error);
@@ -201,9 +205,10 @@ otherwise dates will not work.
     }),
 };
 
-export const selectStuctAction = (struct: Struct<Blank, string>, next?: Next) => attemptAsync(async () => {
+export const selectStuctAction = (struct: Struct, next?: Next) => attemptAsync(async () => {
     const entries = Object.entries(structActions);
     const res = (await select({
+        clear: true,
         message: 'Select an action',
         options: entries.map(([key, value]) => ({
             name: key,
@@ -218,7 +223,7 @@ export const selectStuctAction = (struct: Struct<Blank, string>, next?: Next) =>
 });
 
 export const dataActions = {
-    update: async <S extends StructData<Blank, string>>(data: S, next?: Next) => attemptAsync(async () => {
+    update: async <S extends StructData>(data: S, next?: Next) => attemptAsync(async () => {
         const properties = Object.entries(data.data.structure);
 
         const newData: Record<string, unknown> = {};
@@ -241,7 +246,7 @@ export const dataActions = {
             console.error(res.error);
             return async () => {
                 console.log('Failed to update data');
-                const confirmed = (await confirm('Try again?')).unwrap();
+                const confirmed = (await confirm({message: 'Try again?'})).unwrap();
                 if (confirmed) {
                     await dataActions.update(data);
                 } else {
@@ -252,8 +257,8 @@ export const dataActions = {
 
         return doNext('Data updated', undefined, next);
     }),
-    delete: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to delete this data?')).unwrap()) {
+    delete: async (data: StructData, next?: Next) => attemptAsync(async () => {
+        if ((await confirm({message: 'Are you sure you want to delete this data?'})).unwrap()) {
             const res = await data.delete();
             if (res.isErr()) {
                 console.error(res.error);
@@ -265,8 +270,8 @@ export const dataActions = {
 
         return doNext('Data not deleted', undefined, next);
     }),
-    archive: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to archive this data?')).unwrap()) {
+    archive: async (data: StructData, next?: Next) => attemptAsync(async () => {
+        if ((await confirm({message: 'Are you sure you want to archive this data?'})).unwrap()) {
             const res = await data.setArchive(true);
             if (res.isErr()) {
                 console.error(res.error);
@@ -278,8 +283,8 @@ export const dataActions = {
 
         return doNext('Data not archived', undefined, next);
     }),
-    restore: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to restore this data?')).unwrap()) {
+    restore: async (data: StructData, next?: Next) => attemptAsync(async () => {
+        if ((await confirm({message: 'Are you sure you want to restore this data?'})).unwrap()) {
             const res = await data.setArchive(false);
             if (res.isErr()) {
                 console.error(res.error);
@@ -291,11 +296,11 @@ export const dataActions = {
 
         return doNext('Data not restored', undefined, next);
     }),
-    versionHistory: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    versionHistory: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const versions = (await data.getVersions()).unwrap();
         return selectVersionPipe(versions, next);
     }),
-    addAttributes: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    addAttributes: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const current = data.getAttributes().unwrap();
         console.log('Current attributes:', current);
 
@@ -317,7 +322,7 @@ export const dataActions = {
 
         return doNext('Attributes added', undefined, next);
     }),
-    removeAttributes: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    removeAttributes: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const current = data.getAttributes().unwrap();
         console.log('Current attributes:', current);
 
@@ -339,8 +344,9 @@ export const dataActions = {
 
         return doNext('Attributes removed', undefined, next);
     }),
-    setAttributes: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    setAttributes: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const res = (await prompt({
+            clear: true,
             message: 'Enter new attributes separated by commas',
         })).unwrap();
 
@@ -358,9 +364,10 @@ export const dataActions = {
 
         return doNext('Attributes set', undefined, next);
     }),
-    addToUniverse: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    addToUniverse: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const universes = (await Permissions.Universe.all(false)).unwrap();
         const res = (await select({
+            clear: true,
             message: 'Select a universe',
             options: universes.map(u => ({
                 name: u.data.name,
@@ -381,7 +388,7 @@ export const dataActions = {
 
         return doNext('Data added to universe', undefined, next);
     }),
-    setUniverses: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    setUniverses: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const universes = (await Permissions.Universe.all(false)).unwrap();
         const res = (await multiSelect({
             message: 'Select universes',
@@ -404,11 +411,12 @@ export const dataActions = {
 
         return doNext('Universes set', undefined, next);
     }),
-    removeFromUniverse: async (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+    removeFromUniverse: async (data: StructData, next?: Next) => attemptAsync(async () => {
         const universes = (await Permissions.Universe.all(false)).unwrap();
         const current = data.getUniverses().unwrap().map(u => universes.find(u2 => u2.id === u)).filter(Boolean) as Permissions.UniverseData[];
     
         const res = (await select({
+            clear: true,
             message: 'Select a universe',
             options: current.map(u => ({
                 name: u.data.name,
@@ -431,9 +439,10 @@ export const dataActions = {
     }),
 };
 
-export const selectDataAction = (data: StructData<Blank, string>, next?: Next) => attemptAsync(async () => {
+export const selectDataAction = (data: StructData, next?: Next) => attemptAsync(async () => {
     const entries = Object.entries(dataActions);
     const res = (await select({
+        clear: true,
         message: 'Select an action',
         options: entries.map(([key, value]) => ({
             name: key,
@@ -449,7 +458,8 @@ export const selectDataAction = (data: StructData<Blank, string>, next?: Next) =
 
 export const versionActions = {
     restore: async (version: DataVersion<Blank, string>, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to restore this version?')).unwrap()) {
+        if ((await confirm({
+            clear: true,message: 'Are you sure you want to restore this version?'})).unwrap()) {
             const res = await version.restore();
             if (res.isErr()) {
                 console.error(res.error);
@@ -462,7 +472,8 @@ export const versionActions = {
         return doNext('Version not restored', undefined, next);
     }),
     delete: async (version: DataVersion<Blank, string>, next?: Next) => attemptAsync(async () => {
-        if ((await confirm('Are you sure you want to delete this version?')).unwrap()) {
+        if ((await confirm({
+            clear: true,message: 'Are you sure you want to delete this version?'})).unwrap()) {
             const res = await version.delete();
             if (res.isErr()) {
                 console.error(res.error);
@@ -477,6 +488,7 @@ export const versionActions = {
 };
 
 export const selectVersion = (versions: DataVersion<Blank, string>[], message?: string) => selectFromTable({
+    clear: true,
     message: message || 'Select a version',
     options: versions.map(v => v.data),
 });
@@ -484,6 +496,7 @@ export const selectVersion = (versions: DataVersion<Blank, string>[], message?: 
 export const selectVersionAction = (version: DataVersion<Blank, string>, next?: Next) => attemptAsync(async () => {
     const entries = Object.entries(versionActions);
     const res = (await select({
+        clear: true,
         message: 'Select an action',
         options: entries.map(([key, value]) => ({
             name: key,
@@ -506,15 +519,15 @@ export const selectVersionPipe = (versions: DataVersion<Blank, string>[], next?:
     return selectVersionAction(versions[res], next);
 });
 
-export const structsPipe = () => attemptAsync(async () => {
-    const structs = (await openStructs()).unwrap();
-    const selected = (await selectStruct(structs)).unwrap();
-    if (!selected) {
-        return console.log('No struct selected');
-    }
-    (await selectStuctAction(selected, (message, err) => {
-        if (err) throw err;
-        console.log(message);
-        structsPipe();
-    })).unwrap();
-});
+// export const structsPipe = () => attemptAsync(async () => {
+//     const structs = (await openStructs()).unwrap();
+//     const selected = (await selectStruct(structs)).unwrap();
+//     if (!selected) {
+//         return console.log('No struct selected');
+//     }
+//     (await selectStuctAction(selected, (message, err) => {
+//         if (err) throw err;
+//         console.log(message);
+//         structsPipe();
+//     })).unwrap();
+// });

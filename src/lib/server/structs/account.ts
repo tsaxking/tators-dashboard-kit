@@ -1,6 +1,8 @@
 import { boolean, text } from "drizzle-orm/pg-core";
 import { Struct } from "../struct";
 import { uuid } from "../utils/uuid";
+import { attempt } from "../../ts-utils/check";
+import crypto from 'crypto';
 
 export namespace Account {
     export const Account = new Struct({
@@ -35,6 +37,24 @@ export namespace Account {
     });
     
     export type AccountData = typeof Account.sample;
+
+    export const newHash = (password: string) => {
+        return attempt(() => {
+            const salt = crypto.randomBytes(16).toString('hex');
+            const hash = crypto
+                .pbkdf2Sync(password, salt, 1000, 64, 'sha512')
+                .toString('hex');
+            return { hash, salt };
+        });
+    };
+
+    export const hash = (password: string, salt: string) => {
+        return attempt(() => {
+            return crypto
+                .pbkdf2Sync(password, salt, 1000, 64, 'sha512')
+                .toString('hex');
+        });
+    };
 }
 
 // for drizzle
