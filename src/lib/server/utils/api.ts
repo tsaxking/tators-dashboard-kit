@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Client, /*Server,*/ type Events } from './tcp';
+import { Client, /*Server,*/ type ClientEvents } from './tcp';
 import { z } from 'zod';
 import fs from 'fs';
 import path from 'path';
@@ -10,14 +10,14 @@ import { EventEmitter } from '../../ts-utils/event-emitter';
 import { type Blank, Struct, type Structable } from '../struct';
 // import { Webhook } from '../structs/webhook';
 type StructEvents<T extends Blank> = {
-    'archive': { id: string };
-    'build': { struct: string; };
-    'create': Structable<T>;
-    'delete': { id: string; };
-    'delete-version': { vhId: string; id: string; };
-    'restore': { id: string; };
-    'restore-version': { vhId: string; id: string; };
-    'update': Partial<Structable<T>>;
+    'archive': { timestamp: number; data: { id: string } };
+    'build': { timestamp: number; data: { struct: string; } };
+    'create': { timestamp: number; data: Structable<T> };
+    'delete': { timestamp: number; data: { id: string; }};
+    'delete-version': { timestamp: number; data: { vhId: string; id: string; } };
+    'restore': { timestamp: number; data: { id: string; } };
+    'restore-version': { timestamp: number; data: { vhId: string; id: string; } };
+    'update': { timestamp: number; data: Partial<Structable<T>> };
 };
 class EventFileManager {
     private static streams: Map<string, fs.WriteStream> = new Map();
@@ -58,17 +58,28 @@ class EventFileManager {
 //             await fs.promises.mkdir(path.join(__dirname, 'api'), { recursive: true });
 //             await fs.promises.writeFile(this.eventFilePath, '', { flag: 'a' });
 
-//             this.listen('connect', () => {
+//             this.listen('connect', async (data) => {
+//                 const apiKey = data.data;
+//                 const info = await Webhook.get(apiKey);
+//                 if (info.isErr()) return console.error(info);
+
+//                 if (!info.value) {
+//                     return this.send('invalid-api-key', undefined, Date.now());
+//                 }
+
 //                 this.replayEvents();
 //             });
 //             this.listen('struct', async (data) => {
 //                 const info = (await Webhook.get(this.apiKey)).unwrap();
 //                 if (!info) return console.error('Webhook not found');
 
-//                 if (info.permissions.some(p => p.data.struct === data.struct && p.data.permission === data.event)) {
-//                     const emitter = this.structEmitters.get(data.struct);
+//                 if (info.permissions.some(p => p.data.struct === data.data.struct && p.data.permission === data.data.event)) {
+//                     const emitter = this.structEmitters.get(data.data.struct);
 //                     if (emitter) {
-//                         emitter.emit(data.event as any, data.data);
+//                         emitter.emit(data.data.event as keyof StructEvents<Blank>, {
+//                             data: data.data,
+//                             timestamp: data.timestamp,
+//                         });
 //                     }
 //                 } else {
 //                     console.error('Permission denied');
@@ -77,7 +88,7 @@ class EventFileManager {
 //         });
 //     }
 
-//     listen<T extends keyof Events>(event: T, cb: (data: Events[T]) => void, zod?: z.ZodType<Events[T]>) {
+//     listen<T extends keyof Events>(event: T, cb: (data: { data: Events[T]; timestamp: number; }) => void, zod?: z.ZodType<Events[T]>) {
 //         this.server.listenTo(this.apiKey, event, cb, zod);
 //     }
 
@@ -109,7 +120,6 @@ class EventFileManager {
 //             const fileContent = await fs.promises.readFile(this.eventFilePath, 'utf-8');
 //             const lines = fileContent.split('\n').filter(Boolean);
 //             const unprocessedEvents: string[] = [];
-
 //             for (const line of lines) {
 //                 try {
 //                     const parsed = JSON.parse(decode(line));
@@ -164,10 +174,10 @@ export class ClientAPI {
 
             this.listen('struct', (data) => {
                 try {
-                    const emitter = this.structEmitters.get(data.struct);
+                    const emitter = this.structEmitters.get(data.data.struct);
                     if (emitter) {
                         let obj: any;
-                        switch (data.event) {
+                        switch (data.data.event) {
                             case 'archive':
                             case 'restore':
                             case 'delete':
@@ -187,7 +197,7 @@ export class ClientAPI {
                             default:
                                 throw new Error(`Unknown struct event: ${data}`);
                         }
-                        emitter.emit(data.event as any, obj);
+                        emitter.emit(data.data.event as any, obj);
                     }
                 } catch (error) {
                     console.error(error);
@@ -196,7 +206,7 @@ export class ClientAPI {
         });
     }
 
-    listen<T extends keyof Events>(event: T, cb: (data: Events[T]) => void, zod?: z.ZodType<Events[T]>) {
+    listen<T extends keyof ClientEvents>(event: T, cb: (data: {data: ClientEvents[T]; timestamp: number;}) => void, zod?: z.ZodType<ClientEvents[T]>) {
         this.client.listen(event, cb, zod);
     }
 
@@ -249,7 +259,7 @@ export class ClientAPI {
         }
     }
 
-    private structEmitters: Map<string, EventEmitter<StructEvents<Blank>>> = new Map();
+    private readonly structEmitters: Map<string, EventEmitter<StructEvents<Blank>>> = new Map();
 
     createEmitter<S extends Struct>(struct: S) {
         const em = new EventEmitter<StructEvents<S['data']['structure']>>();

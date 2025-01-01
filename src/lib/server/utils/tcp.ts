@@ -99,12 +99,21 @@ class Connection {
         this.emitter.emit('disconnect', undefined);
     }
 
-    listen<T = unknown>(event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
-        const run = (data: T) => {
+    listen<T = unknown>(event: string, listener: (data: {
+        data: T;
+        timestamp: number;
+    }) => void, zod?: z.ZodType<T>) {
+        const run = (data: {
+            data: T;
+            timestamp: number;
+        }) => {
             try {
                 if (zod) {
-                    const typed = zod.parse(data);
-                    listener(typed);
+                    const typed = zod.parse(data.data);
+                    listener({
+                        data: typed,
+                        timestamp: data.timestamp,
+                    });
                 } else {
                     if (data === undefined) listener(data);
                     else console.log('Did not pass zod into an event handler where data is being used.');
@@ -273,7 +282,7 @@ export class Server {
         zod?: z.ZodType<unknown>;
     }[]>();
 
-    listenTo<T = unknown>(apiKey: string, event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
+    listenTo<T = unknown>(apiKey: string, event: string, listener: (data: { data: T; timestamp: number; }) => void, zod?: z.ZodType<T>) {
         const connection = this.connections.get(apiKey);
         if (!connection) {
             const cache = this.listenCache.get(apiKey) ?? [];
@@ -399,12 +408,15 @@ export class Client {
         this.emitter.emit('disconnect', undefined);
     }
 
-    listen<T = unknown>(event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
-        const run = (data: T) => {
+    listen<T = unknown>(event: string, listener: (data: { data: T, timestamp: number }) => void, zod?: z.ZodType<T>) {
+        const run = (data: { data: T, timestamp: number }) => {
             try {
                 if (zod) {
-                    const typed = zod.parse(data);
-                    listener(typed);
+                    const typed = zod.parse(data.data);
+                    listener({
+                        data: typed,
+                        timestamp: data.timestamp,
+                    });
                 } else {
                     if (data === undefined) listener(data);
                     else console.log('Did not pass zod into an event handler where data is being used.', event, data);

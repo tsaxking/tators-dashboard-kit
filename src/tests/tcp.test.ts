@@ -18,14 +18,14 @@ test('TCP', async () => {
 
 
 
-    client.listen('test', (data) => {
+    client.listen('test', ({data}) => {
         console.log(data);
         expect(data.test).toBe('test');
     }, z.object({
         test: z.string(),
     }));
 
-    server.listenTo('test', 'test', (data => {
+    server.listenTo('test', 'test', (({data}) => {
         console.log(data);
         expect(data.test).toBe('test');
         server.sendTo('test', 'test', {

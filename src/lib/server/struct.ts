@@ -989,22 +989,20 @@ export class Struct<T extends Blank = any, Name extends string = any> {
         });
     }
 
-    startReflection(API: ClientAPI /*| ServerAPI*/) {
+    startReflection(API: ClientAPI) {
         return attempt(() => {
             // let connected = false;
-            if (API instanceof ClientAPI) {
-                const { reflect } = this.data;
-                if (!reflect) return;
+            // if (API instanceof ClientAPI) {
+            //     const { reflect } = this.data;
+            //     if (!reflect) return;
 
-                // API.client.listen('connect', () => connected = true);
-                // API.client.listen('disconnect', () => {
-                //     connected = false;
-                // });
-            } else {
-                // ServerAPI
-            }
-
-            // TODO: this will create an infinite loop because the other server is also reflecting
+            //     API.client.listen('connect', () => connected = true);
+            //     API.client.listen('disconnect', () => {
+            //         connected = false;
+            //     });
+            // } else {
+            //     // ServerAPI
+            // }
 
             this.on('archive', (d) => API.send('archive', d.id));
             // this.on('build', (d) => API.send('build'));
@@ -1015,28 +1013,33 @@ export class Struct<T extends Blank = any, Name extends string = any> {
             this.on('restore-version', (d) => API.send('restore-version', d.vhId));
             this.on('update', (d) => API.send('update', d.safe()));
 
+
+            // TODO: handle outdated events, i've only done the updated event so vfar
             const em = API.createEmitter(this);
 
-            em.on('archive', async ({ id }) => {
+            em.on('archive', async (event) => {
+                const { id } = event.data;
                 const data = (await this.fromId(id)).unwrap();
                 if (!data) return;
                 await data.setArchive(true);
             });
             // em.on('build', async ({ struct }) => built = true);
             em.on('create', async (data) => {
-                (await (this.new(data, {
+                (await (this.new(data.data, {
                     emit: false,
                     ignoreGlobals: true,
                 }))).unwrap();
             });
-            em.on('delete', async ({ id }) => {
+            em.on('delete', async (event) => {
+                const { id } = event.data;
                 const data = (await this.fromId(id)).unwrap();
                 if (!data) return;
                 (await data.delete({
                     emit: false,
                 })).unwrap();
             });
-            em.on('delete-version', async ({ vhId, id }) => {
+            em.on('delete-version', async (event) => {
+                const { vhId, id } = event.data;
                 const data = (await this.fromId(id)).unwrap();
                 if (!data) return;
                 const versions = (await data.getVersions()).unwrap();
@@ -1046,14 +1049,16 @@ export class Struct<T extends Blank = any, Name extends string = any> {
                     emit: false,
                 })).unwrap();
             });
-            em.on('restore', async ({ id }) => {
+            em.on('restore', async (event) => {
+                const { id } = event.data;
                 const data = (await this.fromId(id)).unwrap();
                 if (!data) return;
                 (await data.setArchive(false, {
                     emit: false
                 })).unwrap();
             });
-            em.on('restore-version', async ({ vhId, id }) => {
+            em.on('restore-version', async (event) => {
+                const { vhId, id } = event.data;
                 const data = (await this.fromId(id)).unwrap();
                 if (!data) return;
                 const versions = (await data.getVersions()).unwrap();
@@ -1063,11 +1068,13 @@ export class Struct<T extends Blank = any, Name extends string = any> {
                     emit: false,
                 })).unwrap();
             });
-            em.on('update', async (data) => {
-                const id = z.string().parse(data.id);
+            em.on('update', async (event) => {
+                const id = z.string().parse(event.data.id);
                 const d = (await this.fromId(id)).unwrap();
                 if (!d) return;
-                (await d.update(data, {
+                console.log('Dropping outdated event', event);
+                if (d.updated.getTime() >= event.timestamp) return;
+                (await d.update(event.data, {
                     emit: false,
                 })).unwrap();
             });
