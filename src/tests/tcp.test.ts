@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Client, Server } from '../src/lib/server/utils/tcp';
+import { Client, Server } from '../lib/server/utils/tcp';
 import { z } from 'zod';
 
 test('TCP', async () => {

@@ -1,4 +1,5 @@
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
+// This is why trpc may not be a good idea with our infrastructure
 import type { AppRouter } from '../../../../central-server-template/src/index';
 //     👆 **type-only** import
 
