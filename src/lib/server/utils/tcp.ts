@@ -2,7 +2,6 @@
 import net from 'net';
 import { EventEmitter } from '../../ts-utils/event-emitter';
 import { z } from 'zod';
-// import { Webhook } from '../structs/webhook';
 
 type StructEvent = {
     struct: string;
@@ -11,288 +10,295 @@ type StructEvent = {
 };
 
 export type Events = {
-    connect: void;
+    connect: string;
     disconnect: void;
     struct: StructEvent;
 };
 
-
-// class Connection {
-//     private readonly emitter = new EventEmitter<Events>();
-
-//     private readonly buffer: {
-//         event: string;
-//         data: unknown;
-//         timestamp: number;
-//         id: number;  // Add id to track events
-//     }[] = [];
-
-//     private doBuffer = false;
-//     private _connected = false;
-//     private currentId = 0; // Start from 0 for event id's
-
-//     constructor(
-//         public socket: net.Socket,
-//         public readonly apiKey: string,
-//         public readonly server: Server,
-//     ) {
-//         this.socket.on('drain', () => {
-//             this.flushBuffer();
-//         });
-
-//         this.setupSocketListeners();
-//     }
-
-//     send(event: string, data: unknown, timestamp: number) {
-//         const id = this.currentId++;
-//         const eventPayload = {
-//             event,
-//             data,
-//             timestamp,
-//             id,
-//         };
-
-//         if (this.doBuffer) {
-//             this.buffer.push(eventPayload);
-//             return false;
-//         }
-
-//         this.doBuffer = !this.socket.write(JSON.stringify(eventPayload));
-
-//         if (this.doBuffer) {
-//             console.log('Socket is experiencing backpressure');
-//         }
-
-//         return this.doBuffer;
-//     }
-
-//     private flushBuffer() {
-//         while (this.buffer.length > 0) {
-//             const event = this.buffer.shift();
-//             if (!event) break;
-
-//             const drained = this.socket.write(JSON.stringify(event));
-//             if (!drained) {
-//                 this.buffer.unshift(event); 
-//                 break;
-//             }
-//         }
-
-//         if (this.buffer.length === 0) {
-//             this.doBuffer = false;
-//         }
-//     }
-
-//     private handleAcknowledgment(eventId: number) {
-//         // Acknowledge with "hey I got this: id"
-//         const ackMessage = JSON.stringify({ event: 'ack', data: `hey I got this: ${eventId}`, timestamp: Date.now() });
-//         this.socket.write(ackMessage);
-//     }
-
-//     close() {
-//         this.socket.destroy();
-//         this.emitter.emit('disconnect', undefined);
-//     }
-
-//     listen<T extends keyof Events>(event: T, listener: (data: Events[T]) => void, zod?: z.ZodType<Events[T]>) {
-//         const run = (data: Events[T]) => {
-//             try {
-//                 if (zod) {
-//                     const typed = zod.parse(data);
-//                     listener(typed);
-//                 } else {
-//                     if (data === undefined) listener(data);
-//                     else console.log('Did not pass zod into an event handler where data is being used.');
-//                 }
-//             } catch (e) {
-//                 console.error(e);
-//             }
-//         }
-
-//         this.emitter.on(event, run);
-
-//         return () => this.emitter.off(event, run);
-//     }
-
-//     private setupSocketListeners() {
-//         this.socket.on('connect', () => this.setConnected(true));
-//         this.socket.on('drain', () => this.flushBuffer());
-//         this.socket.on('close', () => this.setConnected(false));
-//         this.socket.on('end', () => this.setConnected(false));
-//         this.socket.on('error', (err) => {
-//             console.error('Socket error:', err);
-//             this.setConnected(false);
-//         });
-//     }
-
-//     private setConnected(state: boolean) {
-//         if (this._connected !== state) {
-//             this._connected = state;
-//             const event = state ? 'connect' : 'disconnect';
-//             this.emitter.emit(event, undefined);
-//             console.log(`Connection state updated: ${state ? 'Connected' : 'Disconnected'}`);
-//         }
-//     }
-
-//     get connected() {
-//         return this._connected;
-//     }
-// }
+export type ClientEvents = {
+    connect: undefined;
+    disconnect: void;
+    struct: StructEvent;
+}
 
 
+class Connection {
+    private readonly emitter = new EventEmitter();
 
-// export type ServerEvents = {
-//     'new-connection': string;
-//     'closed-connection': string;
-// };
+    private readonly buffer: {
+        event: string;
+        data: unknown;
+        timestamp: number;
+        id: number;  // Add id to track events
+    }[] = [];
 
-// export class Server {
-//     private readonly connections = new Map<string, Connection>();
+    private doBuffer = false;
+    private _connected = false;
+    private currentId = 0; // Start from 0 for event id's
 
-//     public readonly server: net.Server;
-//     private readonly emitter = new EventEmitter<ServerEvents>();
-//     public readonly on = this.emitter.on.bind(this.emitter);
-//     public readonly off = this.emitter.off.bind(this.emitter);
-//     private readonly emit = this.emitter.emit.bind(this.emitter);
-//     public readonly once = this.emitter.once.bind(this.emitter);
+    constructor(
+        public socket: net.Socket,
+        public readonly apiKey: string,
+        public readonly server: Server,
+    ) {
+        this.socket.on('drain', () => {
+            this.flushBuffer();
+        });
 
-//     constructor(public readonly address: string, public readonly port: number) {
-//         this.server = net.createServer((socket) => {
-//             let connection: Connection | undefined;
-//             let numTries = 0; // Keep track of the retry attempts
-//             const maxRetries = 5; // Maximum number of retries
-//             const maxBackoffDelay = 10000; // Maximum backoff delay in milliseconds (10 seconds)
-//             // const buffer: {
-//             //     event: string;
-//             //     data?: unknown;
-//             // }[] = [];
+        this.setupSocketListeners();
+    }
 
-//             const reconnect = () => {
-//                 if (connection) connection['_connected'] = false;
+    send(event: string, data: unknown, timestamp: number) {
+        const id = this.currentId++;
+        const eventPayload = {
+            event,
+            data,
+            timestamp,
+            id,
+        };
 
-//                 if (numTries >= maxRetries) {
-//                     // If we've reached the max retries, stop retrying
-//                     socket.off('close', reconnect);
-//                     socket.off('error', reconnect);
-//                     connection?.close();
-//                     console.log('Max retries reached. Giving up.');
-//                     return;
-//                 }
+        if (this.doBuffer) {
+            this.buffer.push(eventPayload);
+            return false;
+        }
 
-//                 numTries++;
+        this.doBuffer = !this.socket.write(JSON.stringify(eventPayload));
 
-//                 // Calculate the backoff delay (exponential backoff)
-//                 const backoffDelay = Math.min(Math.pow(2, numTries) * 100, maxBackoffDelay);
-//                 const jitter = Math.random() * 1000; // Optional jitter to avoid synchronized retries
+        if (this.doBuffer) {
+            console.log('Socket is experiencing backpressure');
+        }
 
-//                 const finalDelay = backoffDelay + jitter; // Final delay with jitter
+        return this.doBuffer;
+    }
 
-//                 console.log(`Attempt ${numTries} failed. Retrying in ${finalDelay.toFixed(0)}ms...`);
+    private flushBuffer() {
+        while (this.buffer.length > 0) {
+            const event = this.buffer.shift();
+            if (!event) break;
 
-//                 // Set a timeout to retry after the calculated backoff delay
-//                 setTimeout(() => {
-//                     console.log(`Reconnecting after ${finalDelay.toFixed(0)}ms...`);
-//                     socket.connect({ port: this.port, host: this.address });
-//                 }, finalDelay);
-//             };
+            const drained = this.socket.write(JSON.stringify(event));
+            if (!drained) {
+                this.buffer.unshift(event); 
+                break;
+            }
+        }
 
-//             socket.on('data', async (data) => {
-//                 try {
-//                     const json = JSON.parse(data.toString()) as unknown;
-//                     const typed = z.object({
-//                         event: z.string(),
-//                         data: z.unknown()
-//                     }).parse(json);
+        if (this.buffer.length === 0) {
+            this.doBuffer = false;
+        }
+    }
 
-//                     if (typed.event === 'connect') {
-//                         const apiKey = z.string().parse(typed.data);
-//                         const valid = (await Webhook.get(apiKey)).unwrap();
-//                         if (!valid) {
-//                             socket.write(JSON.stringify({ event: 'error', data: 'Invalid API key' }));
-//                             socket.destroy();
-//                             return;
-//                         }
-//                         // Check if a connection already exists
-//                         connection = this.connections.get(apiKey);
-//                         if (connection) {
-//                             console.log('Reusing existing connection for API key:', apiKey);
-//                             connection.socket.destroy(); // Clean up old socket
-//                             connection.socket = socket; // Replace with new socket
-//                             connection['_connected'] = true;
-//                         } else {
-//                             connection = this.addConnection(socket, apiKey);
-//                         }
-//                     }
-//                 } catch (error) {
-//                     console.error(error);
-//                 }
-//             });
+    private handleAcknowledgment(eventId: number) {
+        // Acknowledge with "hey I got this: id"
+        const ackMessage = JSON.stringify({ event: 'ack', data: `hey I got this: ${eventId}`, timestamp: Date.now() });
+        this.socket.write(ackMessage);
+    }
 
-//             // Handle socket closure or error events
-//             socket.on('close', reconnect);
-//             socket.on('error', reconnect);
-//         });
-//     }
+    close() {
+        this.socket.destroy();
+        this.emitter.emit('disconnect', undefined);
+    }
 
-//     addConnection(socket: net.Socket, apiKey: string) {
-//         const has = this.connections.get(apiKey);
-//         if (has) return has;
-//         const c = new Connection(socket, apiKey, this);
-//         this.connections.set(apiKey, c);
-//         c.listen('disconnect', () => this.connections.delete(apiKey));
-//         return c;
-//     }
+    listen<T = unknown>(event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
+        const run = (data: T) => {
+            try {
+                if (zod) {
+                    const typed = zod.parse(data);
+                    listener(typed);
+                } else {
+                    if (data === undefined) listener(data);
+                    else console.log('Did not pass zod into an event handler where data is being used.');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
-//     close() {
-//         for (const connection of this.connections.values()) {
-//             connection.close();
-//         }
-//         this.server.close();
-//     }
+        this.emitter.on(event, run as (data: unknown) => void);
 
-//     start() {
-//         this.server.listen(this.port, this.address);
-//     }
+        return () => this.emitter.off(event, run as (data: unknown) => void);
+    }
 
-//     sendTo(apiKey: string, event: string, data: unknown, timestamp: number) {
-//         const connection = this.connections.get(apiKey);
-//         if (!connection) return false;
-//         connection.send(event, data, timestamp);
-//         return true;
-//     }
+    private setupSocketListeners() {
+        this.socket.on('connect', () => this.setConnected(true));
+        this.socket.on('drain', () => this.flushBuffer());
+        this.socket.on('close', () => this.setConnected(false));
+        this.socket.on('end', () => this.setConnected(false));
+        this.socket.on('error', (err) => {
+            console.error('Socket error:', err);
+            this.setConnected(false);
+        });
+    }
 
-//     private readonly listenCache = new Map<string, {
-//         event: keyof Events;
-//         listener: (data: Events[keyof Events]) => void;
-//         zod?: z.ZodType<Events[keyof Events]>;
-//     }[]>();
+    private setConnected(state: boolean) {
+        if (this._connected !== state) {
+            this._connected = state;
+            const event = state ? 'connect' : 'disconnect';
+            this.emitter.emit(event, undefined);
+            console.log(`Connection state updated: ${state ? 'Connected' : 'Disconnected'}`);
+        }
+    }
 
-//     listenTo<T extends keyof Events>(apiKey: string, event: T, listener: (data: Events[T]) => void, zod?: z.ZodType<Events[T]>) {
-//         const connection = this.connections.get(apiKey);
-//         if (!connection) {
-//             const cache = this.listenCache.get(apiKey) ?? [];
-//             cache.push({ 
-//                 event, 
-//                 listener: listener as any, 
-//                 zod,
-//             });
-//             this.listenCache.set(apiKey, cache);
-//             return;
-//         }
-//         connection.listen(event, listener, zod);
-//         return true;
-//     }
+    get connected() {
+        return this._connected;
+    }
+}
 
-//     getState(apiKey: string) {
-//         const connection = this.connections.get(apiKey);
-//         if (!connection) return 'no-connection';
-//         return connection.connected ? 'connected' : 'disconnected';
-//     }
-// }
+
+
+export type ServerEvents = {
+    'new-connection': string;
+    'closed-connection': string;
+};
+
+export class Server {
+    private readonly connections = new Map<string, Connection>();
+
+    public readonly server: net.Server;
+    private readonly emitter = new EventEmitter<ServerEvents>();
+    public readonly on = this.emitter.on.bind(this.emitter);
+    public readonly off = this.emitter.off.bind(this.emitter);
+    private readonly emit = this.emitter.emit.bind(this.emitter);
+    public readonly once = this.emitter.once.bind(this.emitter);
+
+    constructor(public readonly address: string, public readonly port: number) {
+        this.server = net.createServer((socket) => {
+            let connection: Connection | undefined;
+            let numTries = 0; // Keep track of the retry attempts
+            const maxRetries = 5; // Maximum number of retries
+            const maxBackoffDelay = 10000; // Maximum backoff delay in milliseconds (10 seconds)
+            // const buffer: {
+            //     event: string;
+            //     data?: unknown;
+            // }[] = [];
+
+            const reconnect = () => {
+                if (connection) connection['_connected'] = false;
+
+                if (numTries >= maxRetries) {
+                    // If we've reached the max retries, stop retrying
+                    socket.off('close', reconnect);
+                    socket.off('error', reconnect);
+                    connection?.close();
+                    console.log('Max retries reached. Giving up.');
+                    return;
+                }
+
+                numTries++;
+
+                // Calculate the backoff delay (exponential backoff)
+                const backoffDelay = Math.min(Math.pow(2, numTries) * 100, maxBackoffDelay);
+                const jitter = Math.random() * 1000; // Optional jitter to avoid synchronized retries
+
+                const finalDelay = backoffDelay + jitter; // Final delay with jitter
+
+                console.log(`Attempt ${numTries} failed. Retrying in ${finalDelay.toFixed(0)}ms...`);
+
+                // Set a timeout to retry after the calculated backoff delay
+                setTimeout(() => {
+                    console.log(`Reconnecting after ${finalDelay.toFixed(0)}ms...`);
+                    socket.connect({ port: this.port, host: this.address });
+                }, finalDelay);
+            };
+
+            socket.on('data', async (data) => {
+                try {
+                    const json = JSON.parse(data.toString()) as unknown;
+                    const typed = z.object({
+                        event: z.string(),
+                        data: z.unknown()
+                    }).parse(json);
+
+                    if (typed.event === 'connect') {
+                        const apiKey = z.string().parse(typed.data);
+                        // const valid = (await Webhook.get(apiKey)).unwrap();
+                        // if (!valid) {
+                        //     socket.write(JSON.stringify({ event: 'error', data: 'Invalid API key' }));
+                        //     socket.destroy();
+                        //     return;
+                        // }
+                        // Check if a connection already exists
+                        connection = this.connections.get(apiKey);
+                        if (connection) {
+                            console.log('Reusing existing connection for API key:', apiKey);
+                            connection.socket.destroy(); // Clean up old socket
+                            connection.socket = socket; // Replace with new socket
+                            connection['_connected'] = true;
+                        } else {
+                            connection = this.addConnection(socket, apiKey);
+                        }
+                    }
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+
+            // Handle socket closure or error events
+            socket.on('close', reconnect);
+            socket.on('error', reconnect);
+        });
+    }
+
+    addConnection(socket: net.Socket, apiKey: string) {
+        const has = this.connections.get(apiKey);
+        if (has) return has;
+        const c = new Connection(socket, apiKey, this);
+        c['emitter'].emit('connect', apiKey);
+        this.connections.set(apiKey, c);
+        c.listen('disconnect', () => this.connections.delete(apiKey));
+        return c;
+    }
+
+    close() {
+        for (const connection of this.connections.values()) {
+            connection.close();
+        }
+        this.server.close();
+    }
+
+    start() {
+        this.server.listen(this.port, this.address);
+    }
+
+    sendTo(apiKey: string, event: string, data: unknown, timestamp: number) {
+        const connection = this.connections.get(apiKey);
+        if (!connection) return false;
+        connection.send(event, data, timestamp);
+        return true;
+    }
+
+    private readonly listenCache = new Map<string, {
+        event: string;
+        listener: (data: unknown) => void;
+        zod?: z.ZodType<unknown>;
+    }[]>();
+
+    listenTo<T = unknown>(apiKey: string, event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
+        const connection = this.connections.get(apiKey);
+        if (!connection) {
+            const cache = this.listenCache.get(apiKey) ?? [];
+            cache.push({ 
+                event, 
+                listener: listener as any, 
+                zod,
+            });
+            this.listenCache.set(apiKey, cache);
+            return;
+        }
+        connection.listen(event, listener, zod);
+        return true;
+    }
+
+    getState(apiKey: string) {
+        const connection = this.connections.get(apiKey);
+        if (!connection) return 'no-connection';
+        return connection.connected ? 'connected' : 'disconnected';
+    }
+}
 
 
 export class Client {
-    private readonly emitter = new EventEmitter<Events>();
+    private readonly emitter = new EventEmitter();
     private readonly buffer: {
         event: string;
         data: unknown;
@@ -393,8 +399,8 @@ export class Client {
         this.emitter.emit('disconnect', undefined);
     }
 
-    listen<T extends keyof Events>(event: T, listener: (data: Events[T]) => void, zod?: z.ZodType<Events[T]>) {
-        const run = (data: Events[T]) => {
+    listen<T = unknown>(event: string, listener: (data: T) => void, zod?: z.ZodType<T>) {
+        const run = (data: T) => {
             try {
                 if (zod) {
                     const typed = zod.parse(data);
@@ -408,9 +414,9 @@ export class Client {
             }
         };
 
-        this.emitter.on(event, run);
+        this.emitter.on(event, run as (data: unknown) => void);
 
-        return () => this.emitter.off(event, run);
+        return () => this.emitter.off(event, run as (data: unknown) => void);
     }
 
     get connected() {
