@@ -11,3 +11,6 @@ const trpc = createTRPCClient<AppRouter>({
         }),
     ],
 });
+
+trpc.userById.query('hi').then((res) => {
+});

@@ -54,12 +54,14 @@
 		"@oslojs/encoding": "^1.1.0",
 		"@trpc/client": "^11.0.0-rc.682",
 		"@trpc/server": "^11.0.0-rc.682",
+		"@types/proper-lockfile": "^4.1.4",
 		"bootstrap": "^5.3.3",
 		"cli-table": "^0.3.11",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.33.0",
 		"fuzzy-search": "^3.2.1",
 		"postgres": "^3.4.4",
+		"proper-lockfile": "^4.1.2",
 		"zod": "^3.24.1"
 	}
 }
