@@ -1,4 +1,4 @@
-import { Struct } from 'drizzle-struct/back-end';
+import { Struct } from 'drizzle-struct/src/back-end';
 
 export const POST = async (event) => {
     const res = (await Struct.handler(event));

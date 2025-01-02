@@ -1,9 +1,9 @@
 import { text } from "drizzle-orm/pg-core";
-import { DataError, Struct, StructData, StructStream, type Blank, type Structable } from "drizzle-struct/back-end";
+import { DataError, Struct, StructData, StructStream, type Blank, type Structable } from "drizzle-struct/src/back-end";
 import { attempt, attemptAsync, resolveAll, type Result } from "ts-utils/check";
 import { decode, encode } from "ts-utils/text";
 import type { Account } from "./account";
-import { PropertyAction, DataAction } from "drizzle-struct/types";
+import { PropertyAction, DataAction } from "drizzle-struct/src/types";
 import { Stream } from "ts-utils/stream";
 
 export namespace Permissions {

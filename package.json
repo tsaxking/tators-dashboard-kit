@@ -77,6 +77,6 @@
 		"proper-lockfile": "^4.1.2",
 		"ts-utils": "git+https://github.com/tsaxking/global-ts-utilities.git",
 		"zod": "^3.24.1",
-		"drizzle-struct": "git+https://github.com/tsaxking/drizzle-struct.git#semver:v1.0.2"
+		"drizzle-struct": "git+https://github.com/tsaxking/drizzle-struct.git#semver:v1.0.3"
 	}
 }

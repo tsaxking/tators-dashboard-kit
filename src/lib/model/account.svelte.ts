@@ -1,6 +1,6 @@
 import { attemptAsync } from "ts-utils/check";
 import { sse } from "$lib/utils/sse";
-import { Struct, type Structable } from "drizzle-struct/front-end"
+import { Struct, type Structable } from "drizzle-struct/src/front-end"
 
 export namespace Account {
     export const Account = new Struct({
