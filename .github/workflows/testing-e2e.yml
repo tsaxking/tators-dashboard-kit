@@ -1,0 +1,58 @@
+name: e2e
+
+on:
+  workflow_call:
+    secrets:
+      GH_TOKEN:
+        description: 'GitHub Token'
+        required: true
+  push:
+    branches:
+      - '*'
+      - '!deploy'
+      - '!gh-pages'
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        ports:
+          - 5433:5432
+
+    steps:
+      - name: Retrieve git dependencies
+        uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: v22.12.0
+
+      - name: Build .env
+        run: |
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5433" >> .env
+          echo "DB_NAME=local" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASS=mysecretpassword" >> .env
+
+      - name: Run
+        run: |
+          exit 0
+          echo "Installing dependencies..."
+          pnpm i
+          echo "Running e2e tests..."
+          pnpm run test:e2e

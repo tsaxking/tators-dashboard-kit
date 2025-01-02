@@ -27,6 +27,14 @@ jobs:
           submodules: 'true'
         #   token: ${{ secrets.GH_TOKEN }}
 
+      - name: Build .env
+        run: |
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5433" >> .env
+          echo "DB_NAME=local" >> .env
+          echo "DB_USER=root" >> .env
+          echo "DB_PASS=mysecretpassword" >> .env
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
