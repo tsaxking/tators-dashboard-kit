@@ -10,7 +10,7 @@ import { Permissions } from "../structs/permissions";
 export const openStructs = () => attemptAsync(async () => {
     const readFile = async (file: string): Promise<Struct[]> => {
         try {
-            if (file.contains('test')) return []; // Skip test struct files
+            if (file.includes('test')) return []; // Skip test struct files
             const data = await import(file);
 
             const structs: Struct[] = [];
