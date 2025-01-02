@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { attemptAsync } from "ts-utils/check";
+import { attemptAsync } from "ts-utils/dist/check";
 import { DataVersion, Struct, StructData, type Blank, type Structable } from "drizzle-struct/src/back-end";
 import fs from 'fs';
 import path from 'path';
@@ -10,6 +10,7 @@ import { Permissions } from "../structs/permissions";
 export const openStructs = () => attemptAsync(async () => {
     const readFile = async (file: string): Promise<Struct[]> => {
         try {
+            if (file.contains('test')) return []; // Skip test struct files
             const data = await import(file);
 
             const structs: Struct[] = [];
