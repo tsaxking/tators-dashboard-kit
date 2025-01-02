@@ -35,9 +35,12 @@ jobs:
         with:
           node-version: v22.12.0
 
-      - name: Run
+      - name: Install dependencies
         run: |
           echo "Installing dependencies..."
-          pnpm i
+          pnpm install --frozen-lockfile
+
+      - name: Run
+        run: |
           echo "Running backend tests..."
           pnpm run test:unit

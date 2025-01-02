@@ -1,13 +1,11 @@
-name: Build
+name: Svelte Check
 
 on:
   workflow_call:
-  # GITHUB_TOKEN is provided by default
-  # it should be permissive enough for this action.
-  # secrets:
-  #   GH_TOKEN:
-  #     description: 'GitHub Token'
-  #     required: true
+    # secrets:
+    #   GH_TOKEN:
+    #     description: 'GitHub Token'
+    #     required: true
   push:
     branches:
       - '*'
@@ -18,22 +16,14 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  tsc:
     runs-on: ubuntu-latest
     steps:
       - name: Retrieve git dependencies
         uses: actions/checkout@v3
         with:
           submodules: 'true'
-        #   token: ${{ secrets.GH_TOKEN }}
-
-      - name: Build .env
-        run: |
-          echo "DB_HOST=localhost" >> .env
-          echo "DB_PORT=5433" >> .env
-          echo "DB_NAME=local" >> .env
-          echo "DB_USER=root" >> .env
-          echo "DB_PASS=mysecretpassword" >> .env
+          #  token: ${{ secrets.GH_TOKEN }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -52,5 +42,5 @@ jobs:
 
       - name: Run
         run: |
-          echo "Building client..."
-          pnpm run build
+          echo "Testing..."
+          pnpm run check

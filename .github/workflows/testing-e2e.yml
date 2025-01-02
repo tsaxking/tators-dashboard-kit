@@ -49,10 +49,12 @@ jobs:
           echo "DB_USER=root" >> .env
           echo "DB_PASS=mysecretpassword" >> .env
 
+      - name: Install dependencies
+        run: |
+          echo "Installing dependencies..."
+          pnpm install --frozen-lockfile
+
       - name: Run
         run: |
-          exit 0
-          echo "Installing dependencies..."
-          pnpm i
           echo "Running e2e tests..."
           pnpm run test:e2e
