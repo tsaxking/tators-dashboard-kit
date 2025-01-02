@@ -1,9 +1,8 @@
 import { boolean, text } from "drizzle-orm/pg-core";
-import { Struct } from "drizzle-struct/src/back-end";
+import { Struct } from "drizzle-struct/dist/back-end";
 import { uuid } from "../utils/uuid";
-import { attempt } from "ts-utils/check";
+import { attempt } from "ts-utils/dist/check";
 import crypto from 'crypto';
-import 'drizzle-struct/src/back-end';
 
 export namespace Account {
     export const Account = new Struct({
