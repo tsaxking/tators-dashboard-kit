@@ -1,6 +1,6 @@
 import { browser } from "$app/environment";
-import { EventEmitter } from "$lib/ts-utils/event-emitter";
-import { decode } from "$lib/ts-utils/text";
+import { EventEmitter } from "ts-utils/event-emitter";
+import { decode } from "ts-utils/text";
 
 class SSE {
     public readonly emitter = new EventEmitter();

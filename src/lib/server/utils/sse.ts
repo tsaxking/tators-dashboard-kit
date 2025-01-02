@@ -1,8 +1,8 @@
-import { attempt } from "$lib/ts-utils/check";
+import { attempt } from "ts-utils/check";
 import type { RequestEvent } from "../../../routes/sse/$types";
 import { Session } from "../structs/session";
-import { encode } from "$lib/ts-utils/text";
-import { EventEmitter, SimpleEventEmitter } from "$lib/ts-utils/event-emitter";
+import { encode } from "ts-utils/text";
+import { EventEmitter, SimpleEventEmitter } from "ts-utils/event-emitter";
 
 type Stream = ReadableStreamDefaultController<string>;
 

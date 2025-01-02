@@ -1,6 +1,6 @@
-import { attemptAsync } from "$lib/utils/check";
+import { attemptAsync } from "ts-utils/check";
 import { API_KEY, API_DOMAIN } from "$env/static/private";
-import { EventEmitter } from "$lib/utils/event-emitter";
+import { EventEmitter } from "ts-utils/event-emitter";
 import type { Cookies } from "@sveltejs/kit";
 
 class RequestError extends Error {

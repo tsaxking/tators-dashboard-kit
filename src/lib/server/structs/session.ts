@@ -1,5 +1,5 @@
-import { attemptAsync } from "../../ts-utils/check";
-import { Struct } from "../struct";
+import { attemptAsync } from "ts-utils/check";
+import { Struct } from "drizzle-struct/back-end";
 import { integer, text } from 'drizzle-orm/pg-core';
 import { Account } from "./account";
 

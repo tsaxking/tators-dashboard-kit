@@ -1,4 +1,4 @@
-import { attemptAsync } from "../../ts-utils/check";
+import { attemptAsync } from "ts-utils/check";
 import * as inquirer from '@inquirer/prompts';
 import FuzzySearch from 'fuzzy-search';
 import Table from 'cli-table';

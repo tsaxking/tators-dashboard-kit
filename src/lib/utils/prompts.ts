@@ -1,5 +1,5 @@
 import { browser } from "$app/environment";
-import { type BootstrapColor } from "../colors/color";
+import { type BootstrapColor } from "colors/color";
 import Modal from "../components/bootstrap/Modal.svelte";
 import { createRawSnippet, mount } from "svelte";
 import Toast from "$lib/components/bootstrap/Toast.svelte";

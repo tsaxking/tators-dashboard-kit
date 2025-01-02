@@ -1,4 +1,4 @@
-import type { Struct } from "../struct";
+import type { Struct } from "drizzle-struct/back-end";
 import { Account } from "../structs/account";
 import { selectData, structActions } from "./struct";
 import { Action, confirm, Folder, password, prompt } from "./utils";

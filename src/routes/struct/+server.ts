@@ -1,4 +1,4 @@
-import { Struct } from '$lib/server/struct.js';
+import { Struct } from 'drizzle-struct/back-end';
 
 
 export const POST = async (event) => {

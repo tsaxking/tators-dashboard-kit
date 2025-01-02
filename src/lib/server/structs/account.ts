@@ -1,7 +1,7 @@
 import { boolean, text } from "drizzle-orm/pg-core";
-import { Struct } from "../struct";
+import { Struct } from "drizzle-struct/back-end";
 import { uuid } from "../utils/uuid";
-import { attempt } from "../../ts-utils/check";
+import { attempt } from "ts-utils/check";
 import crypto from 'crypto';
 
 export namespace Account {
