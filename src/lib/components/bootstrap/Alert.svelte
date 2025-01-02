@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BootstrapColor } from "$lib/colors/color";
+	import type { BootstrapColor } from "colors/color";
 	import { onMount, type Snippet } from "svelte";
 
     interface Props {

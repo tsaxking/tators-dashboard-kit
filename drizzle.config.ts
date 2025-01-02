@@ -1,6 +1,7 @@
 import { defineConfig } from 'drizzle-kit';
 // if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not set');
 
+
 if (!process.env.DB_HOST) throw new Error('DB_HOST is not set');
 if (!process.env.DB_PORT) throw new Error('DB_PORT is not set');
 if (!process.env.DB_NAME) throw new Error('DB_NAME is not set');
@@ -11,16 +12,18 @@ export default defineConfig({
 	schema: './src/lib/server/structs/*.ts',
 
 	dbCredentials: {
-		// url: process.env.DATABASE_URL
+		// url: process.env.DATABASE_URL,
 		host: process.env.DB_HOST,
 		port: Number(process.env.DB_PORT),
 		database: process.env.DB_NAME,
 		user: process.env.DB_USER,
-		password: process.env.DB_PASS
+		password: process.env.DB_PASS,
+		ssl: false,
 	},
 
 	verbose: true,
 	strict: true,
 	dialect: 'postgresql',
-	out: './drizzle'
+	out: './drizzle',
+	// ''
 });
