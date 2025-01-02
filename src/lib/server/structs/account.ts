@@ -3,6 +3,7 @@ import { Struct } from "drizzle-struct/src/back-end";
 import { uuid } from "../utils/uuid";
 import { attempt } from "ts-utils/check";
 import crypto from 'crypto';
+import 'drizzle-struct/src/back-end';
 
 export namespace Account {
     export const Account = new Struct({
