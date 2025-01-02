@@ -1,6 +1,5 @@
 import { Struct } from 'drizzle-struct/back-end';
 
-
 export const POST = async (event) => {
     const res = (await Struct.handler(event));
     if (res.isErr()) {

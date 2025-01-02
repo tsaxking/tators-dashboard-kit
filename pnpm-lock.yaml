@@ -32,6 +32,9 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      canvas:
+        specifier: git+https://github.com/tsaxking/canvas.git
+        version: https://codeload.github.com/tsaxking/canvas/tar.gz/10c6485b61bb5896cd495a7073e4d01cbffc426c
       cli-table:
         specifier: ^0.3.11
         version: 0.3.11
@@ -45,8 +48,8 @@ importers:
         specifier: ^0.38.3
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
-        specifier: git+https://github.com/tsaxking/drizzle-struct.git#semver:v1.0.1
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/75c943eea5834cc43f0e65762cd07ff0e6608b46(@types/node@22.10.3)(@types/react@19.0.2)(react@18.3.1)(typescript@5.7.2)
+        specifier: git+https://github.com/tsaxking/drizzle-struct.git#semver:v1.0.2
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/d611ef82eb73f0f1345c80f7f761d7c9ce350de7(@sveltejs/vite-plugin-svelte@4.0.4(svelte@5.16.0)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0)))(@types/node@22.10.3)(@types/react@19.0.2)(react@18.3.1)(typescript@5.7.2)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0))
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -1742,6 +1745,10 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
+  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/10c6485b61bb5896cd495a7073e4d01cbffc426c:
+    resolution: {tarball: https://codeload.github.com/tsaxking/canvas/tar.gz/10c6485b61bb5896cd495a7073e4d01cbffc426c}
+    version: 1.0.0
+
   chai@5.1.2:
     resolution: {integrity: sha512-aGtmf24DW6MLHHG5gCx4zaI3uBq3KRtxeVs0DjFH6Z0rDNbsvTxFASFvdj79pxjxZ8/5u3PIiN3IwEIQkiiuPw==}
     engines: {node: '>=12'}
@@ -2016,8 +2023,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/75c943eea5834cc43f0e65762cd07ff0e6608b46:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/75c943eea5834cc43f0e65762cd07ff0e6608b46}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/d611ef82eb73f0f1345c80f7f761d7c9ce350de7:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/d611ef82eb73f0f1345c80f7f761d7c9ce350de7}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -2533,6 +2540,9 @@ packages:
 
   map-or-similar@1.5.0:
     resolution: {integrity: sha512-0aF7ZmVon1igznGI4VS30yugpduQW3y3GkcgGJOp7d8x8QrizhigUxjI/m2UojsXXto+jLAH3KSz+xOJTiORjg==}
+
+  material-icons@1.13.12:
+    resolution: {integrity: sha512-/2YoaB79IjUK2B2JB+vIXXYGtBfHb/XG66LvoKVM5ykHW7yfrV5SP6d7KLX6iijY6/G9GqwgtPQ/sbhFnOURVA==}
 
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
@@ -4906,6 +4916,13 @@ snapshots:
 
   callsites@3.1.0: {}
 
+  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/10c6485b61bb5896cd495a7073e4d01cbffc426c:
+    dependencies:
+      colors: colors.git@https://codeload.github.com/tsaxking/colors/tar.gz/3816079f2422a5e3e5b74c09aa0f884d0aef70fb
+      material-icons: 1.13.12
+      math: calculations.git@https://codeload.github.com/tsaxking/calculations/tar.gz/e169f626ac0a77ce6f389ea27150be0dadc19dd4
+      ts-utils: global-ts-utilities.git@https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/38893cf5725d9eef050e811f37e89da89ed00bd7
+
   chai@5.1.2:
     dependencies:
       assertion-error: 2.0.1
@@ -5052,8 +5069,9 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/75c943eea5834cc43f0e65762cd07ff0e6608b46(@types/node@22.10.3)(@types/react@19.0.2)(react@18.3.1)(typescript@5.7.2):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/d611ef82eb73f0f1345c80f7f761d7c9ce350de7(@sveltejs/vite-plugin-svelte@4.0.4(svelte@5.16.0)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0)))(@types/node@22.10.3)(@types/react@19.0.2)(react@18.3.1)(typescript@5.7.2)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0)):
     dependencies:
+      '@sveltejs/kit': 2.15.1(@sveltejs/vite-plugin-svelte@4.0.4(svelte@5.16.0)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0)))(svelte@5.16.0)(vite@5.4.11(@types/node@22.10.3)(sass-embedded@1.83.0))
       dotenv: 16.4.7
       drizzle-orm: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-zod: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -5079,6 +5097,7 @@ snapshots:
       - '@opentelemetry/api'
       - '@planetscale/database'
       - '@prisma/client'
+      - '@sveltejs/vite-plugin-svelte'
       - '@swc/core'
       - '@swc/wasm'
       - '@tidbcloud/serverless'
@@ -5101,6 +5120,7 @@ snapshots:
       - sql.js
       - sqlite3
       - typescript
+      - vite
 
   drizzle-zod@0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1):
     dependencies:
@@ -5733,6 +5753,8 @@ snapshots:
   make-error@1.3.6: {}
 
   map-or-similar@1.5.0: {}
+
+  material-icons@1.13.12: {}
 
   math-intrinsics@1.1.0: {}
 
