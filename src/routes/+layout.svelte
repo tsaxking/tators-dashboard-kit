@@ -1,6 +1,7 @@
 <script>
-    import '$lib/imports';
+	import '$lib/imports';
 
-    const { children } = $props();
+	const { children } = $props();
 </script>
+
 {@render children()}

@@ -1,6 +1,5 @@
 import { defineConfig } from 'drizzle-kit';
 
-
 if (!process.env.DB_HOST) throw new Error('DB_HOST is not set');
 if (!process.env.DB_PORT) throw new Error('DB_PORT is not set');
 if (!process.env.DB_NAME) throw new Error('DB_NAME is not set');
@@ -17,12 +16,12 @@ export default defineConfig({
 		database: process.env.DB_NAME,
 		user: process.env.DB_USER,
 		password: process.env.DB_PASS,
-		ssl: false,
+		ssl: false
 	},
 
 	verbose: true,
 	strict: true,
 	dialect: 'postgresql',
-	out: './drizzle',
+	out: './drizzle'
 	// ''
 });

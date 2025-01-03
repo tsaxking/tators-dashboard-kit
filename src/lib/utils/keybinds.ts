@@ -1,4 +1,4 @@
-import { browser } from "$app/environment";
+import { browser } from '$app/environment';
 
 type KeyFn = () => void;
 
@@ -20,90 +20,90 @@ type KeyFn = () => void;
 //     'Numpad0' | 'NumpadDecimal';
 
 export class Keyboard {
-    private static readonly keyboards = new Map<string, Keyboard>();
-    private static _current = new Keyboard('default');
+	private static readonly keyboards = new Map<string, Keyboard>();
+	private static _current = new Keyboard('default');
 
-    public static get all() {
-        return Array.from(Keyboard.keyboards.values());
-    }
+	public static get all() {
+		return Array.from(Keyboard.keyboards.values());
+	}
 
-    public static get default() {
-        return Keyboard.keyboards.get('default') as Keyboard;
-    }
+	public static get default() {
+		return Keyboard.keyboards.get('default') as Keyboard;
+	}
 
-    public static get current() {
-        return Keyboard._current;
-    }
+	public static get current() {
+		return Keyboard._current;
+	}
 
-    public static use(keyboard: Keyboard) {
-        console.log('Switching keyboard to', keyboard.name);
-        Keyboard._current = keyboard;
-    }
+	public static use(keyboard: Keyboard) {
+		console.log('Switching keyboard to', keyboard.name);
+		Keyboard._current = keyboard;
+	}
 
-    private static readonly global = new Map<string, KeyFn[]>();
+	private static readonly global = new Map<string, KeyFn[]>();
 
-    public static on(key: string, fn: KeyFn) {
-        const fns = Keyboard.global.get(key) || [];
-        fns.push(fn);
-        Keyboard.global.set(key, fns);
-    }
+	public static on(key: string, fn: KeyFn) {
+		const fns = Keyboard.global.get(key) || [];
+		fns.push(fn);
+		Keyboard.global.set(key, fns);
+	}
 
-    public static off(key: string, fn: KeyFn) {
-        const fns = Keyboard.global.get(key) || [];
-        const index = fns.indexOf(fn);
-        if (index !== -1) fns.splice(index, 1);
-    }
+	public static off(key: string, fn: KeyFn) {
+		const fns = Keyboard.global.get(key) || [];
+		const index = fns.indexOf(fn);
+		if (index !== -1) fns.splice(index, 1);
+	}
 
-    public static get(key: string) {
-        return Keyboard.current.listeners.get(key) || Keyboard.global.get(key);
-    }
+	public static get(key: string) {
+		return Keyboard.current.listeners.get(key) || Keyboard.global.get(key);
+	}
 
-    constructor(public readonly name: string) {
-        Keyboard.keyboards.set(name, this);
-    }
+	constructor(public readonly name: string) {
+		Keyboard.keyboards.set(name, this);
+	}
 
-    private readonly listeners = new Map<string, KeyFn[]>();
+	private readonly listeners = new Map<string, KeyFn[]>();
 
-    public on(key: string, fn: KeyFn) {
-        const fns = this.listeners.get(key) || [];
-        fns.push(fn);
-        this.listeners.set(key, fns);
-    }
+	public on(key: string, fn: KeyFn) {
+		const fns = this.listeners.get(key) || [];
+		fns.push(fn);
+		this.listeners.set(key, fns);
+	}
 
-    public off(key: string, fn: KeyFn) {
-        const fns = this.listeners.get(key) || [];
-        const index = fns.indexOf(fn);
-        if (index !== -1) fns.splice(index, 1);
-    }
+	public off(key: string, fn: KeyFn) {
+		const fns = this.listeners.get(key) || [];
+		const index = fns.indexOf(fn);
+		if (index !== -1) fns.splice(index, 1);
+	}
 
-    public combine(...keyboard: Keyboard[]) {
-        for (let i = 0; i < keyboard.length; i++) {
-            const kb = keyboard[i];
-            const entries = Array.from(kb.listeners.entries());
-            // for (let j = 0; j < kb.listeners.size; j++) {
-            //     const [key, fn] = entries.next().value;
-            //     this.on(key, fn);
-            // }
+	public combine(...keyboard: Keyboard[]) {
+		for (let i = 0; i < keyboard.length; i++) {
+			const kb = keyboard[i];
+			const entries = Array.from(kb.listeners.entries());
+			// for (let j = 0; j < kb.listeners.size; j++) {
+			//     const [key, fn] = entries.next().value;
+			//     this.on(key, fn);
+			// }
 
-            for (const [key, fns] of entries) {
-                const current = this.listeners.get(key) || [];
-                this.listeners.set(key, current.concat(fns));
-            }
-        }
-    }
+			for (const [key, fns] of entries) {
+				const current = this.listeners.get(key) || [];
+				this.listeners.set(key, current.concat(fns));
+			}
+		}
+	}
 }
 
 if (browser) {
-    document.addEventListener('keydown', e => {
-        const alt = e.altKey ? 'alt+' : '';
-        const ctrl = e.ctrlKey ? 'ctrl+' : '';
-        const shift = e.shiftKey ? 'shift+' : '';
-        const key = alt + ctrl + shift + e.key;
-    
-        // always only use the first keybind
-        const [global] = Keyboard.get(key) || [];
-        if (global) global();
-    });
-    
-    Object.assign(window, { Keyboard });
+	document.addEventListener('keydown', (e) => {
+		const alt = e.altKey ? 'alt+' : '';
+		const ctrl = e.ctrlKey ? 'ctrl+' : '';
+		const shift = e.shiftKey ? 'shift+' : '';
+		const key = alt + ctrl + shift + e.key;
+
+		// always only use the first keybind
+		const [global] = Keyboard.get(key) || [];
+		if (global) global();
+	});
+
+	Object.assign(window, { Keyboard });
 }

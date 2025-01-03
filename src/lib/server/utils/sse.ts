@@ -1,8 +1,8 @@
-import { attempt } from "ts-utils/src/check";
-import type { RequestEvent } from "../../../routes/sse/$types";
-import { Session } from "../structs/session";
-import { encode } from "ts-utils/src/text";
-import { EventEmitter, SimpleEventEmitter } from "ts-utils/src/event-emitter";
+import { attempt } from 'ts-utils/check';
+import type { RequestEvent } from '../../../routes/sse/$types';
+import { Session } from '../structs/session';
+import { encode } from 'ts-utils/text';
+import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
 
 type Stream = ReadableStreamDefaultController<string>;
 
@@ -23,10 +23,13 @@ export class Connection {
 
 	public on = this.emitter.on.bind(this.emitter);
 	public off = this.emitter.off.bind(this.emitter);
-	public once = this.emitter.once.bind
+	public once = this.emitter.once.bind;
 	private emit = this.emitter.emit.bind(this.emitter);
 
-	constructor(private readonly controller: Stream, session: Session.SessionData) {
+	constructor(
+		private readonly controller: Stream,
+		session: Session.SessionData
+	) {
 		this.sessionId = session.id;
 
 		this.interval = setInterval(() => {
@@ -47,7 +50,9 @@ export class Connection {
 
 	send(event: string, data: unknown) {
 		return attempt(() => {
-			this.controller.enqueue(`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`);
+			this.controller.enqueue(
+				`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`
+			);
 			this.cache.push({ event, data, id: this.index, date: Date.now() });
 			return this.index;
 		});
@@ -85,7 +90,7 @@ class SSE {
 
 	constructor() {
 		process.on('exit', () => {
-			this.each(c => c.close());
+			this.each((c) => c.close());
 		});
 	}
 
@@ -111,7 +116,11 @@ class SSE {
 		});
 	}
 
-	send(event: string, data: unknown, condition?: (connection: Connection) => boolean | Promise<boolean>) {
+	send(
+		event: string,
+		data: unknown,
+		condition?: (connection: Connection) => boolean | Promise<boolean>
+	) {
 		this.connections.forEach((connection) => {
 			if (condition && !condition(connection)) return;
 			connection.send(event, data);

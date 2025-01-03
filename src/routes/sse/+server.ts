@@ -11,7 +11,7 @@ export async function GET(event) {
 	if (body.isErr()) {
 		console.error(body.error);
 		return new Response('Server Error', {
-			status: 500,
+			status: 500
 		});
 	}
 

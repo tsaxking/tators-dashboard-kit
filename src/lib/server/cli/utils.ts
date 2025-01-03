@@ -1,292 +1,315 @@
-import { attemptAsync } from "ts-utils/dist/check";
+import { attemptAsync } from 'ts-utils/check';
 import * as inquirer from '@inquirer/prompts';
 import FuzzySearch from 'fuzzy-search';
 import Table from 'cli-table';
-import { Colors } from "./colors";
+import { Colors } from './colors';
 
 type GlobalConfig = {
-    message: string;
-    clear?: boolean;
-}
+	message: string;
+	clear?: boolean;
+};
 
-export const prompt = async (config: GlobalConfig & {
-    default?: string;
-}) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    const res = await inquirer.input({
-        message: config.message,
-    });
-    if (!res) {
-        return config.default;
-    }
+export const prompt = async (
+	config: GlobalConfig & {
+		default?: string;
+	}
+) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		const res = await inquirer.input({
+			message: config.message
+		});
+		if (!res) {
+			return config.default;
+		}
 
-    return res;
-});
+		return res;
+	});
 
-export const repeatPrompt = async (config: GlobalConfig & {
-    validate?: (output: string) => boolean;
-    allowBlank?: boolean;
-}) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    let firstTime = true;
-    const run = async () => {
-        const res = await inquirer.input({
-            message: firstTime ? config.message : 'Invalid input. ' + config.message,
-        });
-        if (!res && config.allowBlank) {
-            return '';
-        }
-        firstTime = false;
-        if (!res) {
-            return run();
-        }
-        if (config.validate && !config.validate(res)) {
-            return run();
-        }
-        return res;
-    };
+export const repeatPrompt = async (
+	config: GlobalConfig & {
+		validate?: (output: string) => boolean;
+		allowBlank?: boolean;
+	}
+) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		let firstTime = true;
+		const run = async () => {
+			const res = await inquirer.input({
+				message: firstTime ? config.message : 'Invalid input. ' + config.message
+			});
+			if (!res && config.allowBlank) {
+				return '';
+			}
+			firstTime = false;
+			if (!res) {
+				return run();
+			}
+			if (config.validate && !config.validate(res)) {
+				return run();
+			}
+			return res;
+		};
 
-    return run();
-});
+		return run();
+	});
 
-type Option<T> = { 
-    value: T;
-    name: string;
-}
+type Option<T> = {
+	value: T;
+	name: string;
+};
 
-export const select = async <T = unknown>(config: GlobalConfig & {
-    options: Option<T>[];
-    exit?: boolean;
-    cancel?: boolean;
-}) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    const choices: {
-        name: string;
-        value: T | undefined | 'exit';
-    }[] = config.options.map(o => ({
-        name: o.name,
-        value: o.value,
-    }));
+export const select = async <T = unknown>(
+	config: GlobalConfig & {
+		options: Option<T>[];
+		exit?: boolean;
+		cancel?: boolean;
+	}
+) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		const choices: {
+			name: string;
+			value: T | undefined | 'exit';
+		}[] = config.options.map((o) => ({
+			name: o.name,
+			value: o.value
+		}));
 
-    if (config.cancel) {
-        choices.push({
-            name: 'Cancel',
-            value: undefined,
-        });
-    }
+		if (config.cancel) {
+			choices.push({
+				name: 'Cancel',
+				value: undefined
+			});
+		}
 
-    if (config.exit) {
-        choices.push({
-            name: 'Exit',
-            value: 'exit',
-        });
-    }
-    
-    const res = await inquirer.select<T | undefined | 'exit'>({
-        message: config.message,
-        choices,
-        // loop: true,
-    });
+		if (config.exit) {
+			choices.push({
+				name: 'Exit',
+				value: 'exit'
+			});
+		}
 
-    if (res === 'exit') {
-        process.exit(0);
-    }
+		const res = await inquirer.select<T | undefined | 'exit'>({
+			message: config.message,
+			choices
+			// loop: true,
+		});
 
-    return res;
-});
+		if (res === 'exit') {
+			process.exit(0);
+		}
 
-export const multiSelect = async <T = unknown>(config: GlobalConfig & {
-    options: Option<T>[];
-}) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    return inquirer.checkbox({
-        message: config.message,
-        choices: config.options.map(o => ({
-            name: o.name,
-            value: o.value,
-        })),
-        // loop: true,
-    });
-});
+		return res;
+	});
 
-export const confirm = async (config: GlobalConfig) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    return inquirer.confirm({
-        message: config.message,
-    });
-});
+export const multiSelect = async <T = unknown>(
+	config: GlobalConfig & {
+		options: Option<T>[];
+	}
+) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		return inquirer.checkbox({
+			message: config.message,
+			choices: config.options.map((o) => ({
+				name: o.name,
+				value: o.value
+			}))
+			// loop: true,
+		});
+	});
 
-export const password = async (config: GlobalConfig) => attemptAsync(async () => {
-    if (config.clear) console.clear();
-    return inquirer.password({
-        message: config.message,
-    });
-});
+export const confirm = async (config: GlobalConfig) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		return inquirer.confirm({
+			message: config.message
+		});
+	});
 
-export const search = async <T = unknown>(config: GlobalConfig & {
-    options: Option<T>[];
-}) => attemptAsync(async () => {
-    return inquirer.search({
-        message: config.message,
-        source: (input) => {
-            if (!input) {
-                return config.options;
-            }
-            const searcher = new FuzzySearch(config.options, ['name']);
-            return searcher.search(input);
-        },
-    });
-});
+export const password = async (config: GlobalConfig) =>
+	attemptAsync(async () => {
+		if (config.clear) console.clear();
+		return inquirer.password({
+			message: config.message
+		});
+	});
 
-export const selectFromTable = async <T extends Record<string, unknown>>(config: GlobalConfig & {
-    options: T[];
-    omit?: (keyof T)[];
-}) => attemptAsync(async () => new Promise<number | undefined>((res) => {
-    if (config.clear) console.clear();
-    if (!config.options.length) {
-        console.log('No options available');
-        return res(undefined);
-    }
+export const search = async <T = unknown>(
+	config: GlobalConfig & {
+		options: Option<T>[];
+	}
+) =>
+	attemptAsync(async () => {
+		return inquirer.search({
+			message: config.message,
+			source: (input) => {
+				if (!input) {
+					return config.options;
+				}
+				const searcher = new FuzzySearch(config.options, ['name']);
+				return searcher.search(input);
+			}
+		});
+	});
 
-    const headers = Object.keys(config.options[0]).filter(k => !config.omit?.includes(k as keyof T));
+export const selectFromTable = async <T extends Record<string, unknown>>(
+	config: GlobalConfig & {
+		options: T[];
+		omit?: (keyof T)[];
+	}
+) =>
+	attemptAsync(
+		async () =>
+			new Promise<number | undefined>((res) => {
+				if (config.clear) console.clear();
+				if (!config.options.length) {
+					console.log('No options available');
+					return res(undefined);
+				}
 
-    const stdin = process.stdin;
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
+				const headers = Object.keys(config.options[0]).filter(
+					(k) => !config.omit?.includes(k as keyof T)
+				);
 
-    let selected = 0;
+				const stdin = process.stdin;
+				stdin.setRawMode(true);
+				stdin.resume();
+				stdin.setEncoding('utf8');
 
-    const run = (selected: number) => {
-        console.clear();
-        console.log(config.message);
-        const t = new Table({
-            head: headers,
-        });
+				let selected = 0;
 
-        t.push(
-            ...config.options.map((o, i) => headers.map(h => {
-                if (i === selected) {
-                    return `${Colors.FgBlue}${o[h]}${Colors.Reset}`;
-                }
-                return String(o[h]);
-            }))
-        );
+				const run = (selected: number) => {
+					console.clear();
+					console.log(config.message);
+					const t = new Table({
+						head: headers
+					});
 
-        console.log(t.toString());
+					t.push(
+						...config.options.map((o, i) =>
+							headers.map((h) => {
+								if (i === selected) {
+									return `${Colors.FgBlue}${o[h]}${Colors.Reset}`;
+								}
+								return String(o[h]);
+							})
+						)
+					);
 
-        stdin.on('data', handleKey);
-    };
+					console.log(t.toString());
 
-    const handleKey = (key: string) => {
-        switch (key) {
-            case '\u0003':
-                process.exit();
-                break;
-            case '\r':
-                console.clear();
-                res(selected);
-                break;
-            case '\u001b[A':
-                selected = selected === 0 ? config.options.length - 1 : selected - 1;
-                run(selected);
-                break;
-            case '\u001b[B':
-                selected = selected === config.options.length - 1 ? 0 : selected + 1;
-                run(selected);
-                break;
-        }
+					stdin.on('data', handleKey);
+				};
 
-        stdin.off('data', handleKey);
-    };
+				const handleKey = (key: string) => {
+					switch (key) {
+						case '\u0003':
+							process.exit();
+							break;
+						case '\r':
+							console.clear();
+							res(selected);
+							break;
+						case '\u001b[A':
+							selected = selected === 0 ? config.options.length - 1 : selected - 1;
+							run(selected);
+							break;
+						case '\u001b[B':
+							selected = selected === config.options.length - 1 ? 0 : selected + 1;
+							run(selected);
+							break;
+					}
 
-    run(selected);
-}));
+					stdin.off('data', handleKey);
+				};
 
+				run(selected);
+			})
+	);
 
 let id = -1;
 export class Folder {
-    public static home?: Folder;
+	public static home?: Folder;
 
-    private parent?: Folder;
-    private id = id -=- 1; // :) shhhhh.... don't tell anyone
+	private parent?: Folder;
+	private id = (id -= -1); // :) shhhhh.... don't tell anyone
 
-    constructor(
-        public readonly name: string,
-        public readonly description: string,
-        public readonly icon: string,
-        public readonly actions: (Action | Folder)[],
-    ) {
-        for (const a of this.actions) {
-            if (a instanceof Folder) {
-                a.setParent(this);
-            }
-        }
-    }
+	constructor(
+		public readonly name: string,
+		public readonly description: string,
+		public readonly icon: string,
+		public readonly actions: (Action | Folder)[]
+	) {
+		for (const a of this.actions) {
+			if (a instanceof Folder) {
+				a.setParent(this);
+			}
+		}
+	}
 
-    public action() {
-        return attemptAsync(async () => {
-            const extras: (Action|Folder)[] = [
-                this.exit,
-            ];
-            if (this.parent) {
-                extras.unshift(this.parent);
-            }
-            if (Folder.home && this.parent?.id !== Folder.home.id) {
-                if (this.id !== Folder.home.id) {
-                    extras.unshift(Folder.home);
-                }
-            }
-            const selected =  (await select({
-                message: this.name,
-                clear: true,
-                options: [
-                    ...this.actions,
-                    ...extras,
-                ].map(a => ({
-                    name: `${a.icon} ${a.name}: ${Colors.Dim}${a.description}${Colors.Reset}`,
-                    value: () => a.action(),
-                })),
-            })).unwrap();
+	public action() {
+		return attemptAsync(async () => {
+			const extras: (Action | Folder)[] = [this.exit];
+			if (this.parent) {
+				extras.unshift(this.parent);
+			}
+			if (Folder.home && this.parent?.id !== Folder.home.id) {
+				if (this.id !== Folder.home.id) {
+					extras.unshift(Folder.home);
+				}
+			}
+			const selected = (
+				await select({
+					message: this.name,
+					clear: true,
+					options: [...this.actions, ...extras].map((a) => ({
+						name: `${a.icon} ${a.name}: ${Colors.Dim}${a.description}${Colors.Reset}`,
+						value: () => a.action()
+					}))
+				})
+			).unwrap();
 
-            if (selected) {
-                try {
-                    (await selected()).unwrap();
-                } catch (error) {
-                    console.error(error);
-                }
-            } else {
-                console.log('Cancelled');
-            }
+			if (selected) {
+				try {
+					(await selected()).unwrap();
+				} catch (error) {
+					console.error(error);
+				}
+			} else {
+				console.log('Cancelled');
+			}
 
-            return;
-        });
-    }
+			return;
+		});
+	}
 
-    get exit() {
-        return new Action('Exit', 'Exit the CLI', '🚪', () => {
-            console.log('Exiting CLI');
-            console.log('Goodbye!');
-            process.exit(0);
-        });
-    }
-    
-    setParent(parent: Folder) {
-        this.parent = parent;
-    }
-};
+	get exit() {
+		return new Action('Exit', 'Exit the CLI', '🚪', () => {
+			console.log('Exiting CLI');
+			console.log('Goodbye!');
+			process.exit(0);
+		});
+	}
+
+	setParent(parent: Folder) {
+		this.parent = parent;
+	}
+}
 
 export class Action {
-    constructor(
-        public readonly name: string,
-        public readonly description: string,
-        public readonly icon: string,
-        public readonly _action: () => unknown,
-    ) {}
+	constructor(
+		public readonly name: string,
+		public readonly description: string,
+		public readonly icon: string,
+		public readonly _action: () => unknown
+	) {}
 
-    public action() {
-        return attemptAsync(async () => {
-            await this._action();
-        });
-    }
-};
+	public action() {
+		return attemptAsync(async () => {
+			await this._action();
+		});
+	}
+}
