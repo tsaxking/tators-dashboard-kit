@@ -1,4 +1,4 @@
-import { attempt } from 'ts-utils/check';
+import { attempt, attemptAsync } from 'ts-utils/check';
 import type { RequestEvent } from '../../../routes/sse/$types';
 import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
@@ -12,7 +12,7 @@ export class Connection {
 	private readonly emitter = new SimpleEventEmitter<'connect' | 'destroy' | 'close'>();
 
 	private index = -1;
-	private readonly interval: NodeJS.Timeout;
+	// private readonly interval: NodeJS.Timeout;
 
 	private cache: {
 		event: string;
@@ -32,20 +32,20 @@ export class Connection {
 	) {
 		this.sessionId = session.id;
 
-		this.interval = setInterval(() => {
-			this.controller.enqueue(':keep-alive\n\n');
-			this.send('ping', null).unwrap();
+		// this.interval = setInterval(() => {
+		// 	this.send('ping', null).unwrap();
 
-			const now = Date.now();
-			const cache = this.cache.filter((e) => now - e.date < 10000);
-			for (const { event, data, date } of cache) {
-				// if it has not acknoledged a ping after 20 seconds, the connection is dead
-				if (now - date > 20000 && event === 'ping') {
-					return this.close();
-				}
-				this.send(event, data);
-			}
-		}, 10000);
+		// 	const now = Date.now();
+		// 	const cache = this.cache.filter((e) => now - e.date < 10000);
+		// 	for (const { event, data, date } of cache) {
+		// 		// if it has not acknoledged a ping after 20 seconds, the connection is dead
+		// 		// if (now - date > 20000 && event === 'ping') {
+		// 		// 	clearInterval(this.interval);
+		// 		// 	return this.close();
+		// 		// }
+		// 		this.send(event, data);
+		// 	}
+		// }, 10000);
 	}
 
 	send(event: string, data: unknown) {
@@ -59,9 +59,12 @@ export class Connection {
 	}
 
 	close() {
-		this.send('close', null);
-		this.controller.close();
-		this.emit('close');
+		return attempt(() => {
+			// clearInterval(this.interval);
+			this.send('close', null);
+			this.controller.close();
+			this.emit('close');
+		});
 	}
 
 	getSession() {
@@ -96,21 +99,38 @@ class SSE {
 
 	connect(event: RequestEvent) {
 		const me = this;
-		return attempt(() => {
+		return attemptAsync(async () => {
+			const session = (await Session.getSession(event)).unwrap();
 			let connection: Connection;
-			return new ReadableStream({
+			if (this.fromSession(session.id)) {
+				return new Response('Already Connected', {
+					status: 409
+				});
+			}
+
+			const stream = new ReadableStream({
 				async start(controller) {
-					const session = (await Session.getSession(event)).unwrap();
 					connection = new Connection(controller, session);
 					me.connections.add(connection);
 					me.emit('connect', connection);
 				},
 				cancel() {
-					if (connection) {
-						me.emit('disconnect', connection);
-						connection.close();
-						me.connections.delete(connection);
+					try {
+						if (connection) {
+							me.emit('disconnect', connection);
+							connection.close();
+							me.connections.delete(connection);
+						}
+					} catch (error) {
+						console.error(error);
 					}
+				}
+			});
+
+			return new Response(stream, {
+				headers: {
+					'cache-control': 'no-store',
+					'content-type': 'text/event-stream'
 				}
 			});
 		});

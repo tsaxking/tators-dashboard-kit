@@ -39,6 +39,7 @@ export namespace Session {
 	export const getSession = (event: RequestEvent) => {
 		return attemptAsync(async () => {
 			const id = event.cookies.get('ssid');
+			console.log('sessionid', id);
 
 			const create = async () => {
 				const session = (
@@ -53,11 +54,13 @@ export namespace Session {
 
 				event.cookies.set('ssid', session.id, {
 					httpOnly: true,
-					domain: DOMAIN || '',
+					domain: DOMAIN ?? '',
 					sameSite: 'none',
-					path: '/*',
-					expires: new Date(Date.now() + Number(SESSION_DURATION))
+					path: '/',
+					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});
+
+				// event.headers.set('cookie', `ssid=${session.id}; Domain=${DOMAIN}; Path=/; SameSite=None; Secure`);
 
 				return session;
 			};
@@ -75,6 +78,7 @@ export namespace Session {
 			return s;
 		});
 	};
+
 
 	export const getAccount = (session: SessionData) => {
 		return attemptAsync(async () => {

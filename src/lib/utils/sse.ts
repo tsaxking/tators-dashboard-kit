@@ -15,7 +15,7 @@ class SSE {
 			const connect = () => {
 				const source = new EventSource('/sse');
 
-				source.addEventListener('error', console.error);
+				source.addEventListener('error', (e) => console.error('Error:', e));
 
 				const onConnect = () => {
 					this.emit('connect', undefined);
@@ -26,10 +26,13 @@ class SSE {
 				let id = 0;
 
 				const onMessage = (event: MessageEvent) => {
+					// console.log('recieved:', event);
 					try {
 						const e = JSON.parse(decode(event.data));
+						// console.log(e);
 						if (e.id < id) return;
 						id = e.id;
+						console.log(e);
 						if (!Object.hasOwn(e, 'event')) {
 							return console.error('Invalid event:', e);
 						}
@@ -67,15 +70,16 @@ class SSE {
 				};
 			};
 
-			let disconnect = connect();
+			// let disconnect = connect();
 
-			// ping the server every 10 seconds, if the server does not respond, reconnect
-			setInterval(async () => {
-				if (!(await this.ping())) {
-					disconnect();
-					disconnect = connect();
-				}
-			}, 10000);
+			// // ping the server every 10 seconds, if the server does not respond, reconnect
+			// setInterval(async () => {
+			// 	if (!(await this.ping())) {
+			// 		disconnect();
+			// 		disconnect = connect();
+			// 	}
+			// }, 10000);
+			connect();
 		}
 	}
 
