@@ -30,11 +30,12 @@ jobs:
 
       - name: Load .env variables
         run: |
-          DB_HOST=localhost
-          DB_PORT=5432
-          DB_USER=postgres
-          DB_PASS=postgres
-          DB_NAME=test
+          touch .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASS=postgres" >> .env
+          echo "DB_NAME=postgres" >> .env
 
       - name: Start database service
         run: docker compose up -d
