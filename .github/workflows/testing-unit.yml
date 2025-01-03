@@ -20,26 +20,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Docker Compose
       - name: Set up Docker Compose
         run: |
-          docker compose version || sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o ./docker-compose
-          sudo chmod +x ./docker-compose
+          docker compose version || sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o ./docker-compose.yml
+          sudo chmod +x ./docker-compose.yml
 
-      # Step 3: Load environment variables from .env file
       - name: Load .env variables
         run: |
           export $(cat .env | xargs)
 
-      # Step 4: Start the database service
       - name: Start database service
         run: docker compose up -d
 
-      # Step 5: Wait for the database to be ready
       - name: Wait for database
         run: |
           until docker exec $(docker ps -q -f name=db) pg_isready -U $DB_USER; do
@@ -47,11 +42,9 @@ jobs:
             sleep 2
           done
 
-      # Step 6: Run Vitest tests
       - name: Run Vitest tests
         run: npm run test:unit
 
-      # Step 7: Tear down services
       - name: Stop database service
         if: always()
         run: docker compose down
