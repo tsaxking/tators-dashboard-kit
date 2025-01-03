@@ -33,17 +33,16 @@ export class Connection {
 		this.sessionId = session.id;
 
 		// this.interval = setInterval(() => {
-		// 	this.controller.enqueue(':keep-alive\n\n');
 		// 	this.send('ping', null).unwrap();
 
 		// 	const now = Date.now();
 		// 	const cache = this.cache.filter((e) => now - e.date < 10000);
 		// 	for (const { event, data, date } of cache) {
 		// 		// if it has not acknoledged a ping after 20 seconds, the connection is dead
-		// 		if (now - date > 20000 && event === 'ping') {
-		// 			clearInterval(this.interval);
-		// 			return this.close();
-		// 		}
+		// 		// if (now - date > 20000 && event === 'ping') {
+		// 		// 	clearInterval(this.interval);
+		// 		// 	return this.close();
+		// 		// }
 		// 		this.send(event, data);
 		// 	}
 		// }, 10000);
@@ -61,6 +60,7 @@ export class Connection {
 
 	close() {
 		return attempt(() => {
+			// clearInterval(this.interval);
 			this.send('close', null);
 			this.controller.close();
 			this.emit('close');
