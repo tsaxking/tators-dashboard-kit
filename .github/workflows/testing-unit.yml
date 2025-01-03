@@ -36,6 +36,7 @@ jobs:
           echo "DB_USER=postgres" >> .env
           echo "DB_PASS=postgres" >> .env
           echo "DB_NAME=postgres" >> .env
+          export $(cat .env | xargs)
 
       - name: Start database service
         run: docker compose up -d
