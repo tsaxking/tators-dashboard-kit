@@ -63,6 +63,11 @@ jobs:
             sleep 2
           done
 
+      - name: Run migrations
+        run: |
+          pnpm run db:migrate
+          pnpm run db:push
+
       - name: Run Vitest tests
         run: npm run test:unit
 
