@@ -1,6 +1,6 @@
 import { type Handle } from "@sveltejs/kit";
 import { Struct } from "drizzle-struct/src/back-end";
-import { match } from "ts-utils/match";
+import { match } from "ts-utils/src/match";
 
 type Proof = 'string' | 'number' | 'boolean' | ((data: unknown) => boolean);
 

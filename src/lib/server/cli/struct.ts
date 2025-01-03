@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { attemptAsync } from "ts-utils/dist/check";
-import { DataVersion, Struct, StructData, type Blank, type Structable } from "drizzle-struct/src/back-end";
+import { DataVersion, Struct, StructData, type Blank, type Structable } from "drizzle-struct/dist/back-end";
 import fs from 'fs';
 import path from 'path';
 import { select, selectFromTable, repeatPrompt, confirm, prompt, multiSelect } from './utils';
-import { checkStrType, returnType } from "drizzle-struct/src/utils";
+import { checkStrType, returnType } from "drizzle-struct/dist/utils";
 import { Permissions } from "../structs/permissions";
 
 export const openStructs = () => attemptAsync(async () => {

@@ -1,4 +1,4 @@
-import type { Struct } from "drizzle-struct/src/back-end";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Account } from "../structs/account";
 import { selectData, structActions } from "./struct";
 import { Action, confirm, Folder, password, prompt } from "./utils";
@@ -13,7 +13,7 @@ export default new Folder(
             'List all accounts',
             '📋',
             async () => {
-                return (await structActions.all(Account.Account as Struct)).unwrap();
+                return (await structActions.all(Account.Account as any)).unwrap();
             },
         ),
         new Action(
@@ -32,7 +32,7 @@ export default new Folder(
 
                 const { hash, salt } = Account.newHash(p).unwrap();
 
-                return (await structActions.new(Account.Account, undefined, {
+                return (await structActions.new(Account.Account as any, undefined, {
                     username,
                     key: hash,
                     salt,
@@ -45,7 +45,7 @@ export default new Folder(
             '🔐',
             async () => {
                 const accounts = (await Account.Account.fromProperty('verified', false, false)).unwrap();
-                const a = (await selectData(accounts)).unwrap();
+                const a = (await selectData(accounts as any)).unwrap();
                 if (typeof a === 'undefined') return console.log('Cancelled');
                 const account = accounts[a];
                 if (!account) return console.log('Invalid account');
@@ -69,7 +69,7 @@ export default new Folder(
             '🔓',
             async () => {
                 const accounts = (await Account.Account.fromProperty('verified', true, false)).unwrap();
-                const a = (await selectData(accounts)).unwrap();
+                const a = (await selectData(accounts as any)).unwrap();
                 if (typeof a === 'undefined') return console.log('Cancelled');
                 const account = accounts[a];
                 if (!account) return console.log('Invalid account');
@@ -92,7 +92,7 @@ export default new Folder(
             '👑',
             async () => {
                 const accounts = (await Account.Account.all(false)).unwrap();
-                const a = (await selectData(accounts)).unwrap();
+                const a = (await selectData(accounts as any)).unwrap();
                 if (typeof a === 'undefined') return console.log('Cancelled');
                 const account = accounts[a];
                 if (!account) return console.log('Invalid account');
@@ -118,7 +118,7 @@ export default new Folder(
             '🚫',
             async () => {
                 const admins = (await Account.Admins.all(false)).unwrap();
-                const a = (await selectData(admins)).unwrap();
+                const a = (await selectData(admins as any)).unwrap();
                 if (typeof a === 'undefined') return console.log('Cancelled');
                 const admin = admins[a];
                 if (!admin) return console.log('Invalid admin');
