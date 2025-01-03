@@ -1,8 +1,8 @@
 name: Deploy
 on:
   push:
-    branches:
-      - main
+    tags:
+      - '*'
 jobs:
   build:
     uses: ./.github/workflows/testing-build.yml
@@ -53,6 +53,8 @@ jobs:
 
       - name: Push to Deploy
         run: |
+          TAG_NAME=$(git describe --tags --abbrev=0)
+
           echo "testing if on branch 'main'"
           if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
             echo "not on branch 'main', exiting"
@@ -86,7 +88,7 @@ jobs:
           pnpm run lint
 
           git add .
-          git commit --allow-empty -m "Merging main into staging"
+          git commit --allow-empty -m "Merging main into staging: $TAG_NAME"
           git push origin staging
 
   # ssh:
