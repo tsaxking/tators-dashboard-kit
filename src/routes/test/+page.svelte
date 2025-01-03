@@ -4,12 +4,6 @@
 
     const tests = Test.unitTest();
 
-    // let progress = $state(0);
-
-    // setInterval(() => {
-    //     progress += 
-    // }, 500);
-
     const generateSymbol = (state: Test.State): string => {
         switch (state) {
             case 'not started':
@@ -17,7 +11,7 @@
             case 'in progress':
                 return 'pending';
             case 'success':
-                return 'new_releases';
+                return 'thumb_up_alt';
             case 'failure':
                 return 'error_outline';
         }
@@ -25,10 +19,11 @@
 </script>
 
 
-{#snippet test(name: string, state: Test.State)}
+{#snippet test(name: string, status: Test.Status)}
     <li class="list-group-item"
-        id="test-{toSnakeCase(name)}"
-        data-value={state}
+        id="test-{toSnakeCase(name.toLowerCase())}"
+        data-value={status.state}
+        data-message={status.message}
     >
         <i 
         class="
@@ -36,14 +31,20 @@
         animate__bounce 
         animate__infinite
     "
-        class:text-success={state === 'success'}
-        class:text-danger={state === 'failure'}
-        class:text-warning={state === 'in progress'}
-        class:animate__animated={state === 'in progress'}
+        class:text-success={status.state === 'success'}
+        class:text-danger={status.state === 'failure'}
+        class:text-warning={status.state === 'in progress'}
+        class:animate__animated={status.state === 'in progress'}
     >
-            {@html generateSymbol(state)}
+            {@html generateSymbol(status.state)}
         </i>
         {name}
+
+        {#if status.message}
+            <small class="text-muted">
+                {status.message}
+            </small>
+        {/if}
     </li>
 
 {/snippet}
@@ -60,9 +61,10 @@
     {@render test('Read All', tests.readAll)}
     {@render test('Read Archived', tests.readArchived)}
     {@render test('Read From Property', tests.readFromProperty)}
-    {@render test('Emit New', tests.emitNew)}
-    {@render test('Emit Update', tests.emitUpdate)}
-    {@render test('Emit Archive', tests.emitArchive)}
-    {@render test('Emit Restore', tests.emitRestore)}
-    {@render test('Emit Delete', tests.emitDelete)}
+    {@render test('Recieved New', tests.emitNew)}
+    {@render test('Recieved Update', tests.emitUpdate)}
+    {@render test('Recieved Archive', tests.emitArchive)}
+    {@render test('Recieved Restore', tests.emitRestore)}
+    {@render test('Recieved Delete', tests.emitDelete)}
+    {@render test('Pull', tests.pullData)}
 </ul>

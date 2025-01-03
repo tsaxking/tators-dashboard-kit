@@ -1,8 +1,20 @@
 import { Struct } from 'drizzle-struct/back-end';
 import { z } from 'zod';
+import { Test } from '$lib/server/structs/testing';
+import { DB } from '$lib/server/db/index.js';
+
+if (!Test.Test.built) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Test.Test.build(DB as any).then(res => {
+        if (res.isErr()) {
+            console.error(res.error);
+        }
+    });
+}
+
 
 export const POST = async (event) => {
-    const data = event.request.json();
+    const data = await event.request.json();
     try {
         const typed = z.object({
             name: z.string(),
@@ -16,9 +28,15 @@ export const POST = async (event) => {
         }), { status: 200 });
         
         for (const [k, v] of Object.entries(struct.data.structure)) {
-            if (!typed.structure[k]) return new Response(`Error: missing key ${k}`, { status: 400 });
+            if (!typed.structure[k]) return new Response(JSON.stringify({
+                success: false,
+                message: `Missing key ${k}`,
+            }), { status: 400 });
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            if (typeof typed.structure[k] !== (v as any).config.dataType) return new Response(`Error: invalid type for key ${k}`, { status: 400 });
+            if (typed.structure[k] !== (v as any).config.dataType) return new Response(JSON.stringify({
+                success: false,
+                message: `Error: invalid type for key ${k}`
+            }), { status: 400 });
         }
     } catch (error) {
         console.error(error);
