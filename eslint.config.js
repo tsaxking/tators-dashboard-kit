@@ -35,6 +35,10 @@ export default ts.config(
 		rules: {
 			'@typescript-eslint/no-namespace': 'off',
 			'@typescript-eslint/no-this-alias': 'off',
+			'@typescript-eslint/no-unused-vars': [
+				'warn',
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
+			]
 		}
 	}
 );

@@ -1,26 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DB } from "../db/index";
-import { Struct } from "drizzle-struct/dist/back-end";
-import { openStructs } from "./struct";
-import { Folder } from "./utils";
-import accounts from "./accounts";
-import serverController from "./server-controller";
+import { DB } from '../db/index';
+import { Struct } from 'drizzle-struct/dist/back-end';
+import { openStructs } from './struct';
+import { Folder } from './utils';
+import accounts from './accounts';
+import serverController from './server-controller';
 
-export const home  = new Folder(
-    'Home',
-    'Root Folder Access',
-    '🏠',
-    [
-        serverController,
-        accounts,
-    ],
-);
+export const home = new Folder('Home', 'Root Folder Access', '🏠', [serverController, accounts]);
 
 Folder.home = home;
 
-openStructs().then(async s => {
-    s.unwrap();
-    (await Struct.buildAll(DB as any)).unwrap();
-    // structsPipe();
-    home.action();
+openStructs().then(async (s) => {
+	s.unwrap();
+	(await Struct.buildAll(DB as any)).unwrap();
+	// structsPipe();
+	home.action();
 });

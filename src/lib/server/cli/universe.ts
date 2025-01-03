@@ -1,8 +1,3 @@
-import { Folder } from "./utils";
+import { Folder } from './utils';
 
-export default new Folder(
-    'Universe',
-    'Control the universe',
-    '🌌',
-    [],
-)
+export default new Folder('Universe', 'Control the universe', '🌌', []);

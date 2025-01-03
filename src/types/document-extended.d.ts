@@ -9,8 +9,8 @@
  * @returns {HTMLElementTagNameMap[K]}
  */
 declare function create<K extends keyof HTMLElementTagNameMap>(
-    tag: K,
-    attrs?: any
+	tag: K,
+	attrs?: any
 ): HTMLElementTagNameMap[K];
 /**
  * Creates an element with the specified tag name.
@@ -22,8 +22,8 @@ declare function create<K extends keyof HTMLElementTagNameMap>(
  * @returns {HTMLElementDeprecatedTagNameMap[K]}
  */
 declare function create<K extends keyof HTMLElementDeprecatedTagNameMap>(
-    tag: string,
-    attrs?: any
+	tag: string,
+	attrs?: any
 ): HTMLElementDeprecatedTagNameMap[K];
 /**
  * Creates an element with the specified tag name.
@@ -57,12 +57,12 @@ declare function create(html: string, attrs?: any): HTMLElement;
  * )[]}
  */
 declare function createDeep(
-    tag: string,
-    attrs?: any
+	tag: string,
+	attrs?: any
 ): (
-    | HTMLElementDeprecatedTagNameMap[keyof HTMLElementDeprecatedTagNameMap]
-    | HTMLElementTagNameMap[keyof HTMLElementTagNameMap]
-    | HTMLElement
+	| HTMLElementDeprecatedTagNameMap[keyof HTMLElementDeprecatedTagNameMap]
+	| HTMLElementTagNameMap[keyof HTMLElementTagNameMap]
+	| HTMLElement
 )[];
 
 /**
@@ -73,9 +73,7 @@ declare function createDeep(
  * @param {K} selector
  * @returns {HTMLElementTagNameMap[K]}
  */
-declare function find<K extends keyof HTMLElementTagNameMap>(
-    selector: K
-): HTMLElementTagNameMap[K];
+declare function find<K extends keyof HTMLElementTagNameMap>(selector: K): HTMLElementTagNameMap[K];
 /**
  * Using querySelector, returns the first element that matches the selector
  * @date 1/21/2024 - 8:39:08 PM
@@ -85,7 +83,7 @@ declare function find<K extends keyof HTMLElementTagNameMap>(
  * @returns {HTMLElementDeprecatedTagNameMap[K]}
  */
 declare function find<K extends keyof HTMLElementDeprecatedTagNameMap>(
-    selector: string
+	selector: string
 ): HTMLElementDeprecatedTagNameMap[K];
 /**
  * Using querySelector, returns the first element that matches the selector
@@ -105,7 +103,7 @@ declare function find(selector: string): HTMLElement;
  * @returns {HTMLElementTagNameMap[K][]}
  */
 declare function findAll<K extends keyof HTMLElementTagNameMap>(
-    selector: K
+	selector: K
 ): HTMLElementTagNameMap[K][];
 
 /**
@@ -117,7 +115,7 @@ declare function findAll<K extends keyof HTMLElementTagNameMap>(
  * @returns {HTMLElementDeprecatedTagNameMap[K][]}
  */
 declare function findAll<K extends keyof HTMLElementDeprecatedTagNameMap>(
-    selector: string
+	selector: string
 ): HTMLElementDeprecatedTagNameMap[K][];
 
 /**
