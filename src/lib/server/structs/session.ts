@@ -1,5 +1,5 @@
-import { attemptAsync } from "ts-utils/check";
-import { Struct } from "drizzle-struct/src/back-end";
+import { attemptAsync } from "ts-utils/dist/check";
+import { Struct } from "drizzle-struct/dist/back-end";
 import { integer, text } from 'drizzle-orm/pg-core';
 import { Account } from "./account";
 
@@ -78,5 +78,5 @@ export namespace Session {
     };
 }
 
-// for drizzle
+// // for drizzle
 export const _sessionTable = Session.Session.table;

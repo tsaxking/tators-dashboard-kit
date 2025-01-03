@@ -1,4 +1,4 @@
-import { attemptAsync } from "ts-utils/check";
+import { attemptAsync } from "ts-utils/dist/check";
 import { sse } from "$lib/utils/sse";
 import { Struct, type Structable } from "drizzle-struct/src/front-end"
 

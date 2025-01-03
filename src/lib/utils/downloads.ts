@@ -1,4 +1,4 @@
-import { attempt, attemptAsync, type Result } from 'ts-utils/check';
+import { attempt, attemptAsync, type Result } from 'ts-utils/src/check';
 
 /**
  * Download a file from a URL

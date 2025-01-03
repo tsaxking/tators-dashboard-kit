@@ -1,10 +1,10 @@
 import { text } from "drizzle-orm/pg-core";
-import { DataError, Struct, StructData, StructStream, type Blank, type Structable } from "drizzle-struct/src/back-end";
-import { attempt, attemptAsync, resolveAll, type Result } from "ts-utils/check";
-import { decode, encode } from "ts-utils/text";
+import { DataError, Struct, StructData, StructStream, type Blank, type Structable } from "drizzle-struct/dist/back-end";
+import { attempt, attemptAsync, resolveAll, type Result } from "ts-utils/dist/check";
+import { decode, encode } from "ts-utils/dist/text";
 import type { Account } from "./account";
-import { PropertyAction, DataAction } from "drizzle-struct/src/types";
-import { Stream } from "ts-utils/stream";
+import { PropertyAction, DataAction } from "drizzle-struct/dist/types";
+import { Stream } from "ts-utils/dist/stream";
 
 export namespace Permissions {
     export class DataPermission {
