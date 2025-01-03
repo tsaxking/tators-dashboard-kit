@@ -27,8 +27,8 @@ jobs:
       # Step 2: Set up Docker Compose
       - name: Set up Docker Compose
         run: |
-          docker compose version || sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
+          docker compose version || sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o ./docker-compose
+          sudo chmod +x ./docker-compose
 
       # Step 3: Load environment variables from .env file
       - name: Load .env variables
