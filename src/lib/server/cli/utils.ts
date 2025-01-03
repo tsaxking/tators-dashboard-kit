@@ -1,4 +1,4 @@
-import { attemptAsync } from "ts-utils/check";
+import { attemptAsync } from "ts-utils/dist/check";
 import * as inquirer from '@inquirer/prompts';
 import FuzzySearch from 'fuzzy-search';
 import Table from 'cli-table';
@@ -250,7 +250,13 @@ export class Folder {
             })).unwrap();
 
             if (selected) {
-                (await selected()).unwrap();
+                try {
+                    (await selected()).unwrap();
+                } catch (error) {
+                    console.error(error);
+                }
+            } else {
+                console.log('Cancelled');
             }
 
             return;
@@ -281,7 +287,6 @@ export class Action {
     public action() {
         return attemptAsync(async () => {
             await this._action();
-            if (Folder.home) await Folder.home.action();
         });
     }
 };
