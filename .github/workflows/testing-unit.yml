@@ -30,7 +30,11 @@ jobs:
 
       - name: Load .env variables
         run: |
-          export $(cat .env | xargs)
+          DB_HOST=localhost
+          DB_PORT=5432
+          DB_USER=postgres
+          DB_PASS=postgres
+          DB_NAME=test
 
       - name: Start database service
         run: docker compose up -d
