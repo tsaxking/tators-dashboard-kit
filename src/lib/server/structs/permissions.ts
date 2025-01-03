@@ -6,12 +6,12 @@ import {
 	StructStream,
 	type Blank,
 	type Structable
-} from 'drizzle-struct/dist/back-end';
-import { attempt, attemptAsync, resolveAll, type Result } from 'ts-utils/dist/check';
-import { decode, encode } from 'ts-utils/dist/text';
+} from 'drizzle-struct/back-end';
+import { attempt, attemptAsync, resolveAll, type Result } from 'ts-utils/check';
+import { decode, encode } from 'ts-utils/text';
 import type { Account } from './account';
-import { PropertyAction, DataAction } from 'drizzle-struct/dist/types';
-import { Stream } from 'ts-utils/dist/stream';
+import { PropertyAction, DataAction } from 'drizzle-struct/types';
+import { Stream } from 'ts-utils/stream';
 
 export namespace Permissions {
 	export class DataPermission {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Random } from 'ts-utils/dist/math';
+	import { Random } from 'ts-utils/math';
 	import { onMount, type Snippet } from 'svelte';
-	import { SimpleEventEmitter } from 'ts-utils/dist/event-emitter';
+	import { SimpleEventEmitter } from 'ts-utils/event-emitter';
 
 	const id = Random.uuid();
 

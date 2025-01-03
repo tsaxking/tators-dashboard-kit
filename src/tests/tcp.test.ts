@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { Client, Server } from 'drizzle-struct/src/tcp';
+import { Client, Server } from 'drizzle-struct/tcp';
 import { z } from 'zod';
 
 test('TCP', async () => {
