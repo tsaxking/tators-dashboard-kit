@@ -1,4 +1,5 @@
 import { text } from 'drizzle-orm/pg-core';
+import { integer } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
 
 console.log(
@@ -10,7 +11,7 @@ export namespace Test {
 		name: 'test',
 		structure: {
 			name: text('name').notNull(),
-			age: text('age').notNull()
+			age: integer('age').notNull()
 		}
 	});
 }

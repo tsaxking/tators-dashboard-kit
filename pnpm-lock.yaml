@@ -49,7 +49,7 @@ importers:
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
         specifier: github:tsaxking/drizzle-struct
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/703cfcb82863c59c71ba9266748505f1e766ad0d(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/9d363788e02bff5ec54bc4dee38a65322c074f90(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -2126,8 +2126,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/703cfcb82863c59c71ba9266748505f1e766ad0d:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/703cfcb82863c59c71ba9266748505f1e766ad0d}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/9d363788e02bff5ec54bc4dee38a65322c074f90:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/9d363788e02bff5ec54bc4dee38a65322c074f90}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -2659,6 +2659,10 @@ packages:
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
+
+  math@https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91:
+    resolution: {tarball: https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91}
+    version: 1.0.0
 
   mdsvex@0.11.2:
     resolution: {integrity: sha512-Y4ab+vLvTJS88196Scb/RFNaHMHVSWw6CwfsgWIQP8f42D57iDII0/qABSu530V4pkv8s6T2nx3ds0MC1VwFLA==}
@@ -5229,14 +5233,14 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/703cfcb82863c59c71ba9266748505f1e766ad0d(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/9d363788e02bff5ec54bc4dee38a65322c074f90(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
     dependencies:
       '@types/proper-lockfile': 4.1.4
       dotenv: 16.4.7
       drizzle-orm: 0.36.4(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-zod: 0.6.1(drizzle-orm@0.36.4(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
       fuzzy-search: 3.2.1
-      math: calculations@https://codeload.github.com/tsaxking/calculations/tar.gz/e169f626ac0a77ce6f389ea27150be0dadc19dd4
+      math: https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91
       pg: 8.13.1
       postgres: 3.4.5
       proper-lockfile: 4.1.2
@@ -5934,6 +5938,10 @@ snapshots:
   map-or-similar@1.5.0: {}
 
   math-intrinsics@1.1.0: {}
+
+  math@https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91:
+    dependencies:
+      typescript: 5.7.2
 
   mdsvex@0.11.2(svelte@5.16.1):
     dependencies:
