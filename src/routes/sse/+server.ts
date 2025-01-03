@@ -1,24 +1,16 @@
 import { sse } from '$lib/server/utils/sse';
 
-// setInterval(() => {
-// 	sse.send({
-// 		data: JSON.stringify({ text: `Hello: ${crypto.randomUUID()}` })
-// 	});
-// }, 1000);
+setInterval(() => {
+	sse.send('ping', null);
+}, 1000);
 
 export async function GET(event) {
-	const body = sse.connect(event);
-	if (body.isErr()) {
-		console.error(body.error);
+	const res = await sse.connect(event);
+	if (res.isErr()) {
+		console.error(res.error);
 		return new Response('Server Error', {
 			status: 500
 		});
 	}
-
-	const headers = {
-		'cache-control': 'no-store',
-		'content-type': 'text/event-stream'
-	};
-
-	return new Response(body.value, { headers });
+	return res.unwrap();
 }

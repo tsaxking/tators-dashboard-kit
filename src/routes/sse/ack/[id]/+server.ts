@@ -17,4 +17,6 @@ export const GET = async (event) => {
 	}
 
 	connection.ack(+id);
+
+	return new Response('OK');
 };

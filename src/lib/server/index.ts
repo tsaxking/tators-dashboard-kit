@@ -1,17 +1,12 @@
-// import { createTRPCClient, httpBatchLink } from '@trpc/client';
-// // This is why trpc may not be a good idea with our infrastructure
-// import type { AppRouter } from '../../../../central-server-template/src/index';
-// //     👆 **type-only** import
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { Struct } from "drizzle-struct/back-end";
+import "./structs/account";
+import "./structs/session";
+import "./structs/permissions";
+import { DB } from "./db";
 
-// // Pass AppRouter as generic here. 👇 This lets the `trpc` object know
-// // what procedures are available on the server and their input/output types.
-// const trpc = createTRPCClient<AppRouter>({
-//     links: [
-//         httpBatchLink({
-//             url: 'http://localhost:3000',
-//         }),
-//     ],
-// });
-
-// trpc.userById.query('hi').then((res) => {
-// });
+Struct.each(s => {
+    if (!s.built) {
+        s.build(DB as any);
+    }
+});
