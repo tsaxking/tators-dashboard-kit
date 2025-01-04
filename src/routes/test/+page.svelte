@@ -61,10 +61,10 @@
     {@render test('Read All', tests.readAll)}
     {@render test('Read Archived', tests.readArchived)}
     {@render test('Read From Property', tests.readFromProperty)}
-    {@render test('Recieved New', tests.emitNew)}
-    {@render test('Recieved Update', tests.emitUpdate)}
-    {@render test('Recieved Archive', tests.emitArchive)}
-    {@render test('Recieved Restore', tests.emitRestore)}
-    {@render test('Recieved Delete', tests.emitDelete)}
+    {@render test('Received New', tests.receivedNew)}
+    {@render test('Received Update', tests.receivedUpdate)}
+    {@render test('Received Archive', tests.receivedArchive)}
+    {@render test('Received Restore', tests.receivedRestore)}
+    {@render test('Received Delete', tests.receivedDelete)}
     {@render test('Pull', tests.pullData)}
 </ul>

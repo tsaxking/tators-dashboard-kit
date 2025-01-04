@@ -2,14 +2,20 @@ import { Struct } from 'drizzle-struct/back-end';
 import { z } from 'zod';
 import { Test } from '$lib/server/structs/testing';
 import { DB } from '$lib/server/db/index.js';
+import { handleEvent, connectionEmitter } from '$lib/server/event-handler.js';
 
 if (!Test.Test.built) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Test.Test.build(DB as any).then(res => {
+        console.log(res);
         if (res.isErr()) {
             console.error(res.error);
         }
     });
+    Test.Test.eventHandler(handleEvent(Test.Test));
+    // TODO: make this base on .env?
+    Test.Test.bypass('*', () => true);
+    connectionEmitter(Test.Test);
 }
 
 

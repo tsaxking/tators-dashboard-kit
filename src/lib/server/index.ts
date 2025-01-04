@@ -4,9 +4,13 @@ import "./structs/account";
 import "./structs/session";
 import "./structs/permissions";
 import { DB } from "./db";
+import { handleEvent, connectionEmitter } from "./event-handler";
 
-Struct.each(s => {
-    if (!s.built) {
-        s.build(DB as any);
+
+Struct.each(struct => {
+    if (!struct.built) {
+        struct.build(DB as any);
+        struct.eventHandler(handleEvent(struct));
+        connectionEmitter(struct);
     }
 });
