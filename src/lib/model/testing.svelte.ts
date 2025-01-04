@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { sse } from '$lib/utils/sse';
-import { Struct, type Structable } from 'drizzle-struct/front-end';
+import { Struct, StructData } from 'drizzle-struct/front-end';
 
 
 export namespace Test {
@@ -15,7 +15,7 @@ export namespace Test {
 	});
 
 
-	export type TestData = Structable<typeof Test.data.structure>;
+	export type TestData = StructData<typeof Test.data.structure>;
 	export type State = 'not started' | 'in progress' | 'success' | 'failure';
 
 	export type Status = {
@@ -98,144 +98,286 @@ export namespace Test {
 		(async () => {
 			if (!browser) return;
 			(await Test.build()).unwrap();
-
-			tests.connect.update('in progress');
-			const res = await Test.connect();
-			if (res.isErr()) {
-				tests.connect.update('failure');
-				tests.connect.message = res.error.message;
-				return;
-			}
-			if (res.value.success) {
-				tests.connect.update('success');
-				tests.connect.message = res.value.message;
-			} else {
-				tests.connect.update('failure');
-				tests.connect.message = res.value.message;
-			}
-
+			
 			const uniqueName = Math.random().toString(36).substring(7);
 			console.log('uniqueName', uniqueName);
-			
-			Test.on('archive', (data) => {
-				tests.archive.update('success');
-			});
 
-			Test.on('delete', (data) => {
-				tests.delete.update('success');
-			});
-
-			Test.on('new', (data) => {
-				if (data.data.name === uniqueName) {
-					tests.receivedNew.update('success');
+			const connect = async () => {
+				tests.connect.update('in progress');
+				const res = await Test.connect();
+				if (res.isErr()) {
+					tests.connect.update('failure');
+					tests.connect.message = res.error.message;
+					return;
 				}
-			});
-
-			Test.on('restore', (data) => {
-				tests.restore.update('success');
-			});
-
-			Test.on('update', (data) => {
-				if (data.data.name === uniqueName) {
-					console.log('update', data);
-					tests.receivedUpdate.update('success');
+				if (res.value.success) {
+					tests.connect.update('success');
+					tests.connect.message = res.value.message;
+				} else {
+					tests.connect.update('failure');
+					tests.connect.message = res.value.message;
 				}
-			});
+			};
 
-			tests.new.update('in progress');
+			const testNew = async () => {
+				return new Promise<void>((res) => {
+					tests.receivedNew.update('in progress');
+					tests.new.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.receivedNew.update('failure', error);
+						} else {
+							tests.receivedNew.update('success');
+						}
 
-			const createRes = await Test.new({
-				name: uniqueName,
-				age: 20,
-			});
-			tests.receivedNew.update('in progress');
+						Test.off('new', onNew);
+					}
 
-			if (createRes.isErr()) {
-				tests.new.update('failure');
-				tests.new.message = createRes.error.message;
-				return;
-			} else if (!createRes.value.success) {
-				tests.new.update('failure');
-				tests.new.message = createRes.value.message || 'No message';
-				return;
-			}
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
 
-			tests.new.update('success');
-			tests.readAll.update('in progress');
+					const onNew = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					};
 
-			const readAllStream = Test.all(true);
-			readAllStream.on('data', async (d) => {
-				if (d.data.name === uniqueName) {
-					tests.readAll.update('success');
+					Test.on('new', onNew);
 
-					tests.update.update('in progress');
+					Test.new({
+						name: uniqueName,
+						age: 20,
+					}).then(r => {
+						if (r.isErr()) {
+							return tests.new.update('failure', r.error.message);
+						}
+
+						if (!r.value.success) {
+							return tests.new.update('failure', r.value.message || 'No message');
+						}
+
+						tests.new.update('success');
+					});
+				});
+			};
+
+			const testUpdate = async (data: TestData) => {
+				return new Promise<void>((res) => {
 					tests.receivedUpdate.update('in progress');
+					tests.update.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.receivedUpdate.update('failure', error);
+						} else {
+							tests.receivedUpdate.update('success');
+						}
+					}
 
-					const updateRes = await d.update((data) => ({
-						...data,
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onUpdate = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					}
+
+					Test.on('update', onUpdate);
+
+					data.update(d => ({
+						...d,
 						age: 21,
-					}));
+					})).then(r => {
+						if (r.isErr()) {
+							return tests.update.update('failure', r.error.message);
+						}
 
-					if (updateRes.isErr()) {
-						tests.update.update('failure');
-						tests.update.message = updateRes.error.message;
-						return;
+						if (!r.value.success) {
+							return tests.update.update('failure', r.value.message || 'No message');
+						}
+
+						tests.update.update('success');
+					});
+				});
+			};
+
+			const testReadAll = async () => {
+				return new Promise<void>((res) => {
+					tests.readAll.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.readAll.update('failure', error);
+						} else {
+							tests.readAll.update('success');
+						}
+
+						stream.off('data', onData);
+						stream.off('error', onError);
 					}
 
-					console.log('updateRes', updateRes.value);
-				
-					if (!updateRes.value.result.success) {
-						tests.update.update('failure');
-						tests.update.message = updateRes.value.result.message || 'No message';
-						return;
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onData = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					};
+
+					const onError = (error: Error) => {
+						finish(error.message);
 					}
 
-					tests.update.update('success');
+					const stream = Test.all(true);
+					stream.on('data', onData);
+					stream.on('error', onError);
+				});
+			};
 
-					tests.archive.update('in progress');
+			const testArchive = async (data: TestData) => {
+				return new Promise<void>((res) => {
 					tests.receivedArchive.update('in progress');
+					tests.archive.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.receivedArchive.update('failure', error);
+						} else {
+							tests.receivedArchive.update('success');
+						}
+					}
+
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onArchive = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					}
+
+					Test.on('archive', onArchive);
+
+					data.setArchive(true).then(r => {
+						if (r.isErr()) {
+							return tests.archive.update('failure', r.error.message);
+						}
+
+						if (!r.value.success) {
+							return tests.archive.update('failure', r.value.message || 'No message');
+						}
+
+						tests.archive.update('success');
+					});
+				});
+			};
+
+			const testRestore = async (data: TestData) => {
+				return new Promise<void>((res) => {
 					tests.receivedRestore.update('in progress');
-
-					const archiveRes = await d.setArchive(true);
-					if (archiveRes.isErr()) {
-						tests.archive.update('failure');
-						tests.archive.message = archiveRes.error.message;
-						return;
-					}
-
-					if (!archiveRes.value.success) {
-						tests.archive.update('failure');
-						tests.archive.message = archiveRes.value.message || 'No message';
-						return;
-					}
-
-					tests.archive.update('success');
-
 					tests.restore.update('in progress');
-
-					const restoreRes = await d.setArchive(false);
-					if (restoreRes.isErr()) {
-						tests.restore.update('failure');
-						tests.restore.message = restoreRes.error.message;
-						return;
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.receivedRestore.update('failure', error);
+						} else {
+							tests.receivedRestore.update('success');
+						}
 					}
 
-					if (!restoreRes.value.success) {
-						tests.restore.update('failure');
-						tests.restore.message = restoreRes.value.message || 'No message';
-						return;
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onRestore = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
 					}
 
-					tests.restore.update('success');
+					Test.on('restore', onRestore);
 
+					data.setArchive(false).then(r => {
+						if (r.isErr()) {
+							return tests.restore.update('failure', r.error.message);
+						}
+
+						if (!r.value.success) {
+							return tests.restore.update('failure', r.value.message || 'No message');
+						}
+
+						tests.restore.update('success');
+					});
+				});
+			};
+
+			const testDelete = async (data: TestData) => {
+				return new Promise<void>((res) => {
+					tests.receivedDelete.update('in progress');
+					tests.delete.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.receivedDelete.update('failure', error);
+						} else {
+							tests.receivedDelete.update('success');
+						}
+					}
+
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onDelete = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					}
+
+					Test.on('delete', onDelete);
+
+					data.delete().then(r => {
+						if (r.isErr()) {
+							return tests.delete.update('failure', r.error.message);
+						}
+
+						if (!r.value.success) {
+							return tests.delete.update('failure', r.value.message || 'No message');
+						}
+
+						tests.delete.update('success');
+					});
+				});
+			};
+
+			const testPull = async (data: TestData) => {
+				const pulled = data.pull('name', 'age');
+				if (!pulled) {
+					tests.pullData.update('failure', 'Could not pull data');
+					return;
 				}
-			});
 
-			readAllStream.on('error', (e) => {
-				console.error('Error', e);
-				tests.readAll.update('failure', e.message);
-			});
-
+				tests.pullData.update('success');
+			};
 		})();
 
 		return tests;
