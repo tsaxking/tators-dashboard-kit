@@ -1,8 +1,10 @@
 <script lang="ts">
     import { Test } from "$lib/model/testing.svelte.ts";
+	import { onMount } from "svelte";
 	import { toSnakeCase } from "ts-utils/text";
 
     const tests = Test.unitTest();
+    let complete = $state(false);
 
     const generateSymbol = (state: Test.State): string => {
         switch (state) {
@@ -16,6 +18,10 @@
                 return 'error_outline';
         }
     }
+
+    tests.promise.then(() => {
+        complete = true;
+    });
 </script>
 
 
@@ -49,23 +55,37 @@
 
 {/snippet}
 
-<ul class="list-group">
-    {@render test('Connected', tests.connect)}
-    {@render test('Created new', tests.new)}
-    {@render test('Update', tests.update)}
-    {@render test('Archive', tests.archive)}
-    {@render test('Restore Archive', tests.restore)}
-    {@render test('Delete', tests.delete)}
-    {@render test('Read Version', tests.readVersion)}
-    {@render test('Delete Version', tests.deleteVersion)}
-    {@render test('Restore Version', tests.restoreVersion)}
-    {@render test('Read All', tests.readAll)}
-    {@render test('Read Archived', tests.readArchived)}
-    {@render test('Read From Property', tests.readFromProperty)}
-    {@render test('Received New', tests.receivedNew)}
-    {@render test('Received Update', tests.receivedUpdate)}
-    {@render test('Received Archive', tests.receivedArchive)}
-    {@render test('Received Restore', tests.receivedRestore)}
-    {@render test('Received Delete', tests.receivedDelete)}
-    {@render test('Pull', tests.pullData)}
-</ul>
+<div class="container">
+    <div class="row">
+        <h1>Testing</h1>
+    </div>
+    <div class="row">
+        <ul class="list-group">
+            {@render test('Connected', tests.connect)}
+            {@render test('Created new', tests.new)}
+            {@render test('Update', tests.update)}
+            {@render test('Archive', tests.archive)}
+            {@render test('Restore Archive', tests.restore)}
+            {@render test('Delete', tests.delete)}
+            {@render test('Read Version', tests.readVersion)}
+            {@render test('Delete Version', tests.deleteVersion)}
+            {@render test('Restore Version', tests.restoreVersion)}
+            {@render test('Read All', tests.readAll)}
+            {@render test('Read Archived', tests.readArchived)}
+            {@render test('Read From Property', tests.readFromProperty)}
+            {@render test('Received New', tests.receivedNew)}
+            {@render test('Received Update', tests.receivedUpdate)}
+            {@render test('Received Archive', tests.receivedArchive)}
+            {@render test('Received Restore', tests.receivedRestore)}
+            {@render test('Received Delete', tests.receivedDelete)}
+            {@render test('Pull', tests.pullData)}
+        </ul>
+    </div>
+    <div class="row">
+        <div id="test-complete"
+            style="display: {complete ? 'block' : 'none'}"
+        >    
+            <h2>Tests Complete</h2>
+    </div>
+    </div>
+</div>
