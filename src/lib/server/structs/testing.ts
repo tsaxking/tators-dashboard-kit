@@ -3,7 +3,7 @@ import { integer } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
 
 console.log(
-	`This file (${__filename}) should only be used for unit tests. If you are seeing this outside of a unit testing environment, there is an issue with the program.`
+	`This file ('./struct/testing') should only be used for unit tests. If you are seeing this outside of a unit testing environment, there is an issue with the program.`
 );
 
 export namespace Test {
@@ -12,8 +12,13 @@ export namespace Test {
 		structure: {
 			name: text('name').notNull(),
 			age: integer('age').notNull()
+		},
+		versionHistory: {
+			amount: 2,
+			type: 'versions',
 		}
 	});
 }
 
 export const _test = Test.Test.table;
+export const _testVersion = Test.Test.versionTable;

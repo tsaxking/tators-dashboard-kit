@@ -74,6 +74,8 @@ export class Connection {
 	ack(id: number) {
 		this.cache = this.cache.filter((e) => e.id > id);
 	}
+
+	notify() {}
 }
 
 type Events = {
@@ -102,6 +104,8 @@ class SSE {
 		return attemptAsync(async () => {
 			const session = (await Session.getSession(event)).unwrap();
 			let connection: Connection;
+
+			// TODO: We need the ability with multiple tabs to have multiple connections
 			if (this.fromSession(session.id)) {
 				return new Response('Already Connected', {
 					status: 409

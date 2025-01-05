@@ -18,20 +18,12 @@ permissions:
 jobs:
   e2e-tests:
     # this has a chance of infinite loop if we write a test wrong, timeout should catch it eventually.
-    timeout-minutes: 60
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:latest
-        ports:
-          - 5433:5432
 
     steps:
-      - name: Retrieve git dependencies
+      - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          submodules: 'true'
-          # token: ${{ secrets.GH_TOKEN }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -43,21 +35,41 @@ jobs:
         with:
           node-version: v22.12.0
 
-      - name: Build .env
-        run: |
-          echo "DB_HOST=localhost" >> .env
-          echo "DB_PORT=5433" >> .env
-          echo "DB_NAME=local" >> .env
-          echo "DB_USER=root" >> .env
-          echo "DB_PASS=mysecretpassword" >> .env
-
       - name: Install dependencies
         run: |
           echo "Installing dependencies..."
           pnpm install --frozen-lockfile
+          pnpm exec playwright install
 
-      - name: Install Playwright Browsers
-        run: pnpm dlx playwright install --with-deps
+      - name: Set up Docker Compose
+        run: |
+          docker compose version || sudo curl -L "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-$(uname -s)-$(uname -m)" -o ./docker-compose.yml
+          sudo chmod +x ./docker-compose.yml
+
+      - name: Load .env variables
+        run: |
+          touch .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASS=postgres" >> .env
+          echo "DB_NAME=postgres" >> .env
+          export $(cat .env | xargs)
+
+      - name: Start database service
+        run: docker compose up -d
+
+      - name: Wait for database
+        run: |
+          until docker exec $(docker ps -q -f name=db) pg_isready -U postgres; do
+            echo "Waiting for database..."
+            sleep 2
+          done
+
+      - name: Run migrations
+        run: |
+          pnpm run db:migrate
+          pnpm run db:push --strict --verbose --force
 
       - name: Run
         run: |
