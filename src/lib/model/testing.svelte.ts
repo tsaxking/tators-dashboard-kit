@@ -376,7 +376,57 @@ export namespace Test {
 					return;
 				}
 
+				if (!Object.hasOwn(pulled, 'name')) {
+					tests.pullData.update('failure', 'Name not found');
+					return;
+				}
+
+				if (!Object.hasOwn(pulled, 'age')) {
+					tests.pullData.update('failure', 'Age not found');
+					return;
+				}
+
 				tests.pullData.update('success');
+			};
+
+			const testVersions = async (data: TestData) => {
+				const versions = await data.getVersions();
+				if (versions.isErr()) {
+					tests.readVersion.update('failure', versions.error.message);
+					return;
+				}
+
+				if (versions.value.length === 0) {
+					tests.readVersion.update('failure', 'No versions found');
+					return;
+				}
+
+				const version = versions[0];
+				const versionData = version.getData();
+				if (!versionData) {
+					tests.readVersion.update('failure', 'No data found');
+					return;
+				}
+
+				if (versionData.name !== uniqueName) {
+					tests.readVersion.update('failure', 'Name does not match');
+					return;
+				}
+
+				tests.readVersion.update('success');
+
+				const deleted = version.delete();
+				if (deleted.isErr()) {
+					tests.deleteVersion.update('failure', deleted.error.message);
+					return;
+				}
+
+				if (!deleted.value.success) {
+					tests.deleteVersion.update('failure', deleted.value.message || 'No message');
+					return;
+				}
+
+				tests.deleteVersion.update('success');
 			};
 		})();
 
