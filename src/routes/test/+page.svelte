@@ -20,7 +20,7 @@
 
 
 {#snippet test(name: string, status: Test.Status)}
-    <li class="list-group-item"
+    <li class="list-group-item data-test"
         id="test-{toSnakeCase(name.toLowerCase())}"
         data-value={status.state}
         data-message={status.message}
@@ -58,6 +58,7 @@
     {@render test('Delete', tests.delete)}
     {@render test('Read Version', tests.readVersion)}
     {@render test('Delete Version', tests.deleteVersion)}
+    {@render test('Restore Version', tests.restoreVersion)}
     {@render test('Read All', tests.readAll)}
     {@render test('Read Archived', tests.readArchived)}
     {@render test('Read From Property', tests.readFromProperty)}

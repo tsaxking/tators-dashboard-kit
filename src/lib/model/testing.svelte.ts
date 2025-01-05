@@ -11,7 +11,7 @@ export namespace Test {
             age: 'number',
         },
 		socket: sse,
-		// log: true,
+		log: true,
 	});
 
 
@@ -47,6 +47,7 @@ export namespace Test {
 
 			readVersion: Status;
 			deleteVersion: Status;
+			restoreVersion: Status;
 
 			readAll: Status;
 			readArchived: Status;
@@ -70,6 +71,7 @@ export namespace Test {
 
 			readVersion: init(),
 			deleteVersion: init(),
+			restoreVersion: init(),
 
 			readAll: init(),
 			readArchived: init(),
@@ -200,14 +202,16 @@ export namespace Test {
 							return tests.update.update('failure', r.error.message);
 						}
 
-						if (!r.value.success) {
-							return tests.update.update('failure', r.value.message || 'No message');
+						if (!r.value.result.success) {
+							return tests.update.update('failure', r.value.result.message || 'No message');
 						}
 
 						tests.update.update('success');
 					});
 				});
 			};
+
+			let testData: TestData | undefined;
 
 			const testReadAll = async () => {
 				return new Promise<void>((res) => {
@@ -232,6 +236,7 @@ export namespace Test {
 
 					const onData = (data: TestData) => {
 						if (data.data.name === uniqueName) {
+							testData = data;
 							finish();
 						}
 					};
@@ -370,19 +375,20 @@ export namespace Test {
 			};
 
 			const testPull = async (data: TestData) => {
+				tests.pullData.update('in progress');
 				const pulled = data.pull('name', 'age');
 				if (!pulled) {
 					tests.pullData.update('failure', 'Could not pull data');
 					return;
 				}
 
-				if (!Object.hasOwn(pulled, 'name')) {
-					tests.pullData.update('failure', 'Name not found');
+				if (!pulled.data.name) {
+					tests.pullData.update('failure', 'Name not pulled');
 					return;
 				}
 
-				if (!Object.hasOwn(pulled, 'age')) {
-					tests.pullData.update('failure', 'Age not found');
+				if (!pulled.data.age) {
+					tests.pullData.update('failure', 'Age not pulled');
 					return;
 				}
 
@@ -390,6 +396,10 @@ export namespace Test {
 			};
 
 			const testVersions = async (data: TestData) => {
+				tests.readVersion.update('in progress');
+				tests.deleteVersion.update('in progress');
+				tests.restoreVersion.update('in progress');
+
 				const versions = await data.getVersions();
 				if (versions.isErr()) {
 					tests.readVersion.update('failure', versions.error.message);
@@ -401,21 +411,28 @@ export namespace Test {
 					return;
 				}
 
-				const version = versions[0];
-				const versionData = version.getData();
-				if (!versionData) {
-					tests.readVersion.update('failure', 'No data found');
-					return;
-				}
-
-				if (versionData.name !== uniqueName) {
+				const version = versions.value[0];
+				if (version.data.name !== uniqueName) {
 					tests.readVersion.update('failure', 'Name does not match');
 					return;
 				}
 
 				tests.readVersion.update('success');
 
-				const deleted = version.delete();
+				const restoreVersion = await version.restore();
+				if (restoreVersion.isErr()) {
+					tests.restoreVersion.update('failure', restoreVersion.error.message);
+					return;
+				}
+
+				if (!restoreVersion.value.success) {
+					tests.restoreVersion.update('failure', restoreVersion.value.message || 'No message');
+					return;
+				}
+
+				tests.restoreVersion.update('success');
+
+				const deleted = await version.delete();
 				if (deleted.isErr()) {
 					tests.deleteVersion.update('failure', deleted.error.message);
 					return;
@@ -428,6 +445,97 @@ export namespace Test {
 
 				tests.deleteVersion.update('success');
 			};
+
+			const testReadArchived = async () => {
+				return new Promise<void>((res) => {
+					tests.readArchived.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.readArchived.update('failure', error);
+						} else {
+							tests.readArchived.update('success');
+						}
+
+						stream.off('data', onData);
+						stream.off('error', onError);
+					}
+
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onData = (data: TestData) => {
+						console.log('archived', data);
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					};
+
+					const onError = (error: Error) => {
+						finish(error.message);
+					}
+
+					const stream = Test.archived(true);
+					stream.on('data', onData);
+					stream.on('error', onError);
+				});
+			};
+			const testReadProperty = async () => {
+				return new Promise<void>((res) => {
+					tests.readFromProperty.update('in progress');
+					let resolved = false;
+					const finish = (error?: string) => {
+						if (!resolved) res();
+						resolved = true;
+						if (error) {
+							tests.readFromProperty.update('failure', error);
+						} else {
+							tests.readFromProperty.update('success');
+						}
+
+						stream.off('data', onData);
+						stream.off('error', onError);
+					}
+
+					setTimeout(() => {
+						finish('Timeout');
+					}, 1000);
+
+					const onData = (data: TestData) => {
+						if (data.data.name === uniqueName) {
+							finish();
+						}
+					};
+
+					const onError = (error: Error) => {
+						finish(error.message);
+					}
+
+					const stream = Test.fromProperty('name', uniqueName, true);
+					stream.on('data', onData);
+					stream.on('error', onError);
+				});
+			};
+
+			// TODO: Attributes and universes
+
+			await connect();
+			await testNew();
+			await testReadAll();
+			await testReadProperty();
+			
+			if (testData) {
+				await testUpdate(testData);
+				await testArchive(testData);
+				await testReadArchived();
+				await testRestore(testData);
+				await testPull(testData);
+				await testVersions(testData);
+				await testDelete(testData);
+			}
 		})();
 
 		return tests;

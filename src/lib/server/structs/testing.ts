@@ -12,8 +12,13 @@ export namespace Test {
 		structure: {
 			name: text('name').notNull(),
 			age: integer('age').notNull()
+		},
+		versionHistory: {
+			amount: 2,
+			type: 'versions',
 		}
 	});
 }
 
 export const _test = Test.Test.table;
+export const _testVersion = Test.Test.versionTable;

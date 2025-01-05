@@ -43,9 +43,50 @@ export const handleEvent = (struct: Struct) =>  async (event: RequestAction): Pr
         return false;
     };
 
+    if (event.action === DataAction.ReadVersionHistory) {
+        if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing ReadVersionHistory id'));
+        const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+        if (!data) return error(new DataError('Data not found'));
+        const history = (await data.getVersions()).unwrap();
+        return new Response(JSON.stringify({
+            success: true,
+            data: history.map(v => v.data),
+        }), { status: 200 });
+    }
+
+    if (event.action === DataAction.DeleteVersion) {
+        if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing DeleteVersion id'));
+        if (!Object.hasOwn(event.data as any, 'vhId')) return error(new DataError('Missing DeleteVersion version'));
+        const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+        if (!data) return error(new DataError('Data not found'));
+        const version = (await data.getVersions()).unwrap().find(v => v.vhId === (event.data as any).vhId);
+        if (!version) return error(new DataError('Version not found'));
+        
+        (await version.delete()).unwrap();
+
+        return new Response(JSON.stringify({
+            success: true,
+        }), { status: 200 });
+    }
+
+    if (event.action === DataAction.RestoreVersion) {
+        if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing RestoreVersion id'));
+        if (!Object.hasOwn(event.data as any, 'vhId')) return error(new DataError('Missing RestoreVersion version'));
+        const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+        if (!data) return error(new DataError('Data not found'));
+        const versions = (await data.getVersions()).unwrap().find(v => v.vhId === (event.data as any).vhId);
+        if (!versions) return error(new DataError('Version not found'));
+        const res = await versions.restore();
+        if (res.isErr()) return error(res.error);
+
+        return new Response(JSON.stringify({
+            success: true,
+        }), { status: 200 });
+    }
+
     if (event.action === PropertyAction.Read) {
         if (!Object.hasOwn(event.data as any, 'type')) return error(new DataError('Missing Read type'));
-        if ((event.data as any).type !== 'all' && !Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
+        if ((event.data as any).type !== 'all' && (event.data as any).type !== 'archived' && !Object.hasOwn(event.data as any, 'args')) return error(new DataError('Missing Read args'));
 
         let streamer: StructStream<typeof struct.data.structure, typeof struct.data.name>;
         const type = (event.data as any).type as 'all' | 'archived' | 'from-id' | 'property' | 'universe';
