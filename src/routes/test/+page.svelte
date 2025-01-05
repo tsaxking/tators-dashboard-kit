@@ -36,7 +36,7 @@
         class:text-warning={status.state === 'in progress'}
         class:animate__animated={status.state === 'in progress'}
     >
-            {@html generateSymbol(status.state)}
+            {generateSymbol(status.state)}
         </i>
         {name}
 
