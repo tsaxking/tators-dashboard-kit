@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="gyLWCIs_2NT41w74knfC" name="Page-1">
-        <mxGraphModel dx="2230" dy="1895" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="1812" dy="1654" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -349,8 +349,8 @@
                 <mxCell id="102" value="app DB" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;fontColor=#FFFFFF;" parent="1" vertex="1">
                     <mxGeometry x="350" y="1010" width="40" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="108" value="Do we need all the micro databases? It may be easier to have multiple connections to the main.&lt;br&gt;&lt;br&gt;However, without the central server, the other microservices will not recieve any updates." style="shape=note;size=15;align=left;spacingLeft=10;html=1;whiteSpace=wrap;" vertex="1" parent="1">
-                    <mxGeometry x="410" y="220" width="150" height="150" as="geometry"/>
+                <mxCell id="108" value="Do we need all the micro databases? It may be easier to have multiple connections to the main.&lt;br&gt;&lt;br&gt;However, without the central server, the other microservices will not recieve any updates. Also, there would be no way for the backup systems to write to the main DB" style="shape=note;size=15;align=left;spacingLeft=10;html=1;whiteSpace=wrap;" vertex="1" parent="1">
+                    <mxGeometry x="410" y="210" width="150" height="230" as="geometry"/>
                 </mxCell>
                 <mxCell id="109" value="" style="edgeStyle=none;endArrow=none;exitX=0;exitY=0.5;dashed=1;html=1;entryX=0.625;entryY=1;entryDx=0;entryDy=0;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" source="108" parent="1" target="66">
                     <mxGeometry x="1" relative="1" as="geometry">
