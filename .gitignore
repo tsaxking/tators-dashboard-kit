@@ -1,6 +1,8 @@
 test-results
 node_modules
 
+diagrams/*.png
+
 # Output
 .output
 .vercel
