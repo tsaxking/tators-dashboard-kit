@@ -1,5 +1,5 @@
 import { attempt, attemptAsync } from 'ts-utils/check';
-import type { RequestEvent } from '../../../routes/sse/$types';
+import type { RequestEvent } from '../../../routes/sse/[tabId]/$types';
 import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
 import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
@@ -28,7 +28,9 @@ export class Connection {
 
 	constructor(
 		private readonly controller: Stream,
-		session: Session.SessionData
+		public readonly tabId: string,
+		session: Session.SessionData,
+		public readonly sse: SSE,
 	) {
 		this.sessionId = session.id;
 
@@ -62,8 +64,9 @@ export class Connection {
 		return attempt(() => {
 			// clearInterval(this.interval);
 			this.send('close', null);
-			this.controller.close();
 			this.emit('close');
+			this.controller.close();
+			this.sse.connections.delete(this.tabId);
 		});
 	}
 
@@ -75,7 +78,14 @@ export class Connection {
 		this.cache = this.cache.filter((e) => e.id > id);
 	}
 
-	notify() {}
+	notify(notif: {
+		title: string;
+		message: string;
+		icon?: string;
+		severity: 'info' | 'warning' | 'danger' | 'success';
+	}) {
+		return this.send('notification', notif);
+	}
 }
 
 type Events = {
@@ -84,7 +94,7 @@ type Events = {
 };
 
 class SSE {
-	public readonly connections = new Set<Connection>();
+	public readonly connections = new Map<string, Connection>();
 
 	private readonly emitter = new EventEmitter<Events>();
 
@@ -114,8 +124,7 @@ class SSE {
 
 			const stream = new ReadableStream({
 				async start(controller) {
-					connection = new Connection(controller, session);
-					me.connections.add(connection);
+					connection = me.addConnection(controller, event.params.tabId, session);
 					me.emit('connect', connection);
 				},
 				cancel() {
@@ -123,7 +132,6 @@ class SSE {
 						if (connection) {
 							me.emit('disconnect', connection);
 							connection.close();
-							me.connections.delete(connection);
 						}
 					} catch (error) {
 						console.error(error);
@@ -156,7 +164,25 @@ class SSE {
 	}
 
 	fromSession(sessionId: string) {
-		return [...this.connections].find((connection) => connection.sessionId === sessionId);
+		return [...this.connections.values()].find((connection) => connection.sessionId === sessionId);
+	}
+
+	addConnection(controller: Stream, tabId: string, session: Session.SessionData) {
+		if (this.connections.has(tabId)) {
+			this.connections.get(tabId)?.close();
+		}
+
+		const connection = new Connection(controller, tabId, session, this);
+		this.connections.set(tabId, connection);
+		return connection;
+	}
+
+	getConnection(event: {
+		request: Request;
+	}) {
+		const tabId = event.request.headers.get('X-Tab-Id');
+		if (!tabId) return undefined;
+		return this.connections.get(tabId);
 	}
 }
 

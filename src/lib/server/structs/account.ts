@@ -23,7 +23,7 @@ export namespace Account {
 		}
 	});
 
-	Account.bypass('*', (a, b) => a.id === b?.id);
+	// Account.bypass('*', (a, b) => a.id === b?.id);
 
 	Account.on('delete', async (a) => {
 		Admins.fromProperty('accountId', a.id, true).pipe((a) => a.delete());
