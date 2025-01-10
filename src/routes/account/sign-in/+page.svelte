@@ -59,7 +59,7 @@
                         placeholder=""
                         floatingLabel={true}
                         label="Password"
-                        buttonColor="secondary"
+                        buttonColor="primary"
                     />
                 </div>
 
