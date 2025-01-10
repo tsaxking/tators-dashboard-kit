@@ -2,6 +2,8 @@
     import { env } from "$env/dynamic/public";
 	import type { ActionData } from "./$types";
     import Password from "$lib/components/forms/Password.svelte";
+	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
 
     // const validateEmail = (value: string) => {
     //     if (!value) return '';
@@ -18,7 +20,8 @@
 
     // let user = $state(form?.user || '');
 
-    if (form?.success === true) {
+    if (form?.redirect && browser) {
+        goto(form.redirect);
     }
 </script>
 
@@ -65,7 +68,17 @@
                 </a>
 
                 <hr>
-                {#if form?.message}<p class="text-danger">{form.message}</p>{/if}
+                {#if form?.message}
+                    {#if form.message === 'Logged in'}
+                        <p class="text-success">
+                            Logged in successfully
+                        </p>
+                    {:else}
+                        <p class="text-danger">
+                            {form.message}
+                        </p>
+                    {/if}
+                {/if}
                 <button
                     type="submit"
                     class="btn btn-primary"

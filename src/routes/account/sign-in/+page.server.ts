@@ -1,4 +1,4 @@
-import { fail, json } from '@sveltejs/kit';
+import { fail, json, redirect } from '@sveltejs/kit';
 import { Account } from '$lib/server/structs/account.js';
 import { Session } from '$lib/server/structs/session.js';
 import type { Result } from 'ts-utils/check';
@@ -19,29 +19,35 @@ export const actions = {
             return fail(ServerCode.badRequest, {
                 message: 'Invalid form data',
                 user: data.get('user'),
-                success: false,
-                redirect: false
             });
         }
 
-        let account: Result<Account.AccountData | undefined>;
+        let account: Account.AccountData;
 
-        account = await Account.Account.get({
-            username: res.data.username,
-        }, false);
+        ACCOUNT: {
+            const user = await Account.Account.fromProperty('username', res.data.username, false);
+            if (user.isErr()) {
+                return fail(ServerCode.internalServerError, {
+                    user: res.data.username,
+                    message: 'Failed to get user',
+                });
+            }
+            [account] = user.value;
+            if (account) break ACCOUNT;
 
-        if (!account) {
-            account = await Account.Account.get({
-                email: res.data.username,
-            }, false);
-        }
+            const email = await Account.Account.fromProperty('email', res.data.username, false);
+            if (email.isErr()) {
+                return fail(ServerCode.internalServerError, {
+                    user: res.data.username,
+                    message: 'Failed to get user',
+                });
+            }
+            [account] = email.value;
+            if (account) break ACCOUNT;
 
-        if (account.isErr()) {
             return fail(ServerCode.notFound, {
                 user: res.data.username,
-                message: 'Account not found',
-                success: false,
-                redirect: false
+                message: 'User not found',
             });
         }
 
@@ -50,19 +56,26 @@ export const actions = {
             return fail(ServerCode.internalServerError, {
                 user: res.data.username,
                 message: 'Failed to get session',
-                success: false,
-                redirect: false
             });
         }
 
-        session.value.update({
-            accountId: account.value?.id,
+        const sessionRes = await session.value.update({
+            accountId: account.id,
         });
 
-        return json({
+        if (sessionRes.isErr()) {
+            console.error(sessionRes.error);
+            return fail(ServerCode.internalServerError, {
+                user: res.data.username,
+                message: 'Failed to update session',
+            });
+        }
+
+        return {
             message: 'Logged in',
-            success: true,
+            user: res.data.username,
             redirect: session.value.data.prevUrl || '/',
-        });
+            success: true,
+        }
     },
 };

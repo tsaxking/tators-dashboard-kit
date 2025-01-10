@@ -3,6 +3,8 @@
 	import { passwordStrength } from "check-password-strength";
 	import type { ActionData } from "./$types";
 	import Password from "$lib/components/forms/Password.svelte";
+	import { browser } from "$app/environment";
+	import { goto } from "$app/navigation";
 
     let { form }: { form?: ActionData } = $props();
 
@@ -23,6 +25,10 @@
     $effect(() => {
         passwordResult = passwordStrength(password);
     });
+
+    if (form?.redirect && browser) {
+        goto(form.redirect);
+    }
 </script>
 
 <main>
@@ -37,7 +43,13 @@
         </div>
         <div class="row mb-3">
             <form action="?/register" method="post">
-                {#if form?.message}<p class="text-danger">{form.message}</p>{/if}
+                {#if form?.message}
+                    {#if form.message === 'Account created'}
+                        <p class="text-success">Account created successfully</p>
+                    {:else}
+                        <p class="text-danger">{form.message}</p>
+                    {/if}
+                {/if}
                 <div class="container">
                     <div class="row">
                         <div class="col-md-6">

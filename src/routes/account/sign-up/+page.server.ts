@@ -119,6 +119,10 @@ export const actions = {
             });
         }
 
-        return redirect(ServerCode.permanentRedirect, '/account/sign-in');
+        return {
+            message: 'Account created',
+            redirect: '/account/sign-in',
+            success: true,
+        }
     },
 };
