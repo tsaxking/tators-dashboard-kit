@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { DB } from '../lib/server/db/index';
 import { test } from 'vitest';
 // import { structTest } from 'drizzle-struct/unit-tests';

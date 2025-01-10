@@ -5,10 +5,13 @@ export const POST = async (event) => {
 	// console.log(res);
 	if (res.isErr()) {
 		console.error(res.error);
-		return new Response(JSON.stringify({
-			success: false,
-			message: res.error.message,
-		}), { status: 500 });
+		return new Response(
+			JSON.stringify({
+				success: false,
+				message: res.error.message
+			}),
+			{ status: 500 }
+		);
 	}
 	return res.value;
 };

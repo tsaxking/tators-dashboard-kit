@@ -15,7 +15,7 @@ export namespace Test {
 		},
 		versionHistory: {
 			amount: 2,
-			type: 'versions',
+			type: 'versions'
 		}
 	});
 }

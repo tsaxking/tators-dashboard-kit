@@ -4,8 +4,6 @@ import { describe } from 'vitest';
 
 describe('TCP', async () => {
 	// const server = new Server('localhost', 3333);
-
 	// const client = new Client('localhost', 3333, 'apiKey');
-
 	// tcpTest(server, client);
 });
