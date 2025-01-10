@@ -12,11 +12,11 @@ interface RequestEvent {
 			name: string,
 			value: string,
 			options: {
-				httpOnly: boolean;
-				domain: string;
-				sameSite: 'none';
+				httpOnly?: boolean;
+				domain?: string;
+				sameSite?: 'none';
 				path: string;
-				expires: Date;
+				expires?: Date;
 			}
 		) => void;
 	};
@@ -39,7 +39,6 @@ export namespace Session {
 	export const getSession = (event: RequestEvent) => {
 		return attemptAsync(async () => {
 			const id = event.cookies.get('ssid');
-			console.log('sessionid', id);
 
 			const create = async () => {
 				const session = (
@@ -48,16 +47,14 @@ export namespace Session {
 						ip: '',
 						userAgent: '',
 						requests: 0,
-						prevUrl: ''
+						prevUrl: '',
 					})
 				).unwrap();
 
-				console.log(session.data);
-
-				event.cookies.set('ssid', session.data.id, {
+				event.cookies.set('ssid', session.id, {
 					httpOnly: true,
 					domain: DOMAIN ?? '',
-					sameSite: 'none',
+					// sameSite: 'none',
 					path: '/',
 					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});

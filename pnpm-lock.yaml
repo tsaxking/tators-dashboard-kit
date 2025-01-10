@@ -35,6 +35,9 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      check-password-strength:
+        specifier: ^2.0.10
+        version: 2.0.10
       cli-table:
         specifier: ^0.3.11
         version: 0.3.11
@@ -48,7 +51,7 @@ importers:
         specifier: ^0.38.3
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
-        specifier: git+https://github.com/tsaxking/drizzle-struct.git
+        specifier: github:tsaxking/drizzle-struct
         version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/b7e4f75a796b667c6db96dc9113d916c433c19d0(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
@@ -68,6 +71,9 @@ importers:
       ts-utils:
         specifier: github:tsaxking/global-ts-utilities
         version: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/78515545075c95c433dc44d6bae801e1737f56db
+      uuid:
+        specifier: ^11.0.4
+        version: 11.0.4
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -126,6 +132,9 @@ importers:
       '@types/node':
         specifier: ^22.10.4
         version: 22.10.4
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       concurrently:
         specifier: ^9.1.2
         version: 9.1.2
@@ -1559,6 +1568,9 @@ packages:
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
 
+  '@types/uuid@10.0.0':
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
+
   '@types/uuid@9.0.8':
     resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
 
@@ -1817,6 +1829,9 @@ packages:
   check-error@2.1.1:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
+
+  check-password-strength@2.0.10:
+    resolution: {integrity: sha512-HRM5ICPmtnNtLnTv2QrfVkq1IxI9z3bzYpDJ1k5ixwD9HtJGHuv265R6JmHOV6r8wLhQMlULnIUVpkrC2yaiCw==}
 
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
@@ -3710,8 +3725,8 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
-  uuid@11.0.5:
-    resolution: {integrity: sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==}
+  uuid@11.0.4:
+    resolution: {integrity: sha512-IzL6VtTTYcAhA/oghbFJ1Dkmqev+FpQWnCBaKq/gUluLxliWvO8DPFWfIviRmYbtaavtSQe4WBL++rFjdcGWEg==}
     hasBin: true
 
   uuid@9.0.1:
@@ -5093,6 +5108,8 @@ snapshots:
 
   '@types/unist@2.0.11': {}
 
+  '@types/uuid@10.0.0': {}
+
   '@types/uuid@9.0.8': {}
 
   '@typescript-eslint/eslint-plugin@8.19.0(@typescript-eslint/parser@8.19.0(eslint@9.17.0)(typescript@5.7.2))(eslint@9.17.0)(typescript@5.7.2)':
@@ -5395,6 +5412,8 @@ snapshots:
 
   check-error@2.1.1: {}
 
+  check-password-strength@2.0.10: {}
+
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.0.2
@@ -5584,7 +5603,7 @@ snapshots:
       ts-node: 10.9.2(@types/node@22.10.4)(typescript@5.7.2)
       ts-utils: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb
       typescript: 5.7.2
-      uuid: 11.0.5
+      uuid: 11.0.4
       zod: 3.24.1
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
@@ -7198,7 +7217,7 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
-  uuid@11.0.5: {}
+  uuid@11.0.4: {}
 
   uuid@9.0.1: {}
 

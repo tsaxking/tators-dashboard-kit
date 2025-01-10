@@ -1,6 +1,9 @@
 import { browser } from '$app/environment';
 import { EventEmitter } from 'ts-utils/event-emitter';
 import { decode } from 'ts-utils/text';
+import { notify } from './prompts';
+import { z } from 'zod';
+import { Requests } from './requests';
 
 class SSE {
 	public readonly emitter = new EventEmitter();
@@ -13,7 +16,7 @@ class SSE {
 	init(browser: boolean) {
 		if (browser) {
 			const connect = () => {
-				const source = new EventSource('/sse');
+				const source = new EventSource(`/sse/${Requests.tabId}`,);
 
 				source.addEventListener('error', (e) => console.error('Error:', e));
 
@@ -41,6 +44,20 @@ class SSE {
 
 						if (e.event === 'close') {
 							source.close();
+						}
+
+						if (e.event === 'notification') {
+							const parsed = z.object({
+								title: z.string(),
+								message: z.string(),
+								severity: z.enum(['info', 'warning', 'danger', 'success']),
+							}).safeParse(e.data);
+							if (parsed.success) notify({
+								type: 'alert',
+								...parsed.data,
+								color: parsed.data.severity,
+							});
+							return;
 						}
 
 						if (!['close', 'ping'].includes(e.event)) {

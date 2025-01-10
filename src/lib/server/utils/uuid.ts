@@ -1,1 +1,2 @@
-export const uuid = (): string => crypto.randomUUID();
+import { v4 } from 'uuid';
+export const uuid = (): string => v4();

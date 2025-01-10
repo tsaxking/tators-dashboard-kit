@@ -39,7 +39,7 @@ button,
 }
 
 * {
-	border: none !important;
+	/* border: none !important; */
 }
 
 .card {
