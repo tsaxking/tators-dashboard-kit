@@ -1,7 +1,6 @@
-import { fail, json, redirect } from '@sveltejs/kit';
+import { fail } from '@sveltejs/kit';
 import { Account } from '$lib/server/structs/account.js';
 import { Session } from '$lib/server/structs/session.js';
-import type { Result } from 'ts-utils/check';
 import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
 
