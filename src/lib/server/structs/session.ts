@@ -52,15 +52,15 @@ export namespace Session {
 					})
 				).unwrap();
 
-				event.cookies.set('ssid', session.id, {
+				console.log(session.data);
+
+				event.cookies.set('ssid', session.data.id, {
 					httpOnly: true,
 					domain: DOMAIN ?? '',
 					sameSite: 'none',
 					path: '/',
 					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});
-
-				// event.headers.set('cookie', `ssid=${session.id}; Domain=${DOMAIN}; Path=/; SameSite=None; Secure`);
 
 				return session;
 			};
