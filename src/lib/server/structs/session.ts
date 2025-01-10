@@ -54,9 +54,8 @@ export namespace Session {
 				event.cookies.set('ssid', session.id, {
 					httpOnly: true,
 					domain: DOMAIN ?? '',
-					// sameSite: 'none',
 					path: '/',
-					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
+					// expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});
 
 				return session;

@@ -3,10 +3,7 @@ import { attemptAsync, type Result } from 'ts-utils/check';
 import { Stream } from 'ts-utils/stream';
 import { v4 as uuid } from 'uuid';
 export namespace Requests {
-    export const tabId = uuid();
-    
     const metadata: Record<string, string> = {
-        'X-Tab-Id': tabId,
     };
     let requests: ServerRequest[] = [];
 
@@ -118,7 +115,6 @@ export namespace Requests {
     };
 
     export const setMeta = (key: string, value: string) => {
-        if (key === 'X-Tab-Id') throw new Error('Cannot set tabId');
         metadata.key = value;
     }
 }

@@ -16,7 +16,7 @@ class SSE {
 	init(browser: boolean) {
 		if (browser) {
 			const connect = () => {
-				const source = new EventSource(`/sse/${Requests.tabId}`,);
+				const source = new EventSource(`/sse`,);
 
 				source.addEventListener('error', (e) => console.error('Error:', e));
 
@@ -88,15 +88,15 @@ class SSE {
 				};
 			};
 
-			// let disconnect = connect();
+			let disconnect = connect();
 
-			// // ping the server every 10 seconds, if the server does not respond, reconnect
-			// setInterval(async () => {
-			// 	if (!(await this.ping())) {
-			// 		disconnect();
-			// 		disconnect = connect();
-			// 	}
-			// }, 10000);
+			// ping the server every 10 seconds, if the server does not respond, reconnect
+			setInterval(async () => {
+				if (!(await this.ping())) {
+					disconnect();
+					disconnect = connect();
+				}
+			}, 10000);
 			connect();
 		}
 	}

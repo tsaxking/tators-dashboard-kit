@@ -1,5 +1,5 @@
 import { attempt, attemptAsync } from 'ts-utils/check';
-import type { RequestEvent } from '../../../routes/sse/[tabId]/$types';
+import type { RequestEvent } from '../../../routes/sse/$types';
 import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
 import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
@@ -115,16 +115,11 @@ class SSE {
 			const session = (await Session.getSession(event)).unwrap();
 			let connection: Connection;
 
-			// TODO: We need the ability with multiple tabs to have multiple connections
-			if (this.fromSession(session.id)) {
-				return new Response('Already Connected', {
-					status: 409
-				});
-			}
-
 			const stream = new ReadableStream({
 				async start(controller) {
-					connection = me.addConnection(controller, event.params.tabId, session);
+					const tabId = event.cookies.get('tab-session');
+					if (!tabId) return;
+					connection = me.addConnection(controller, tabId, session);
 					me.emit('connect', connection);
 				},
 				cancel() {
@@ -169,6 +164,7 @@ class SSE {
 
 	addConnection(controller: Stream, tabId: string, session: Session.SessionData) {
 		if (this.connections.has(tabId)) {
+			console.log('Closing connection for tab', tabId);
 			this.connections.get(tabId)?.close();
 		}
 
@@ -178,9 +174,11 @@ class SSE {
 	}
 
 	getConnection(event: {
-		request: Request;
+		cookies: {
+			get: (key: string) => string | undefined;
+		}
 	}) {
-		const tabId = event.request.headers.get('X-Tab-Id');
+		const tabId = event.cookies.get('tab-session');
 		if (!tabId) return undefined;
 		return this.connections.get(tabId);
 	}
