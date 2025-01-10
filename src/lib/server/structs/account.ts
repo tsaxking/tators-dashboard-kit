@@ -1,7 +1,7 @@
 import { boolean, text } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
 import { uuid } from '../utils/uuid';
-import { attempt } from 'ts-utils/check';
+import { attempt, attemptAsync } from 'ts-utils/check';
 import crypto from 'crypto';
 
 export namespace Account {
@@ -51,6 +51,34 @@ export namespace Account {
 			return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
 		});
 	};
+
+	export const createAccount = async (data:  {
+		username: string;
+		email: string;
+		firstName: string;
+		lastName: string;
+		password: string;
+	}) => {
+		return attemptAsync(async () => {
+			const hash = newHash(data.password).unwrap();
+			const verificationId = uuid();
+			const account = (await Account.new({
+				username: data.username,
+				email: data.email,
+				firstName: data.firstName,
+				lastName: data.lastName,
+				key: hash.hash,
+				salt: hash.salt,
+				verified: false,
+				verification: verificationId,
+				picture: '/'
+			})).unwrap();
+
+			// send verification email
+
+			return account;
+		});
+	}
 }
 
 // for drizzle

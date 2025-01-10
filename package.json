@@ -71,6 +71,7 @@
 		"@trpc/server": "11.0.0-rc.682",
 		"@types/proper-lockfile": "^4.1.4",
 		"bootstrap": "^5.3.3",
+		"check-password-strength": "^2.0.10",
 		"cli-table": "^0.3.11",
 		"colors": "github:tsaxking/colors",
 		"dotenv": "^16.4.7",

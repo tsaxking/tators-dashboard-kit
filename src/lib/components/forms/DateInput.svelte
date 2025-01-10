@@ -5,7 +5,7 @@
         onChange: (value: string) => void;
     }
 
-    let { data, header, onChange }: Props = $props();
+    let { data = $bindable(), header, onChange }: Props = $props();
 </script>
 
 <input

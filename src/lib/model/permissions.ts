@@ -106,83 +106,6 @@ export namespace Permissions {
                 permissions: Permissions;
             }>
     {
-        // public static fromRole(role: RoleData) {
-        //     // return attempt(() => {
-        //         const { permissions } = role.data;
-        //         if (permissions === undefined)
-        //             throw new PermissionError('No permissions found');
-
-        //         if (!permissions.length) return [];
-
-        //         const split = permissions.split(';');
-
-        //         const result = split.map(p => {
-        //             let [permission, struct, property] = p.split(',');
-        //             [permission, struct, property] = [
-        //                 permission,
-        //                 struct,
-        //                 property
-        //             ].map(decode);
-        //             const s = Struct.structs.get(struct);
-        //             if (!s) throw new PermissionError('Struct not found');
-        //             return {
-        //                 permission,
-        //                 struct: s,
-        //                 property
-        //             } as {
-        //                 permission: keyof Permissions | 'read' | 'update';
-        //                 struct: Struct<Blank>;
-        //                 property?: string;
-        //             };
-        //         });
-
-        //         const structPerms: StructPermissions<Blank>[] = [];
-
-        //         for (const r of result) {
-        //             let found = structPerms.find(i =>
-        //                 Object.is(i.struct, r.struct)
-        //             );
-        //             if (!found) {
-        //                 found = new StructPermissions(r.struct, role, [], {
-        //                     create: false,
-        //                     delete: false,
-        //                     'read-archive': false,
-        //                     archive: false,
-        //                     'restore-archive': false,
-        //                     'read-version-history': false,
-        //                     'restore-version': false,
-        //                     'delete-version': false
-        //                 });
-        //             }
-
-        //             const { permission, property } = r;
-
-        //             if (property) {
-        //                 found.update(i => ({
-        //                     properties: [
-        //                         ...i.properties,
-        //                         {
-        //                             property,
-        //                             update: permission === 'update',
-        //                             read: permission === 'read'
-        //                         }
-        //                     ],
-        //                     permissions: i.permissions
-        //                 }));
-        //             } else {
-        //                 found.update(i => ({
-        //                     properties: i.properties,
-        //                     permissions: {
-        //                         ...i.permissions,
-        //                         [permission]: true
-        //                     }
-        //                 }));
-        //             }
-        //         }
-
-        //         return structPerms;
-        //     // });
-        // }
 
         public static stringify(permissions: StructPermissions<Blank>[]) {
             return attempt(() => {
@@ -389,13 +312,6 @@ export namespace Permissions {
 
         reset() {
             return attempt(() => {
-                // const { role } = this;
-                // const res = StructPermissions.getAll(role).find(i =>
-                //     Object.is(i.struct, this.struct)
-                // );
-                // if (!res) throw new PermissionError('Struct not found');
-
-                // this.set(res.data);
 
                 this.set({
                     permissions: {
@@ -450,21 +366,6 @@ export namespace Permissions {
             account: 'string'
         }
     });
-
-    // export const currentUniverse: SingleWritable<
-    //     typeof Universe.data.structure
-    // > = new SingleWritable(
-    //     Universe.Generator({
-    //         name: '',
-    //         description: ''
-    //     })
-    // );
-
-    // export const joinUniverse = (universe: UniverseData) => {
-    //     currentUniverse.set(universe);
-
-    //     ServerRequest.metadata.set('universe', universe.id || '');
-    // };
 
     export const removeRole = (
         account: Account.AccountData,

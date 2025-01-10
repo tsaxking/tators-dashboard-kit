@@ -35,6 +35,9 @@ importers:
       bootstrap:
         specifier: ^5.3.3
         version: 5.3.3(@popperjs/core@2.11.8)
+      check-password-strength:
+        specifier: ^2.0.10
+        version: 2.0.10
       cli-table:
         specifier: ^0.3.11
         version: 0.3.11
@@ -49,7 +52,7 @@ importers:
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
         specifier: github:tsaxking/drizzle-struct
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/6301539f19a80f3de454054a166cd44b396aadef(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -1827,6 +1830,9 @@ packages:
     resolution: {integrity: sha512-OAlb+T7V4Op9OwdkjmguYRqncdlx5JiofwOAUkmTF+jNdHwzTaTs4sRAGpzLF3oOz5xAyDGrPgeIDFQmDOTiJw==}
     engines: {node: '>= 16'}
 
+  check-password-strength@2.0.10:
+    resolution: {integrity: sha512-HRM5ICPmtnNtLnTv2QrfVkq1IxI9z3bzYpDJ1k5ixwD9HtJGHuv265R6JmHOV6r8wLhQMlULnIUVpkrC2yaiCw==}
+
   chokidar@4.0.3:
     resolution: {integrity: sha512-Qgzu8kfBvo+cA4962jnP1KkS6Dop5NS6g7R5LFYJr4b8Ub94PPQXUksCw9PvXoeXPRRddRNC5C1JQUR2SMGtnA==}
     engines: {node: '>= 14.16.0'}
@@ -2214,8 +2220,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/6301539f19a80f3de454054a166cd44b396aadef:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/6301539f19a80f3de454054a166cd44b396aadef}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -5406,6 +5412,8 @@ snapshots:
 
   check-error@2.1.1: {}
 
+  check-password-strength@2.0.10: {}
+
   chokidar@4.0.3:
     dependencies:
       readdirp: 4.0.2
@@ -5571,7 +5579,7 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/6301539f19a80f3de454054a166cd44b396aadef(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
     dependencies:
       '@eslint/compat': 1.2.4(eslint@9.17.0)
       '@types/proper-lockfile': 4.1.4
