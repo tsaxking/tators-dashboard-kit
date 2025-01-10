@@ -39,8 +39,8 @@ importers:
         specifier: ^0.3.11
         version: 0.3.11
       colors:
-        specifier: github:tsaxking/colors
-        version: https://codeload.github.com/tsaxking/colors/tar.gz/3816079f2422a5e3e5b74c09aa0f884d0aef70fb
+        specifier: git+https://github.com/tsaxking/colors.git
+        version: https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -1816,9 +1816,9 @@ packages:
     resolution: {integrity: sha512-pFGrxThWcWQ2MsAz6RtgeWe4NK2kUE1WfsrvvlctdII745EW9I0yflqhe7++M5LEc7bV2c/9/5zc8sFcpL0Drw==}
     engines: {node: '>=0.1.90'}
 
-  colors@https://codeload.github.com/tsaxking/colors/tar.gz/3816079f2422a5e3e5b74c09aa0f884d0aef70fb:
-    resolution: {tarball: https://codeload.github.com/tsaxking/colors/tar.gz/3816079f2422a5e3e5b74c09aa0f884d0aef70fb}
-    version: 0.0.0
+  colors@https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b:
+    resolution: {tarball: https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b}
+    version: 1.0.0
 
   commondir@1.0.1:
     resolution: {integrity: sha512-W9pAhw0ja1Edb5GVdIF1mjZw/ASI0AlShXM83UUGe2DVr5TdAPEA1OA8m/g8zWp9x6On7gqufY+FatDbC3MDQg==}
@@ -5116,7 +5116,9 @@ snapshots:
 
   colors@1.0.3: {}
 
-  colors@https://codeload.github.com/tsaxking/colors/tar.gz/3816079f2422a5e3e5b74c09aa0f884d0aef70fb: {}
+  colors@https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b:
+    dependencies:
+      typescript: 5.7.2
 
   commondir@1.0.1: {}
 
