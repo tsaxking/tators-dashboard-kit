@@ -51,7 +51,6 @@ export namespace Session {
 					})
 				).unwrap();
 
-
 				event.cookies.set('ssid', session.id, {
 					httpOnly: true,
 					domain: DOMAIN ?? '',

@@ -51,8 +51,8 @@ importers:
         specifier: ^0.38.3
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
-        specifier: github:tsaxking/drizzle-struct
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
+        specifier: git+https://github.com/tsaxking/drizzle-struct.git
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/47496f12d5e735c99922e4d0415971b4614df399(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -2220,8 +2220,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/47496f12d5e735c99922e4d0415971b4614df399:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/47496f12d5e735c99922e4d0415971b4614df399}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -3720,10 +3720,6 @@ packages:
 
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
-
-  utils-merge@1.0.1:
-    resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
-    engines: {node: '>= 0.4.0'}
 
   uuid@11.0.4:
     resolution: {integrity: sha512-IzL6VtTTYcAhA/oghbFJ1Dkmqev+FpQWnCBaKq/gUluLxliWvO8DPFWfIviRmYbtaavtSQe4WBL++rFjdcGWEg==}
@@ -5581,7 +5577,7 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/4dccd6dac2bbb912e2dc833ce85805b1d6d4e920(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/47496f12d5e735c99922e4d0415971b4614df399(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
     dependencies:
       '@eslint/compat': 1.2.4(eslint@9.17.0)
       '@types/proper-lockfile': 4.1.4
@@ -5603,7 +5599,7 @@ snapshots:
       ts-node: 10.9.2(@types/node@22.10.4)(typescript@5.7.2)
       ts-utils: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb
       typescript: 5.7.2
-      uuid: 11.0.4
+      uuid: 11.0.5
       zod: 3.24.1
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
@@ -7214,8 +7210,6 @@ snapshots:
       is-generator-function: 1.1.0
       is-typed-array: 1.1.15
       which-typed-array: 1.1.18
-
-  utils-merge@1.0.1: {}
 
   uuid@11.0.4: {}
 
