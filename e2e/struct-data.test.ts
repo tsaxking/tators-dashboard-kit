@@ -18,7 +18,7 @@ test('Front end data management', async ({ page }) => {
 		const id = await test.getAttribute('id');
 		const value = await test.getAttribute('data-value');
 		const message = await test.getAttribute('data-message');
-		
+
 		console.log(`Test: ${id} (${value}) - ${message || 'No messsage'}`);
 
 		expect(id).toBeTruthy();

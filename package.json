@@ -71,16 +71,16 @@
 		"@types/proper-lockfile": "^4.1.4",
 		"bootstrap": "^5.3.3",
 		"cli-table": "^0.3.11",
-		"colors": "github:tsaxking/colors",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.38.3",
-		"drizzle-struct": "git+https://github.com/tsaxking/drizzle-struct.git",
 		"drizzle-zod": "^0.6.1",
 		"fuzzy-search": "^3.2.1",
 		"math": "github:tsaxking/calculations",
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
-		"zod": "^3.24.1"
+		"zod": "^3.24.1",
+		"drizzle-struct": "git+https://github.com/tsaxking/drizzle-struct.git",
+		"colors": "git+https://github.com/tsaxking/colors.git"
 	}
 }

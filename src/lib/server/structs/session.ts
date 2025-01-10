@@ -79,7 +79,6 @@ export namespace Session {
 		});
 	};
 
-
 	export const getAccount = (session: SessionData) => {
 		return attemptAsync(async () => {
 			const s = (await Account.Account.fromId(session.data.accountId)).unwrap();
