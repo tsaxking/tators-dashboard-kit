@@ -81,8 +81,12 @@ export const actions = {
 
         // Check if user exists
         {
-            const byEmail = await Account.Account.fromProperty('email', email.data, false);
-            const byUser = await Account.Account.fromProperty('username', username.data, false);
+            const byEmail = await Account.Account.fromProperty('email', email.data, {
+                type: 'single',
+            });
+            const byUser = await Account.Account.fromProperty('username', username.data, {
+                type: 'single',
+            });
 
             if (byEmail.isErr()) return fail(ServerCode.internalServerError, {
                 message: 'Failed to check if email exists',
@@ -94,11 +98,11 @@ export const actions = {
                 error: 'Failed to check if username exists',
             });
 
-            if (byEmail.value.length) return fail(ServerCode.badRequest, {
+            if (byEmail.value) return fail(ServerCode.badRequest, {
                 message: 'Account with that email already exists',
             });
 
-            if (byUser.value.length) return fail(ServerCode.badRequest, {
+            if (byUser.value) return fail(ServerCode.badRequest, {
                 message: 'Account with that username already exists',
             });
         }

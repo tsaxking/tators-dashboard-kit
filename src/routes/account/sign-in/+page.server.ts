@@ -24,24 +24,28 @@ export const actions = {
         let account: Account.AccountData;
 
         ACCOUNT: {
-            const user = await Account.Account.fromProperty('username', res.data.username, false);
+            const user = await Account.Account.fromProperty('username', res.data.username, {
+                type: 'single',
+            });
             if (user.isErr()) {
                 return fail(ServerCode.internalServerError, {
                     user: res.data.username,
                     message: 'Failed to get user',
                 });
             }
-            [account] = user.value;
+            account = user.value;
             if (account) break ACCOUNT;
 
-            const email = await Account.Account.fromProperty('email', res.data.username, false);
+            const email = await Account.Account.fromProperty('email', res.data.username, {
+                type: 'single',
+            });
             if (email.isErr()) {
                 return fail(ServerCode.internalServerError, {
                     user: res.data.username,
                     message: 'Failed to get user',
                 });
             }
-            [account] = email.value;
+            account = email.value;
             if (account) break ACCOUNT;
 
             return fail(ServerCode.notFound, {

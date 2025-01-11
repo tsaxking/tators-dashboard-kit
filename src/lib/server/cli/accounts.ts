@@ -32,7 +32,9 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 		).unwrap();
 	}),
 	new Action('Verify', 'Verify an account', '🔐', async () => {
-		const accounts = (await Account.Account.fromProperty('verified', false, false)).unwrap();
+		const accounts = (await Account.Account.fromProperty('verified', false, {
+			type: 'stream',
+		}).await()).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
 		if (typeof a === 'undefined') return console.log('Cancelled');
 		const account = accounts[a];
@@ -51,7 +53,9 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 		return console.log(`Account ${account.data.username} is now verified`);
 	}),
 	new Action('Unverify', 'Unverify an account', '🔓', async () => {
-		const accounts = (await Account.Account.fromProperty('verified', true, false)).unwrap();
+		const accounts = (await Account.Account.fromProperty('verified', true, {
+			type: 'stream',
+		}).await()).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
 		if (typeof a === 'undefined') return console.log('Cancelled');
 		const account = accounts[a];
@@ -69,7 +73,9 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 		return console.log(`Account ${account.data.username} is now unverified`);
 	}),
 	new Action('Make Admin', 'Make an account an admin', '👑', async () => {
-		const accounts = (await Account.Account.all(false)).unwrap();
+		const accounts = (await Account.Account.all({
+			type: 'stream',
+		}).await()).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
 		if (typeof a === 'undefined') return console.log('Cancelled');
 		const account = accounts[a];
@@ -80,7 +86,9 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 
 		if (!confirmed) return console.log('Cancelled');
 
-		const isAdmin = (await Account.Admins.fromProperty('accountId', account.id, false)).unwrap()
+		const isAdmin = (await Account.Admins.fromProperty('accountId', account.id, {
+			type: 'stream',
+		}).await()).unwrap()
 			.length;
 		if (isAdmin) return console.log('Account is already an admin');
 
@@ -93,7 +101,9 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 		return console.log(`Account ${account.data.username} is now an admin`);
 	}),
 	new Action('Remove Admin', 'Remove an account as an admin', '🚫', async () => {
-		const admins = (await Account.Admins.all(false)).unwrap();
+		const admins = (await Account.Admins.all({
+			type: 'stream',
+		}).await()).unwrap();
 		const a = (await selectData(admins as any)).unwrap();
 		if (typeof a === 'undefined') return console.log('Cancelled');
 		const admin = admins[a];

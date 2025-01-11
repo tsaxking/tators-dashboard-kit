@@ -1,5 +1,6 @@
 import { sse } from "$lib/utils/sse";
 import { Struct, StructData } from "drizzle-struct/front-end";
+import { attemptAsync } from "ts-utils/check";
 
 export namespace Universes {
     export const Universe = new Struct({
@@ -25,4 +26,13 @@ export namespace Universes {
     });
 
     export type UniverseInviteData = StructData<typeof UniverseInvite.data.structure>;
+
+
+    export const acceptInvite = async (invite: UniverseInviteData) => {
+        return attemptAsync(async () => {});
+    };
+
+    export const declineInvite = async (invite: UniverseInviteData) => {
+        return attemptAsync(async () => {});
+    };
 }

@@ -3,6 +3,7 @@ import { Struct } from 'drizzle-struct/back-end';
 import './structs/account';
 import './structs/session';
 import './structs/permissions';
+import './structs/universe';
 import { DB } from './db';
 import { handleEvent, connectionEmitter } from './event-handler';
 

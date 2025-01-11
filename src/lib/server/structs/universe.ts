@@ -1,7 +1,9 @@
 import { boolean, text } from "drizzle-orm/pg-core";
 import { Struct } from "drizzle-struct/back-end";
 import { attemptAsync, resolveAll } from "ts-utils/check";
-import type { Account } from "./account";
+import { Account } from "./account";
+import { DB } from "../db";
+import { eq, sql } from "drizzle-orm";
 
 export namespace Universes {
     export const Universe = new Struct({
@@ -19,7 +21,9 @@ export namespace Universes {
                 d.removeUniverses(u.id);
             });
 
-            UniverseInvites.fromProperty('universe', u.id, true).pipe(i => i.delete());
+            UniverseInvites.fromProperty('universe', u.id, {
+                type: 'stream',
+            }).pipe(i => i.delete());
         });
     });
 
@@ -57,6 +61,42 @@ export namespace Universes {
                 })
             ).unwrap();
         });
+    }
+
+    export const getInvites = async (account: Account.AccountData, config: {
+        type: 'array';
+        limit: number;
+        offset: number;
+    }) => {
+        return attemptAsync(async () => {
+            const res = await DB.select()
+                .from(UniverseInvites.table)
+                .innerJoin(Universe.table, eq(UniverseInvites.table.universe, Universe.table.id))
+                .limit(config.limit)
+                .offset(config.offset)
+                .where(sql`${UniverseInvites.table.account} = ${account.id}`);
+
+            return res.map(r => ({
+                invite: UniverseInvites.Generator(r.universe_invite),
+                universe: Universe.Generator(r.universe),
+            }));
+        });
+    }
+
+    export const acceptInvite = async (invite: UniverseInviteData) => {
+        return attemptAsync(async () => {
+            const { account, universe } = invite.data;
+
+            const a = await (await Account.Account.fromId(account)).unwrap();
+            if (!a) return;
+            (await a.addUniverses(universe)).unwrap();
+
+            (await invite.delete()).unwrap();
+        });
+    }
+
+    export const declineInvite = async (invite: UniverseInviteData) => {
+        return invite.delete();
     }
 }
 
