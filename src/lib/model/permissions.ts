@@ -333,19 +333,8 @@ export namespace Permissions {
         }
     }
 
-    export const Universe = new Struct({
-        name: 'Universe',
-        socket: sse,
-        structure: {
-            name: 'string',
-            description: 'string'
-        }
-    });
-
-    export type UniverseData = StructData<typeof Universe.data.structure>;
-
     export const Role = new Struct({
-        name: 'Role',
+        name: 'role',
         socket: sse,
         structure: {
             name: 'string',
@@ -359,7 +348,7 @@ export namespace Permissions {
     export type RoleData = StructData<typeof Role.data.structure>;
 
     export const RoleAccount = new Struct({
-        name: 'RoleAccount',
+        name: 'role_account',
         socket: sse,
         structure: {
             role: 'string',

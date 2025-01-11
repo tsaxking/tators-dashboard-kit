@@ -12,6 +12,7 @@ import { decode, encode } from 'ts-utils/text';
 import type { Account } from './account';
 import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
+import { Universes } from './universe';
 
 export namespace Permissions {
 	export class DataPermission {
@@ -50,23 +51,7 @@ export namespace Permissions {
 		// }
 	}
 
-	export const Universe = new Struct({
-		name: 'universe',
-		structure: {
-			name: text('name').notNull(),
-			description: text('description').notNull()
-		}
-	});
 
-	Universe.on('delete', (u) => {
-		Struct.each((s) => {
-			s.each((d) => {
-				d.removeUniverses(u.id);
-			});
-		});
-	});
-
-	export type UniverseData = typeof Universe.sample;
 
 	export const Role = new Struct({
 		name: 'role',
@@ -90,7 +75,7 @@ export namespace Permissions {
 
 	export type RoleAccountData = typeof RoleAccount.sample;
 
-	export const getRolesFromUniverse = async (universe: UniverseData) => {
+	export const getRolesFromUniverse = async (universe: Universes.UniverseData) => {
 		return Role.fromProperty('universe', universe.id, false);
 	};
 
@@ -333,6 +318,5 @@ export namespace Permissions {
 }
 
 // for drizzle
-export const _universeTable = Permissions.Universe.table;
 export const _roleTable = Permissions.Role.table;
 export const _roleAccountTable = Permissions.RoleAccount.table;

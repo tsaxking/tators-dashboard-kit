@@ -117,7 +117,7 @@ class SSE {
 
 			const stream = new ReadableStream({
 				async start(controller) {
-					const tabId = event.cookies.get('tab-session');
+					const tabId = event.cookies.get('ssid');
 					if (!tabId) return;
 					connection = me.addConnection(controller, tabId, session);
 					me.emit('connect', connection);
@@ -178,7 +178,7 @@ class SSE {
 			get: (key: string) => string | undefined;
 		}
 	}) {
-		const tabId = event.cookies.get('tab-session');
+		const tabId = event.cookies.get('ssid');
 		if (!tabId) return undefined;
 		return this.connections.get(tabId);
 	}

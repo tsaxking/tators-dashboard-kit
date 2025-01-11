@@ -50,30 +50,19 @@ export const actions = {
             });
         }
 
-        const session = await Session.getSession(event);
-        if (session.isErr()) {
-            return fail(ServerCode.internalServerError, {
-                user: res.data.username,
-                message: 'Failed to get session',
-            });
-        }
-
-        const sessionRes = await session.value.update({
-            accountId: account.id,
-        });
-
+        const sessionRes = await Session.signIn(account, event);
         if (sessionRes.isErr()) {
             console.error(sessionRes.error);
             return fail(ServerCode.internalServerError, {
                 user: res.data.username,
-                message: 'Failed to update session',
+                message: 'Failed to sign in',
             });
         }
 
         return {
             message: 'Logged in',
             user: res.data.username,
-            redirect: session.value.data.prevUrl || '/',
+            redirect: sessionRes.value.session.data.prevUrl || '/',
             success: true,
         }
     },

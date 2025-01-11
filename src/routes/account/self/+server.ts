@@ -1,7 +1,7 @@
 import { Session } from '$lib/server/structs/session.js';
 
 
-export const POST = async (event) => {
+export const GET = async (event) => {
     const session = await Session.getSession(event);
     if (session.isErr()) return new Response('Unable to read session', { status: 500 });
     const account = await Session.getAccount(session.value);
