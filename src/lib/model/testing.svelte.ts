@@ -10,7 +10,7 @@ export namespace Test {
 			age: 'number'
 		},
 		socket: sse,
-		log: true
+		// log: true
 	});
 
 	export type TestData = StructData<typeof Test.data.structure>;

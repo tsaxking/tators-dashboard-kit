@@ -28,11 +28,11 @@ export class Connection {
 
 	constructor(
 		private readonly controller: Stream,
-		public readonly tabId: string,
-		session: Session.SessionData,
+		public readonly ssid: string,
+		session: Session.SessionData | undefined,
 		public readonly sse: SSE,
 	) {
-		this.sessionId = session.id;
+		this.sessionId = ssid;
 
 		// this.interval = setInterval(() => {
 		// 	this.send('ping', null).unwrap();
@@ -66,7 +66,7 @@ export class Connection {
 			this.send('close', null);
 			this.emit('close');
 			this.controller.close();
-			this.sse.connections.delete(this.tabId);
+			this.sse.connections.delete(this.ssid);
 		});
 	}
 
@@ -117,9 +117,9 @@ class SSE {
 
 			const stream = new ReadableStream({
 				async start(controller) {
-					const tabId = event.cookies.get('ssid');
-					if (!tabId) return;
-					connection = me.addConnection(controller, tabId, session);
+					const ssid = event.cookies.get('ssid');
+					if (!ssid) return;
+					connection = me.addConnection(controller, ssid, session);
 					me.emit('connect', connection);
 				},
 				cancel() {
@@ -136,8 +136,9 @@ class SSE {
 
 			return new Response(stream, {
 				headers: {
-					'cache-control': 'no-store',
-					'content-type': 'text/event-stream'
+					'Cache-Control': 'no-store',
+					'Content-Type': 'text/event-stream',
+					'Connection': 'keep-alive',
 				}
 			});
 		});
@@ -162,14 +163,14 @@ class SSE {
 		return [...this.connections.values()].find((connection) => connection.sessionId === sessionId);
 	}
 
-	addConnection(controller: Stream, tabId: string, session: Session.SessionData) {
-		if (this.connections.has(tabId)) {
-			console.log('Closing connection for tab', tabId);
-			this.connections.get(tabId)?.close();
+	addConnection(controller: Stream, ssid: string, session?: Session.SessionData) {
+		if (this.connections.has(ssid)) {
+			console.log('Closing connection for tab', ssid);
+			this.connections.get(ssid)?.close();
 		}
 
-		const connection = new Connection(controller, tabId, session, this);
-		this.connections.set(tabId, connection);
+		const connection = new Connection(controller, ssid, session, this);
+		this.connections.set(ssid, connection);
 		return connection;
 	}
 

@@ -76,12 +76,16 @@ export namespace Permissions {
 	export type RoleAccountData = typeof RoleAccount.sample;
 
 	export const getRolesFromUniverse = async (universe: Universes.UniverseData) => {
-		return Role.fromProperty('universe', universe.id, false);
+		return Role.fromProperty('universe', universe.id, {
+			type: 'stream',
+		}).await();
 	};
 
 	export const getRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
-			const roleAccounts = (await RoleAccount.fromProperty('account', account.id, false)).unwrap();
+			const roleAccounts = (await RoleAccount.fromProperty('account', account.id, {
+				type: 'stream',
+			}).await()).unwrap();
 			return resolveAll(
 				await Promise.all(roleAccounts.map(async (ra) => Role.fromId(ra.data.role)))
 			)

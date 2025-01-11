@@ -3,9 +3,10 @@
     // import RoleEditor from './RoleEditor.svelte';
 // import Modal from '../bootstrap/Modal.svelte';
     import { prompt } from '$lib/utils/prompts';
+	import type { Universes } from '$lib/model/universe';
 
     interface Props {
-        universe: Permissions.UniverseData;
+        universe: Universes.UniverseData;
     }
 
     const { universe }: Props = $props();

@@ -16,7 +16,7 @@ class SSE {
 	init(browser: boolean) {
 		if (browser) {
 			const connect = () => {
-				const source = new EventSource(`/sse`,);
+				const source = new EventSource(`/sse`);
 
 				source.addEventListener('error', (e) => console.error('Error:', e));
 
@@ -31,7 +31,6 @@ class SSE {
 				const onMessage = (event: MessageEvent) => {
 					try {
 						const e = JSON.parse(decode(event.data));
-						// console.log(e);
 						// if (e.id < id) return;
 						id = e.id;
 						if (!Object.hasOwn(e, 'event')) {
@@ -97,7 +96,7 @@ class SSE {
 					disconnect = connect();
 				}
 			}, 10000);
-			connect();
+			// connect();
 		}
 	}
 

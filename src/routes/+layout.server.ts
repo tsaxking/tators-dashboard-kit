@@ -1,8 +1,23 @@
-import '$lib/server/index';
 import { Session } from '$lib/server/structs/session.js';
 import { config } from 'dotenv';
-import { uuid } from '$lib/server/utils/uuid.js';
+import { Struct } from 'drizzle-struct/back-end';
+import '$lib/server/structs/account';
+import '$lib/server/structs/permissions';
+import '$lib/server/structs/universe';
+import { DB } from '$lib/server/db/';
+import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
+
+
 config();
+
+Struct.each((struct) => {
+	if (!struct.built) {
+		struct.build(DB);
+		struct.eventHandler(handleEvent(struct));
+		connectionEmitter(struct);
+	}
+});
+
 
 
 export const load = async (event) => {
@@ -13,12 +28,4 @@ export const load = async (event) => {
             error: 'Failed to get session',
         };
     }
-
-    // event.cookies.set('test', uuid(), {
-    //     httpOnly: true,
-    //     domain: process.env.DOMAIN ?? '',
-    //     // sameSite: 'none',
-    //     path: '/',
-    //     // expires: new Date(Date.now() + parseInt(process.env.SESSION_DURATION ?? '0'))
-    // });
 };
