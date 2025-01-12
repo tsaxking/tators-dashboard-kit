@@ -1,4 +1,4 @@
-import { text } from 'drizzle-orm/pg-core';
+import { text, json } from 'drizzle-orm/pg-core';
 import {
 	DataError,
 	Struct,
@@ -8,34 +8,29 @@ import {
 	type Structable
 } from 'drizzle-struct/back-end';
 import { attempt, attemptAsync, resolveAll, type Result } from 'ts-utils/check';
-import { decode, encode } from 'ts-utils/text';
 import type { Account } from './account';
 import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
+import { Universes } from './universe';
 
 export namespace Permissions {
+	type DP = {
+		permission: PropertyAction | DataAction;
+		struct: string;
+		property?: string;
+	};
+
 	export class DataPermission {
 		static stringify(permissions: DataPermission[]): Result<string> {
 			return attempt(() => {
-				let result = '';
-				for (const p of permissions) {
-					result += [p.permission, p.struct, p.property || ''].map(encode).join(',') + ';';
-				}
-
-				return result;
+				return JSON.stringify(permissions);
 			});
 		}
 
 		static parse(permissions: string): Result<DataPermission[]> {
 			return attempt(() => {
-				const result: DataPermission[] = [];
-				const parts = permissions.split(';');
-				for (const part of parts) {
-					const [permission, struct, property] = part.split(',').map(decode);
-					result.push(new DataPermission(permission as PropertyAction, struct, property));
-				}
-
-				return result;
+				const result = JSON.parse(permissions) as DP[];
+				return result.map((p) => new DataPermission(p.permission, p.struct, p.property));
 			});
 		}
 
@@ -44,29 +39,7 @@ export namespace Permissions {
 			public readonly struct: string,
 			public readonly property?: string // If property is undefined, it means the permission is for the whole struct
 		) {}
-
-		// toString() {
-		//     return `${this.permission}: ${this.struct}.${this.property}`;
-		// }
 	}
-
-	export const Universe = new Struct({
-		name: 'universe',
-		structure: {
-			name: text('name').notNull(),
-			description: text('description').notNull()
-		}
-	});
-
-	Universe.on('delete', (u) => {
-		Struct.each((s) => {
-			s.each((d) => {
-				d.removeUniverses(u.id);
-			});
-		});
-	});
-
-	export type UniverseData = typeof Universe.sample;
 
 	export const Role = new Struct({
 		name: 'role',
@@ -75,6 +48,7 @@ export namespace Permissions {
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
 			permissions: text('permissions').notNull()
+			// permissions: json('permissions').notNull().$type<DataPermission[]>(),
 		}
 	});
 
@@ -90,13 +64,19 @@ export namespace Permissions {
 
 	export type RoleAccountData = typeof RoleAccount.sample;
 
-	export const getRolesFromUniverse = async (universe: UniverseData) => {
-		return Role.fromProperty('universe', universe.id, false);
+	export const getRolesFromUniverse = async (universe: Universes.UniverseData) => {
+		return Role.fromProperty('universe', universe.id, {
+			type: 'stream'
+		}).await();
 	};
 
 	export const getRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
-			const roleAccounts = (await RoleAccount.fromProperty('account', account.id, false)).unwrap();
+			const roleAccounts = (
+				await RoleAccount.fromProperty('account', account.id, {
+					type: 'stream'
+				}).await()
+			).unwrap();
 			return resolveAll(
 				await Promise.all(roleAccounts.map(async (ra) => Role.fromId(ra.data.role)))
 			)
@@ -333,6 +313,5 @@ export namespace Permissions {
 }
 
 // for drizzle
-export const _universeTable = Permissions.Universe.table;
 export const _roleTable = Permissions.Role.table;
 export const _roleAccountTable = Permissions.RoleAccount.table;

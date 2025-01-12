@@ -1,8 +1,9 @@
 import { attempt, attemptAsync } from 'ts-utils/check';
-import type { RequestEvent } from '../../../routes/sse/[tabId]/$types';
+import type { RequestEvent } from '../../../routes/sse/$types';
 import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
 import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
+import type { Notification } from '$lib/types/notification';
 
 type Stream = ReadableStreamDefaultController<string>;
 
@@ -28,11 +29,11 @@ export class Connection {
 
 	constructor(
 		private readonly controller: Stream,
-		public readonly tabId: string,
-		session: Session.SessionData,
-		public readonly sse: SSE,
+		public readonly ssid: string,
+		session: Session.SessionData | undefined,
+		public readonly sse: SSE
 	) {
-		this.sessionId = session.id;
+		this.sessionId = ssid;
 
 		// this.interval = setInterval(() => {
 		// 	this.send('ping', null).unwrap();
@@ -66,7 +67,7 @@ export class Connection {
 			this.send('close', null);
 			this.emit('close');
 			this.controller.close();
-			this.sse.connections.delete(this.tabId);
+			this.sse.connections.delete(this.ssid);
 		});
 	}
 
@@ -78,12 +79,7 @@ export class Connection {
 		this.cache = this.cache.filter((e) => e.id > id);
 	}
 
-	notify(notif: {
-		title: string;
-		message: string;
-		icon?: string;
-		severity: 'info' | 'warning' | 'danger' | 'success';
-	}) {
+	notify(notif: Notification) {
 		return this.send('notification', notif);
 	}
 }
@@ -115,16 +111,11 @@ class SSE {
 			const session = (await Session.getSession(event)).unwrap();
 			let connection: Connection;
 
-			// TODO: We need the ability with multiple tabs to have multiple connections
-			if (this.fromSession(session.id)) {
-				return new Response('Already Connected', {
-					status: 409
-				});
-			}
-
 			const stream = new ReadableStream({
 				async start(controller) {
-					connection = me.addConnection(controller, event.params.tabId, session);
+					const ssid = event.cookies.get('ssid');
+					if (!ssid) return;
+					connection = me.addConnection(controller, ssid, session);
 					me.emit('connect', connection);
 				},
 				cancel() {
@@ -141,8 +132,9 @@ class SSE {
 
 			return new Response(stream, {
 				headers: {
-					'cache-control': 'no-store',
-					'content-type': 'text/event-stream'
+					'Cache-Control': 'no-store',
+					'Content-Type': 'text/event-stream',
+					Connection: 'keep-alive'
 				}
 			});
 		});
@@ -167,20 +159,23 @@ class SSE {
 		return [...this.connections.values()].find((connection) => connection.sessionId === sessionId);
 	}
 
-	addConnection(controller: Stream, tabId: string, session: Session.SessionData) {
-		if (this.connections.has(tabId)) {
-			this.connections.get(tabId)?.close();
+	addConnection(controller: Stream, ssid: string, session?: Session.SessionData) {
+		if (this.connections.has(ssid)) {
+			console.log('Closing connection for tab', ssid);
+			this.connections.get(ssid)?.close();
 		}
 
-		const connection = new Connection(controller, tabId, session, this);
-		this.connections.set(tabId, connection);
+		const connection = new Connection(controller, ssid, session, this);
+		this.connections.set(ssid, connection);
 		return connection;
 	}
 
 	getConnection(event: {
-		request: Request;
+		cookies: {
+			get: (key: string) => string | undefined;
+		};
 	}) {
-		const tabId = event.request.headers.get('X-Tab-Id');
+		const tabId = event.cookies.get('ssid');
 		if (!tabId) return undefined;
 		return this.connections.get(tabId);
 	}

@@ -16,7 +16,7 @@ class SSE {
 	init(browser: boolean) {
 		if (browser) {
 			const connect = () => {
-				const source = new EventSource(`/sse/${Requests.tabId}`,);
+				const source = new EventSource(`/sse`);
 
 				source.addEventListener('error', (e) => console.error('Error:', e));
 
@@ -31,7 +31,7 @@ class SSE {
 				const onMessage = (event: MessageEvent) => {
 					try {
 						const e = JSON.parse(decode(event.data));
-						// console.log(e);
+						console.log(e);
 						// if (e.id < id) return;
 						id = e.id;
 						if (!Object.hasOwn(e, 'event')) {
@@ -47,16 +47,19 @@ class SSE {
 						}
 
 						if (e.event === 'notification') {
-							const parsed = z.object({
-								title: z.string(),
-								message: z.string(),
-								severity: z.enum(['info', 'warning', 'danger', 'success']),
-							}).safeParse(e.data);
-							if (parsed.success) notify({
-								type: 'alert',
-								...parsed.data,
-								color: parsed.data.severity,
-							});
+							const parsed = z
+								.object({
+									title: z.string(),
+									message: z.string(),
+									severity: z.enum(['info', 'warning', 'danger', 'success'])
+								})
+								.safeParse(e.data);
+							if (parsed.success)
+								notify({
+									type: 'alert',
+									...parsed.data,
+									color: parsed.data.severity
+								});
 							return;
 						}
 
@@ -88,16 +91,16 @@ class SSE {
 				};
 			};
 
-			// let disconnect = connect();
+			let disconnect = connect();
 
-			// // ping the server every 10 seconds, if the server does not respond, reconnect
-			// setInterval(async () => {
-			// 	if (!(await this.ping())) {
-			// 		disconnect();
-			// 		disconnect = connect();
-			// 	}
-			// }, 10000);
-			connect();
+			// ping the server every 10 seconds, if the server does not respond, reconnect
+			setInterval(async () => {
+				if (!(await this.ping())) {
+					disconnect();
+					disconnect = connect();
+				}
+			}, 10000);
+			// connect();
 		}
 	}
 

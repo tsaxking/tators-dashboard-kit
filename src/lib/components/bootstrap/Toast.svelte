@@ -1,4 +1,5 @@
 <script lang="ts">
+/* eslint-disable @typescript-eslint/no-explicit-any */
 	import type { BootstrapColor } from 'colors/color';
 	import { onMount, type Snippet } from 'svelte';
 
@@ -32,15 +33,19 @@
 				time = `${Math.floor((Date.now() - start) / 1000 / 60 / 60 / 24)} days ago`;
 				break;
 		}
-		if (autoHide > 0 && Date.now() - start > autoHide) {
-			hide();
-		}
 	}, 1000 * 30);
+
+	let timeout: any | undefined;
+
+	if (autoHide > 0) {
+		timeout = setTimeout(() => hide(), autoHide);
+	}
 
 	onMount(() => destroy);
 
 	export const destroy = () => {
 		clearInterval(interval);
+		if (timeout) clearTimeout(timeout);
 	};
 
 	let doShow = $state(true);

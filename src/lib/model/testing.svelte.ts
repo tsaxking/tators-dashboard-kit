@@ -9,8 +9,8 @@ export namespace Test {
 			name: 'string',
 			age: 'number'
 		},
-		socket: sse,
-		log: true
+		socket: sse
+		// log: true
 	});
 
 	export type TestData = StructData<typeof Test.data.structure>;

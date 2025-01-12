@@ -2,6 +2,12 @@ import { expect, test } from '@playwright/test';
 
 test('Front end data management', async ({ page }) => {
 	await page.goto('/test');
+	page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
+	page.on('pageerror', (err) => console.error('PAGE ERROR:', err));
+	page.on('requestfailed', (request) => {
+		console.error('Request failed:', request.url(), request.failure());
+	});
+
 	const complete = await page.locator('#test-complete').elementHandle();
 	if (!complete) {
 		throw new Error('No test list found');
@@ -22,10 +28,6 @@ test('Front end data management', async ({ page }) => {
 		console.log(`Test: ${id} (${value}) - ${message || 'No messsage'}`);
 
 		expect(id).toBeTruthy();
-		expect(value).toBeTruthy();
-
-		console.log(`Test: ${id} (${value}) - ${message || 'No messsage'}`);
-
 		expect(value).toBe('success');
 	}
 });

@@ -12,6 +12,7 @@ import path from 'path';
 import { select, selectFromTable, repeatPrompt, confirm, prompt, multiSelect } from './utils';
 import { checkStrType, returnType } from 'drizzle-struct/utils';
 import { Permissions } from '../structs/permissions';
+import { Universes } from '../structs/universe';
 
 export const openStructs = () =>
 	attemptAsync(async () => {
@@ -167,7 +168,13 @@ otherwise dates will not work.
 		}),
 	all: async <T extends Struct>(struct: T, next?: Next) =>
 		attemptAsync(async () => {
-			const all = (await struct.all(false)).unwrap();
+			const all = (
+				await struct
+					.all({
+						type: 'stream'
+					})
+					.await()
+			).unwrap();
 			return selectDataPipe(struct, all, next);
 		}),
 	fromProperty: async <T extends Struct>(struct: T, next?: Next) =>
@@ -195,12 +202,22 @@ otherwise dates will not work.
 				})
 			).unwrap();
 
-			const data = (await struct.fromProperty(res, value, false)).unwrap();
+			const data = (
+				await struct
+					.fromProperty(res, value, {
+						type: 'stream'
+					})
+					.await()
+			).unwrap();
 			return selectDataPipe(struct, data, next);
 		}),
 	fromUniverse: async <T extends Struct>(struct: T, next?: Next) =>
 		attemptAsync(async () => {
-			const universes = (await Permissions.Universe.all(false)).unwrap();
+			const universes = (
+				await Universes.Universe.all({
+					type: 'stream'
+				}).await()
+			).unwrap();
 			const res = (
 				await select({
 					message: 'Select a universe',
@@ -215,12 +232,24 @@ otherwise dates will not work.
 				return doNext('No universe selected', undefined, next);
 			}
 
-			const data = (await struct.fromUniverse(res.id, false)).unwrap();
+			const data = (
+				await struct
+					.fromUniverse(res.id, {
+						type: 'stream'
+					})
+					.await()
+			).unwrap();
 			return selectDataPipe(struct, data, next);
 		}),
 	archived: async <T extends Struct>(struct: T, next?: Next) =>
 		attemptAsync(async () => {
-			const data = (await struct.archived(false)).unwrap();
+			const data = (
+				await struct
+					.archived({
+						type: 'stream'
+					})
+					.await()
+			).unwrap();
 			return selectDataPipe(struct, data, next);
 		}),
 	clear: async <T extends Struct>(struct: T, next?: Next) =>
@@ -419,7 +448,11 @@ export const dataActions = {
 		}),
 	addToUniverse: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
-			const universes = (await Permissions.Universe.all(false)).unwrap();
+			const universes = (
+				await Universes.Universe.all({
+					type: 'stream'
+				}).await()
+			).unwrap();
 			const res = (
 				await select({
 					clear: true,
@@ -446,7 +479,11 @@ export const dataActions = {
 		}),
 	setUniverses: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
-			const universes = (await Permissions.Universe.all(false)).unwrap();
+			const universes = (
+				await Universes.Universe.all({
+					type: 'stream'
+				}).await()
+			).unwrap();
 			const res = (
 				await multiSelect({
 					message: 'Select universes',
@@ -472,12 +509,16 @@ export const dataActions = {
 		}),
 	removeFromUniverse: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
-			const universes = (await Permissions.Universe.all(false)).unwrap();
+			const universes = (
+				await Universes.Universe.all({
+					type: 'stream'
+				}).await()
+			).unwrap();
 			const current = data
 				.getUniverses()
 				.unwrap()
 				.map((u) => universes.find((u2) => u2.id === u))
-				.filter(Boolean) as Permissions.UniverseData[];
+				.filter(Boolean) as Universes.UniverseData[];
 
 			const res = (
 				await select({
