@@ -3,15 +3,15 @@ import { fail } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
 
 export const load = async (event) => {
-    const { universeId } = event.params;
+	const { universeId } = event.params;
 
-    const universe = await Universes.Universe.fromId(universeId);
-    if (universe.isErr()) {
-        console.error(universe.error);
-        throw fail(ServerCode.internalServerError);
-    }
+	const universe = await Universes.Universe.fromId(universeId);
+	if (universe.isErr()) {
+		console.error(universe.error);
+		throw fail(ServerCode.internalServerError);
+	}
 
-    return {
-        universe: universe.value?.safe(),
-    }
+	return {
+		universe: universe.value?.safe()
+	};
 };

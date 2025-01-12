@@ -7,7 +7,6 @@ import '$lib/server/structs/universe';
 import { DB } from '$lib/server/db/';
 import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
 
-
 config();
 
 Struct.each((struct) => {
@@ -18,14 +17,12 @@ Struct.each((struct) => {
 	}
 });
 
-
-
 export const load = async (event) => {
-    const session = await Session.getSession(event);
-    if (session.isErr()) {
-        return {
-            status: 500,
-            error: 'Failed to get session',
-        };
-    }
+	const session = await Session.getSession(event);
+	if (session.isErr()) {
+		return {
+			status: 500,
+			error: 'Failed to get session'
+		};
+	}
 };

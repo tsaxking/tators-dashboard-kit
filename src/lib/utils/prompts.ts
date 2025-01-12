@@ -366,7 +366,14 @@ export const colorPicker = async (message: string, config?: ColorPickerConfig) =
 const notificationContainer = (() => {
 	if (browser) {
 		const container = document.createElement('div');
-		container.classList.add('notification-container', 'position-fixed', 'top-0', 'd-flex', 'w-100', 'justify-content-end');
+		container.classList.add(
+			'notification-container',
+			'position-fixed',
+			'top-0',
+			'd-flex',
+			'w-100',
+			'justify-content-end'
+		);
 		document.body.appendChild(container);
 		return container;
 	}

@@ -7,7 +7,7 @@ test('Front end data management', async ({ page }) => {
 	page.on('requestfailed', (request) => {
 		console.error('Request failed:', request.url(), request.failure());
 	});
-	
+
 	const complete = await page.locator('#test-complete').elementHandle();
 	if (!complete) {
 		throw new Error('No test list found');

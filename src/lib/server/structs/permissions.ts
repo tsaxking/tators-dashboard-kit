@@ -18,7 +18,7 @@ export namespace Permissions {
 		permission: PropertyAction | DataAction;
 		struct: string;
 		property?: string;
-	}
+	};
 
 	export class DataPermission {
 		static stringify(permissions: DataPermission[]): Result<string> {
@@ -30,7 +30,7 @@ export namespace Permissions {
 		static parse(permissions: string): Result<DataPermission[]> {
 			return attempt(() => {
 				const result = JSON.parse(permissions) as DP[];
-				return result.map(p => new DataPermission(p.permission, p.struct, p.property));
+				return result.map((p) => new DataPermission(p.permission, p.struct, p.property));
 			});
 		}
 
@@ -40,8 +40,6 @@ export namespace Permissions {
 			public readonly property?: string // If property is undefined, it means the permission is for the whole struct
 		) {}
 	}
-
-
 
 	export const Role = new Struct({
 		name: 'role',
@@ -53,7 +51,6 @@ export namespace Permissions {
 			// permissions: json('permissions').notNull().$type<DataPermission[]>(),
 		}
 	});
-
 
 	export type RoleData = typeof Role.sample;
 
@@ -69,15 +66,17 @@ export namespace Permissions {
 
 	export const getRolesFromUniverse = async (universe: Universes.UniverseData) => {
 		return Role.fromProperty('universe', universe.id, {
-			type: 'stream',
+			type: 'stream'
 		}).await();
 	};
 
 	export const getRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
-			const roleAccounts = (await RoleAccount.fromProperty('account', account.id, {
-				type: 'stream',
-			}).await()).unwrap();
+			const roleAccounts = (
+				await RoleAccount.fromProperty('account', account.id, {
+					type: 'stream'
+				}).await()
+			).unwrap();
 			return resolveAll(
 				await Promise.all(roleAccounts.map(async (ra) => Role.fromId(ra.data.role)))
 			)

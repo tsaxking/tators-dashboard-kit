@@ -39,9 +39,11 @@ export const handleEvent =
 			if (!account) return error(new StructError('Not logged in'));
 
 			roles = (await Permissions.getRoles(account)).unwrap();
-			isAdmin = !!(await Account.Admins.fromProperty('accountId', account.id, {
-				type: 'single',
-			})).unwrap();
+			isAdmin = !!(
+				await Account.Admins.fromProperty('accountId', account.id, {
+					type: 'single'
+				})
+			).unwrap();
 		}
 
 		const invalidPermissions = error(new StructError('Invalid permissions'));
@@ -142,12 +144,12 @@ export const handleEvent =
 			switch (type) {
 				case 'all':
 					streamer = struct.all({
-						type: 'stream',
+						type: 'stream'
 					});
 					break;
 				case 'archived':
 					streamer = struct.archived({
-						type: 'stream',
+						type: 'stream'
 					});
 					break;
 				case 'from-id':
@@ -173,7 +175,7 @@ export const handleEvent =
 						(event.data as any).args.key,
 						(event.data as any).args.value,
 						{
-							type: 'stream',
+							type: 'stream'
 						}
 					);
 					break;
@@ -181,7 +183,7 @@ export const handleEvent =
 					if (!Object.hasOwn((event.data as any).args, 'universe'))
 						return error(new DataError('Missing Read universe'));
 					streamer = struct.fromUniverse((event.data as any).args.universe, {
-						type: 'stream',
+						type: 'stream'
 					});
 					break;
 				default:
@@ -410,9 +412,13 @@ export const connectionEmitter = (struct: Struct) => {
 			const a = account.value;
 			if (!a) return;
 
-			if ((await Account.Admins.fromProperty('accountId', a.id,{
-				type: 'single',
-			})).unwrap()) {
+			if (
+				(
+					await Account.Admins.fromProperty('accountId', a.id, {
+						type: 'single'
+					})
+				).unwrap()
+			) {
 				connection.send(`struct:${struct.name}`, {
 					event,
 					data: data.data

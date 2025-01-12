@@ -31,7 +31,7 @@ export class Connection {
 		private readonly controller: Stream,
 		public readonly ssid: string,
 		session: Session.SessionData | undefined,
-		public readonly sse: SSE,
+		public readonly sse: SSE
 	) {
 		this.sessionId = ssid;
 
@@ -134,7 +134,7 @@ class SSE {
 				headers: {
 					'Cache-Control': 'no-store',
 					'Content-Type': 'text/event-stream',
-					'Connection': 'keep-alive',
+					Connection: 'keep-alive'
 				}
 			});
 		});
@@ -173,7 +173,7 @@ class SSE {
 	getConnection(event: {
 		cookies: {
 			get: (key: string) => string | undefined;
-		}
+		};
 	}) {
 		const tabId = event.cookies.get('ssid');
 		if (!tabId) return undefined;

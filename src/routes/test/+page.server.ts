@@ -1,9 +1,8 @@
-import { DB } from "$lib/server/db";
-import { connectionEmitter, handleEvent } from "$lib/server/event-handler";
-import { Test } from "$lib/server/structs/testing";
+import { DB } from '$lib/server/db';
+import { connectionEmitter, handleEvent } from '$lib/server/event-handler';
+import { Test } from '$lib/server/structs/testing';
 
 if (!Test.Test.built) {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	Test.Test.build(DB).then((res) => {
 		console.log(res);
 		if (res.isErr()) {

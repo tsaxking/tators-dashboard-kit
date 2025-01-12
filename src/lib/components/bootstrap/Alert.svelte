@@ -37,7 +37,7 @@
 		}
 	}, 1000 * 30);
 
-	let timeout: NodeJS.Timeout | undefined;
+	let timeout: any | undefined;
 
 	if (autoHide > 0) {
 		timeout = setTimeout(() => hide(), autoHide);
@@ -87,9 +87,7 @@
 	{@render icon?.()}
 	<div class="d-flex justify-content-between">
 		<h5 class="alert-heading">{title}</h5>
-		<small
-			style="padding-right: 32px;"
-		>{time}</small>
+		<small style="padding-right: 32px;">{time}</small>
 		<button type="button" class="btn-close px-3 py-4" aria-label="Close" onclick={hide}></button>
 	</div>
 	<hr class="my-1" />

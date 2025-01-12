@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { Universes } from "$lib/model/universe";
+	import { Universes } from '$lib/model/universe';
 
-    interface Props {
-        invite: Universes.UniverseInviteData;
-    }
-
+	interface Props {
+		invite: Universes.UniverseInviteData;
+	}
 </script>

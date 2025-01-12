@@ -32,7 +32,7 @@ export namespace Account {
 
 	Account.on('delete', async (a) => {
 		Admins.fromProperty('accountId', a.id, {
-			type: 'stream',
+			type: 'stream'
 		}).pipe((a) => a.delete());
 	});
 
@@ -53,8 +53,8 @@ export namespace Account {
 			severity: text('severity').notNull(),
 			message: text('message').notNull(),
 			icon: text('icon').notNull(),
-			link: text('link').notNull(),
-		},
+			link: text('link').notNull()
+		}
 	});
 
 	export const newHash = (password: string) => {
@@ -71,7 +71,7 @@ export namespace Account {
 		});
 	};
 
-	export const createAccount = async (data:  {
+	export const createAccount = async (data: {
 		username: string;
 		email: string;
 		firstName: string;
@@ -81,48 +81,50 @@ export namespace Account {
 		return attemptAsync(async () => {
 			const hash = newHash(data.password).unwrap();
 			const verificationId = uuid();
-			const account = (await Account.new({
-				username: data.username,
-				email: data.email,
-				firstName: data.firstName,
-				lastName: data.lastName,
-				key: hash.hash,
-				salt: hash.salt,
-				verified: false,
-				verification: verificationId,
-				picture: '/'
-			})).unwrap();
+			const account = (
+				await Account.new({
+					username: data.username,
+					email: data.email,
+					firstName: data.firstName,
+					lastName: data.lastName,
+					key: hash.hash,
+					salt: hash.salt,
+					verified: false,
+					verification: verificationId,
+					picture: '/'
+				})
+			).unwrap();
 
 			// send verification email
 
 			return account;
 		});
-	}
+	};
 
-	export const searchAccounts = async (query: string, config: {
-		type: 'array';
-		limit: number;
-		offset: number;
-	}) => {
+	export const searchAccounts = async (
+		query: string,
+		config: {
+			type: 'array';
+			limit: number;
+			offset: number;
+		}
+	) => {
 		return attemptAsync(async () => {
-			const res = await DB
-				.select()
+			const res = await DB.select()
 				.from(Account.table)
-				.where(
-					sql`${Account.table.username} LIKE ${query} OR ${Account.table.email} LIKE ${query}`
-				)
+				.where(sql`${Account.table.username} LIKE ${query} OR ${Account.table.email} LIKE ${query}`)
 				.limit(config.limit)
 				.offset(config.offset);
 
-			return res.map(a => Account.Generator(a));
+			return res.map((a) => Account.Generator(a));
 		});
 	};
 
 	export const notifyPopup = async (account: AccountData, notification: Notification) => {
 		return attemptAsync(async () => {
 			Session.Session.fromProperty('accountId', account.id, {
-				type: 'stream',
-			}).pipe(s => sse.fromSession(s.id)?.notify(notification));
+				type: 'stream'
+			}).pipe((s) => sse.fromSession(s.id)?.notify(notification));
 		});
 	};
 
@@ -130,10 +132,13 @@ export namespace Account {
 		return attemptAsync(async () => {});
 	};
 
-	export const sendAccountNotif = (account: AccountData, notif: Notification & {
-		icon: string;
-		link: string;
-	}) => {
+	export const sendAccountNotif = (
+		account: AccountData,
+		notif: Notification & {
+			icon: string;
+			link: string;
+		}
+	) => {
 		notifyPopup(account, notif);
 		return AccountNotification.new({
 			title: notif.title,
@@ -141,7 +146,7 @@ export namespace Account {
 			message: notif.message,
 			accountId: account.id,
 			icon: notif.icon,
-			link: notif.link,
+			link: notif.link
 		});
 	};
 }

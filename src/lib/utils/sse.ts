@@ -47,16 +47,19 @@ class SSE {
 						}
 
 						if (e.event === 'notification') {
-							const parsed = z.object({
-								title: z.string(),
-								message: z.string(),
-								severity: z.enum(['info', 'warning', 'danger', 'success']),
-							}).safeParse(e.data);
-							if (parsed.success) notify({
-								type: 'alert',
-								...parsed.data,
-								color: parsed.data.severity,
-							});
+							const parsed = z
+								.object({
+									title: z.string(),
+									message: z.string(),
+									severity: z.enum(['info', 'warning', 'danger', 'success'])
+								})
+								.safeParse(e.data);
+							if (parsed.success)
+								notify({
+									type: 'alert',
+									...parsed.data,
+									color: parsed.data.severity
+								});
 							return;
 						}
 

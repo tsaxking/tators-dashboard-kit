@@ -34,7 +34,7 @@
 		}
 	}, 1000 * 30);
 
-	let timeout: NodeJS.Timeout | undefined;
+	let timeout: any | undefined;
 
 	if (autoHide > 0) {
 		timeout = setTimeout(() => hide(), autoHide);

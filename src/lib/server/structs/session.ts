@@ -32,9 +32,9 @@ export namespace Session {
 			ip: text('ip').notNull(),
 			userAgent: text('user_agent').notNull(),
 			requests: integer('requests').notNull(),
-			prevUrl: text('prev_url').notNull(),
+			prevUrl: text('prev_url').notNull()
 		},
-		universeLimit: 1,
+		universeLimit: 1
 	});
 
 	export type SessionData = typeof Session.sample;
@@ -50,14 +50,14 @@ export namespace Session {
 						ip: '',
 						userAgent: '',
 						requests: 0,
-						prevUrl: '',
+						prevUrl: ''
 					})
 				).unwrap();
 
 				event.cookies.set('ssid', session.id, {
 					httpOnly: true,
 					domain: DOMAIN ?? '',
-					path: '/',
+					path: '/'
 					// expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});
 
@@ -89,11 +89,11 @@ export namespace Session {
 		return attemptAsync(async () => {
 			const session = (await getSession(event)).unwrap();
 			session.update({
-				accountId: account.id,
+				accountId: account.id
 			});
 
 			// const universes = (await Universes.getUniverses(account)).unwrap();
-		
+
 			// for (let i = 0; i < universes.length; i++) {
 			// 	event.cookies.set(`universe-${i}`, universes[i].id, {
 			// 		httpOnly: true,
@@ -104,9 +104,9 @@ export namespace Session {
 			// }
 
 			return {
-				session,
+				session
 				// universes,
-			}
+			};
 		});
 	};
 }

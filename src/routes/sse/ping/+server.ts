@@ -1,3 +1,3 @@
 export const GET = async () => {
-    return new Response('pong');
+	return new Response('pong');
 };
