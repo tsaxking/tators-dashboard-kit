@@ -31,6 +31,7 @@ class SSE {
 				const onMessage = (event: MessageEvent) => {
 					try {
 						const e = JSON.parse(decode(event.data));
+						console.log(e);
 						// if (e.id < id) return;
 						id = e.id;
 						if (!Object.hasOwn(e, 'event')) {

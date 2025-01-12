@@ -366,7 +366,7 @@ export const colorPicker = async (message: string, config?: ColorPickerConfig) =
 const notificationContainer = (() => {
 	if (browser) {
 		const container = document.createElement('div');
-		container.classList.add('notification-container');
+		container.classList.add('notification-container', 'position-fixed', 'top-0', 'd-flex', 'w-100', 'justify-content-end');
 		document.body.appendChild(container);
 		return container;
 	}
@@ -379,17 +379,22 @@ type NotificationConfig<Type extends 'toast' | 'alert'> = {
 	color: BootstrapColor;
 	type: Type;
 };
-export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfig<Type>) => {
-	// return new Promise<void>((res, rej) => {});
-	if (!notificationContainer) return;
 
+const createNotif = () => {
+	const notif = create('div');
+	notif.classList.add('notification', 'mb-3', 'animate__animated', 'animate__slideInRight');
+	if (notificationContainer) notificationContainer.append(notif);
+	return notif;
+};
+
+export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfig<Type>) => {
 	return mount(config.type === 'toast' ? Toast : Alert, {
-		target: notificationContainer,
+		target: createNotif(),
 		props: {
 			title: config.title,
 			message: config.message,
 			color: config.color,
-			autoHide: 0
+			autoHide: 3000
 		}
 	});
 };

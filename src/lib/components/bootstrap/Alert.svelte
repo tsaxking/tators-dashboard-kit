@@ -37,10 +37,17 @@
 		}
 	}, 1000 * 30);
 
+	let timeout: NodeJS.Timeout | undefined;
+
+	if (autoHide > 0) {
+		timeout = setTimeout(() => hide(), autoHide);
+	}
+
 	onMount(() => destroy);
 
 	export const destroy = () => {
 		clearInterval(interval);
+		if (timeout) clearTimeout(timeout);
 	};
 
 	let doShow = $state(true);
@@ -71,18 +78,20 @@
 </script>
 
 <div
-	class="alert alert-{color} alert-dismissible fade"
+	class="alert alert-{color} alert-dismissible fade p-3"
 	role="alert"
 	class:show={doShow}
 	aria-atomic="true"
 	aria-live="assertive"
 >
-	<button type="button" class="btn-close" aria-label="Close" onclick={hide}></button>
 	{@render icon?.()}
 	<div class="d-flex justify-content-between">
 		<h5 class="alert-heading">{title}</h5>
-		<small>{time}</small>
+		<small
+			style="padding-right: 32px;"
+		>{time}</small>
+		<button type="button" class="btn-close px-3 py-4" aria-label="Close" onclick={hide}></button>
 	</div>
-	<hr />
-	<p>{message}</p>
+	<hr class="my-1" />
+	<p class="mb-1">{message}</p>
 </div>

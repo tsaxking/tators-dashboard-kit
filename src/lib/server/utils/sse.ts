@@ -3,6 +3,7 @@ import type { RequestEvent } from '../../../routes/sse/$types';
 import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
 import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
+import type { Notification } from '$lib/types/notification';
 
 type Stream = ReadableStreamDefaultController<string>;
 
@@ -78,12 +79,7 @@ export class Connection {
 		this.cache = this.cache.filter((e) => e.id > id);
 	}
 
-	notify(notif: {
-		title: string;
-		message: string;
-		icon?: string;
-		severity: 'info' | 'warning' | 'danger' | 'success';
-	}) {
+	notify(notif: Notification) {
 		return this.send('notification', notif);
 	}
 }

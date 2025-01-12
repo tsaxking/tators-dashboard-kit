@@ -4,6 +4,7 @@ import { attemptAsync, resolveAll } from "ts-utils/check";
 import { Account } from "./account";
 import { DB } from "../db";
 import { eq, sql } from "drizzle-orm";
+import { Permissions } from "./permissions";
 
 export namespace Universes {
     export const Universe = new Struct({
@@ -51,15 +52,56 @@ export namespace Universes {
 
     export type UniverseInviteData = typeof UniverseInvites.sample;
 
+    export const createUniverse = async (config: {
+        name: string;
+        description: string;
+        public: boolean;
+    }, account: Account.AccountData) => {
+        attemptAsync(async () => {
+            const u = (await Universe.new(config)).unwrap();
+            const admin = (await Permissions.Role.new({
+                universe: u.id,
+                name: 'Admin',
+                permissions: '[*]',
+                description: `${u.data.name} Aministrator`
+            })).unwrap();
+            const member = (await Permissions.Role.new({
+                universe: u.id,
+                name: 'Member',
+                permissions: '[]',
+                description: `${u.data.name} Member`
+            })).unwrap();
+            (await account.addUniverses(u.id)).unwrap();
+            (await Permissions.RoleAccount.new({
+                role: admin.id,
+                account: account.id,
+            }));
+            (await Permissions.RoleAccount.new({
+                role: member.id,
+                account: account.id,
+            })).unwrap();
+        });
+    };
+
     export const invite = async (universe: Universes.UniverseData, account: Account.AccountData, inviter: Account.AccountData) => {
         return attemptAsync(async () => {
-            return (
+            const invite = (
                 await UniverseInvites.new({
                     universe: universe.id,
                     account: account.id,
                     inviter: inviter.id
                 })
             ).unwrap();
+
+            (await Account.sendAccountNotif(account, {
+                title: 'Universe Invite',
+                message: `You have been invited to join ${universe.data.name} by ${inviter.data.username}`,
+                severity: 'info',
+                icon: '/assets/icons/invite.svg',
+                link: `/universe/invite/${invite.id}`,
+            })).unwrap();
+
+            return invite;
         });
     }
 

@@ -1,4 +1,4 @@
-import { text } from 'drizzle-orm/pg-core';
+import { text, json } from 'drizzle-orm/pg-core';
 import {
 	DataError,
 	Struct,
@@ -8,35 +8,29 @@ import {
 	type Structable
 } from 'drizzle-struct/back-end';
 import { attempt, attemptAsync, resolveAll, type Result } from 'ts-utils/check';
-import { decode, encode } from 'ts-utils/text';
 import type { Account } from './account';
 import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
 import { Universes } from './universe';
 
 export namespace Permissions {
+	type DP = {
+		permission: PropertyAction | DataAction;
+		struct: string;
+		property?: string;
+	}
+
 	export class DataPermission {
 		static stringify(permissions: DataPermission[]): Result<string> {
 			return attempt(() => {
-				let result = '';
-				for (const p of permissions) {
-					result += [p.permission, p.struct, p.property || ''].map(encode).join(',') + ';';
-				}
-
-				return result;
+				return JSON.stringify(permissions);
 			});
 		}
 
 		static parse(permissions: string): Result<DataPermission[]> {
 			return attempt(() => {
-				const result: DataPermission[] = [];
-				const parts = permissions.split(';');
-				for (const part of parts) {
-					const [permission, struct, property] = part.split(',').map(decode);
-					result.push(new DataPermission(permission as PropertyAction, struct, property));
-				}
-
-				return result;
+				const result = JSON.parse(permissions) as DP[];
+				return result.map(p => new DataPermission(p.permission, p.struct, p.property));
 			});
 		}
 
@@ -45,10 +39,6 @@ export namespace Permissions {
 			public readonly struct: string,
 			public readonly property?: string // If property is undefined, it means the permission is for the whole struct
 		) {}
-
-		// toString() {
-		//     return `${this.permission}: ${this.struct}.${this.property}`;
-		// }
 	}
 
 
@@ -60,8 +50,10 @@ export namespace Permissions {
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
 			permissions: text('permissions').notNull()
+			// permissions: json('permissions').notNull().$type<DataPermission[]>(),
 		}
 	});
+
 
 	export type RoleData = typeof Role.sample;
 

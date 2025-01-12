@@ -6,6 +6,7 @@ import { Struct, StructData } from 'drizzle-struct/front-end';
 import { type Blank } from 'drizzle-struct/front-end';
 import { decode, encode } from 'ts-utils/text';
 import { sse } from '$lib/utils/sse';
+import type { DataAction, PropertyAction } from 'drizzle-struct/types';
 
 export namespace Permissions {
     export class PermissionError extends Error {
@@ -108,57 +109,72 @@ export namespace Permissions {
     {
 
         public static stringify(permissions: StructPermissions<Blank>[]) {
+            // return attempt(() => {
+            //     if (!permissions.length)
+            //         throw new PermissionError('No permissions found');
+            //     const roles = permissions
+            //         .map(i => i.role)
+            //         .filter((v, i, a) => a.indexOf(v) === i);
+            //     if (roles.length > 1) {
+            //         throw new PermissionError('Multiple roles detected');
+            //     }
+
+            //     let str = '';
+
+            //     for (const p of permissions) {
+            //         for (const prop of p.data.properties) {
+            //             if (!prop.data.property)
+            //                 throw new PermissionError('Property not found');
+            //             if (prop.data.read) {
+            //                 str +=
+            //                     [
+            //                         'read',
+            //                         String(p.struct.data.name),
+            //                         String(prop.data.property)
+            //                     ]
+            //                         .map(encode)
+            //                         .join(',') + ';';
+            //             }
+            //             if (prop.data.update && prop.data.read) {
+            //                 str +=
+            //                     [
+            //                         'update',
+            //                         String(p.struct.data.name),
+            //                         String(prop.data.property)
+            //                     ]
+            //                         .map(encode)
+            //                         .join(',') + ';';
+            //             }
+            //         }
+
+            //         for (const [key, value] of Object.entries(
+            //             p.data.permissions
+            //         )) {
+            //             if (value) {
+            //                 str +=
+            //                     [key, String(p.struct.data.name), '']
+            //                         .map(encode)
+            //                         .join(',') + ';';
+            //             }
+            //         }
+            //     }
+
+            //     return str;
+            // });
             return attempt(() => {
-                if (!permissions.length)
-                    throw new PermissionError('No permissions found');
-                const roles = permissions
-                    .map(i => i.role)
-                    .filter((v, i, a) => a.indexOf(v) === i);
-                if (roles.length > 1) {
-                    throw new PermissionError('Multiple roles detected');
-                }
-
-                let str = '';
-
-                for (const p of permissions) {
-                    for (const prop of p.data.properties) {
-                        if (!prop.data.property)
-                            throw new PermissionError('Property not found');
-                        if (prop.data.read) {
-                            str +=
-                                [
-                                    'read',
-                                    String(p.struct.data.name),
-                                    String(prop.data.property)
-                                ]
-                                    .map(encode)
-                                    .join(',') + ';';
-                        }
-                        if (prop.data.update && prop.data.read) {
-                            str +=
-                                [
-                                    'update',
-                                    String(p.struct.data.name),
-                                    String(prop.data.property)
-                                ]
-                                    .map(encode)
-                                    .join(',') + ';';
-                        }
-                    }
-
-                    for (const [key, value] of Object.entries(
-                        p.data.permissions
-                    )) {
-                        if (value) {
-                            str +=
-                                [key, String(p.struct.data.name), '']
-                                    .map(encode)
-                                    .join(',') + ';';
-                        }
-                    }
-                }
-
-                return str;
+                return JSON.stringify(
+                    permissions.map(i => ({
+                        struct: i.struct.data.name,
+                        properties: i.data.properties
+                            .filter(i => i.data.read || i.data.update)
+                            .map(i => ({
+                                property: i.data.property,
+                                read: i.data.read,
+                                update: i.data.update
+                            })),
+                        permissions: i.data.permissions
+                    }))
+                );
             });
         }
 
@@ -188,16 +204,11 @@ export namespace Permissions {
 
         public static getAll(role: RoleData) {
             if (role.data.permissions === undefined) return [];
-            const all: [string, string, string][] = role.data.permissions
-                .split(';')
-                .map(s => s.split(','))
-                .map(([permission, struct, property]) => {
-                    return [
-                        decode(permission || ''),
-                        decode(struct || ''),
-                        decode(property || '')
-                    ];
-                });
+            const all: {
+                permission: PropertyAction | DataAction;
+                struct: string;
+                property?: string;
+            }[] = JSON.parse(role.data.permissions);
             return Array.from(Struct.structs.values()).map(s => {
                 const p = new StructPermissions(
                     s,
@@ -217,24 +228,24 @@ export namespace Permissions {
                     }
                 );
 
-                const filtered = all.filter(i => i[1] === s.data.name);
+                const filtered = all.filter(i => i.struct === s.data.name);
 
-                for (const [perm, _, prop] of filtered) {
-                    if (prop) {
+                for (const f of filtered) {
+                    if (f.property) {
                         const property = p.data.properties.find(
-                            i => i.data.property === prop
+                            i => i.data.property === f.property
                         );
                         if (property) {
-                            if (perm === 'read') {
+                            if (f.permission === 'read') {
                                 property.data.read = true;
                             }
-                            if (perm === 'update') {
+                            if (f.permission === 'update') {
                                 property.data.update = true;
                             }
                         }
                     } else {
                         p.data.permissions[
-                            perm as keyof typeof p.data.permissions
+                            f.permission as keyof typeof p.data.permissions
                         ] = true;
                     }
                 }

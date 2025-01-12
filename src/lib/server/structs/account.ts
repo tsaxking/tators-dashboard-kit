@@ -1,8 +1,13 @@
-import { boolean, text } from 'drizzle-orm/pg-core';
+import { boolean, pgEnum, text } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
 import { uuid } from '../utils/uuid';
 import { attempt, attemptAsync } from 'ts-utils/check';
 import crypto from 'crypto';
+import { DB } from '../db';
+import { sql } from 'drizzle-orm';
+import type { Notification } from '$lib/types/notification';
+import { Session } from './session';
+import { sse } from '../utils/sse';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -39,6 +44,18 @@ export namespace Account {
 	});
 
 	export type AccountData = typeof Account.sample;
+
+	export const AccountNotification = new Struct({
+		name: 'account_notification',
+		structure: {
+			accountId: text('account_id').notNull(),
+			title: text('title').notNull(),
+			severity: text('severity').notNull(),
+			message: text('message').notNull(),
+			icon: text('icon').notNull(),
+			link: text('link').notNull(),
+		},
+	});
 
 	export const newHash = (password: string) => {
 		return attempt(() => {
@@ -81,6 +98,52 @@ export namespace Account {
 			return account;
 		});
 	}
+
+	export const searchAccounts = async (query: string, config: {
+		type: 'array';
+		limit: number;
+		offset: number;
+	}) => {
+		return attemptAsync(async () => {
+			const res = await DB
+				.select()
+				.from(Account.table)
+				.where(
+					sql`${Account.table.username} LIKE ${query} OR ${Account.table.email} LIKE ${query}`
+				)
+				.limit(config.limit)
+				.offset(config.offset);
+
+			return res.map(a => Account.Generator(a));
+		});
+	};
+
+	export const notifyPopup = async (account: AccountData, notification: Notification) => {
+		return attemptAsync(async () => {
+			Session.Session.fromProperty('accountId', account.id, {
+				type: 'stream',
+			}).pipe(s => sse.fromSession(s.id)?.notify(notification));
+		});
+	};
+
+	export const sendEmail = () => {
+		return attemptAsync(async () => {});
+	};
+
+	export const sendAccountNotif = (account: AccountData, notif: Notification & {
+		icon: string;
+		link: string;
+	}) => {
+		notifyPopup(account, notif);
+		return AccountNotification.new({
+			title: notif.title,
+			severity: notif.severity,
+			message: notif.message,
+			accountId: account.id,
+			icon: notif.icon,
+			link: notif.link,
+		});
+	};
 }
 
 // for drizzle
