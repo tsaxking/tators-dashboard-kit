@@ -1,4 +1,5 @@
 <script lang="ts">
+/* eslint-disable @typescript-eslint/no-explicit-any */
 	import type { BootstrapColor } from 'colors/color';
 	import { onMount, type Snippet } from 'svelte';
 
