@@ -35,6 +35,11 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
           token: ${{ secrets.GH_TOKEN }}
 
+      - name: 'Setup ssh-agent'
+        uses: 'webfactory/ssh-agent@v0.5.0'
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE }}
+
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
