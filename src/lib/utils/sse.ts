@@ -15,93 +15,131 @@ class SSE {
 
 	init(browser: boolean) {
 		if (browser) {
-			const connect = () => {
-				const source = new EventSource(`/sse`);
+			const d = this.connect();
 
-				source.addEventListener('error', (e) => console.error('Error:', e));
+			// the disconnect function is dynamic, so I run it dynamically rather than pulling it
+			const disconnect = () => d.disconnect();
 
-				const onConnect = () => {
-					this.emit('connect', undefined);
-				};
+			const events = [
+				'mousedown',
+				'mouseover',
+				'touch',
+				'scroll'
+			];
 
-				source.addEventListener('open', onConnect);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			let timeout: any;
 
-				let id = 0;
+			// if there's no interaction for 5 minutes, disconnect
+			const onEvent = () => {
+				if (timeout) clearTimeout(timeout);
+				setTimeout(() => {
+					disconnect();
+					this.stop = true;
+				}, 1000 * 60 * 5); // 5 minutes
+				if (this.stop) {
+					this.stop = false;
+					this.connect();
+				}
+			}
 
-				const onMessage = (event: MessageEvent) => {
-					try {
-						const e = JSON.parse(decode(event.data));
-						console.log(e);
-						// if (e.id < id) return;
-						id = e.id;
-						if (!Object.hasOwn(e, 'event')) {
-							return console.error('Invalid event:', e);
-						}
+			for (const event of events) {
+				document.addEventListener(event, onEvent);
+			}
+		}
+	}
 
-						if (!Object.hasOwn(e, 'data')) {
-							return console.error('Invalid data:', e);
-						}
+	connect() {
+		const connect = () => {
+			const source = new EventSource(`/sse`);
 
-						if (e.event === 'close') {
-							source.close();
-						}
+			source.addEventListener('error', (e) => console.error('Error:', e));
 
-						if (e.event === 'notification') {
-							const parsed = z
-								.object({
-									title: z.string(),
-									message: z.string(),
-									severity: z.enum(['info', 'warning', 'danger', 'success'])
-								})
-								.safeParse(e.data);
-							if (parsed.success)
-								notify({
-									type: 'alert',
-									...parsed.data,
-									color: parsed.data.severity
-								});
-							return;
-						}
-
-						if (!['close', 'ping'].includes(e.event)) {
-							console.log('emitting', e.event, e.data);
-							this.emit(e.event, e.data);
-						}
-
-						this.ack(e.id);
-					} catch (error) {
-						console.error(error);
-					}
-				};
-
-				source.addEventListener('message', onMessage);
-
-				const close = () => {
-					source.close();
-					source.removeEventListener('open', onConnect);
-					source.removeEventListener('message', onMessage);
-					source.removeEventListener('error', console.error);
-				};
-
-				window.addEventListener('beforeunload', close);
-
-				return () => {
-					close();
-					window.removeEventListener('beforeunload', close);
-				};
+			const onConnect = () => {
+				this.emit('connect', undefined);
 			};
 
-			let disconnect = connect();
+			source.addEventListener('open', onConnect);
 
-			// ping the server every 10 seconds, if the server does not respond, reconnect
-			setInterval(async () => {
-				if (!(await this.ping())) {
-					disconnect();
-					disconnect = connect();
+			let id = 0;
+
+			const onMessage = (event: MessageEvent) => {
+				try {
+					const e = JSON.parse(decode(event.data));
+					console.log(e);
+					// if (e.id < id) return;
+					id = e.id;
+					if (!Object.hasOwn(e, 'event')) {
+						return console.error('Invalid event:', e);
+					}
+
+					if (!Object.hasOwn(e, 'data')) {
+						return console.error('Invalid data:', e);
+					}
+
+					if (e.event === 'close') {
+						source.close();
+					}
+
+					if (e.event === 'notification') {
+						const parsed = z
+							.object({
+								title: z.string(),
+								message: z.string(),
+								severity: z.enum(['info', 'warning', 'danger', 'success'])
+							})
+							.safeParse(e.data);
+						if (parsed.success)
+							notify({
+								type: 'alert',
+								...parsed.data,
+								color: parsed.data.severity
+							});
+						return;
+					}
+
+					if (!['close', 'ping'].includes(e.event)) {
+						console.log('emitting', e.event, e.data);
+						this.emit(e.event, e.data);
+					}
+
+					this.ack(e.id);
+				} catch (error) {
+					console.error(error);
 				}
-			}, 10000);
-			// connect();
-		}
+			};
+
+			source.addEventListener('message', onMessage);
+
+			const close = () => {
+				source.close();
+				source.removeEventListener('open', onConnect);
+				source.removeEventListener('message', onMessage);
+				source.removeEventListener('error', console.error);
+			};
+
+			window.addEventListener('beforeunload', close);
+
+			return () => {
+				close();
+				window.removeEventListener('beforeunload', close);
+			};
+		};
+		
+		const toReturn = {
+			disconnect: connect(),
+		};
+
+		// ping the server every 10 seconds, if the server does not respond, reconnect
+		const interval = setInterval(async () => {
+			if (this.stop) return clearInterval(interval);
+			if (!(await this.ping())) {
+				toReturn.disconnect();
+				toReturn.disconnect = connect();
+			}
+		}, 10000);
+		// connect();
+		return toReturn;
 	}
 
 	private ack(id: number) {
@@ -111,6 +149,8 @@ class SSE {
 	private ping() {
 		return fetch('/sse/ping').then((res) => res.ok);
 	}
+
+	private stop = false;
 }
 
 export const sse = new SSE();

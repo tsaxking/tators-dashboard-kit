@@ -370,10 +370,12 @@ const notificationContainer = (() => {
 			'notification-container',
 			'position-fixed',
 			'top-0',
+			'end-0',
 			'd-flex',
-			'w-100',
-			'justify-content-end'
+			'justify-content-end',
+			'flex-column',
 		);
+		container.style.zIndex = '0';
 		document.body.appendChild(container);
 		return container;
 	}
@@ -385,23 +387,37 @@ type NotificationConfig<Type extends 'toast' | 'alert'> = {
 	message: string;
 	color: BootstrapColor;
 	type: Type;
-};
+	autoHide?: number;
+} & (Type extends 'toast' ? {
+	textColor?: BootstrapColor;
+} : never);
 
 const createNotif = () => {
-	const notif = create('div');
-	notif.classList.add('notification', 'mb-3', 'animate__animated', 'animate__slideInRight');
-	if (notificationContainer) notificationContainer.append(notif);
+	if (!browser) return;
+	const notif = document.createElement('div');
+	notif.classList.add('notification');
+	// notif.style.width = '300px';
+	// notif.style.maxWidth = '100% !important';
+	if (notificationContainer) notificationContainer.appendChild(notif);
 	return notif;
 };
 
 export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfig<Type>) => {
+	const notif = createNotif();
+	if (!notif) return;
 	return mount(config.type === 'toast' ? Toast : Alert, {
-		target: createNotif(),
+		target: notif,
 		props: {
 			title: config.title,
 			message: config.message,
+			animate: true,
 			color: config.color,
-			autoHide: 3000
+			autoHide: config.autoHide ?? 0,
+			textColor: config.textColor,
+			onHide: () => {
+				notif.remove();
+				console.log('hide');
+			}
 		}
 	});
 };

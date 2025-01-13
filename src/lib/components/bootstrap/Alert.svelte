@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 	import type { BootstrapColor } from 'colors/color';
 	import { onMount, type Snippet } from 'svelte';
+	import { sleep } from 'ts-utils/sleep';
 
 	interface Props {
 		title: string;
@@ -9,9 +10,12 @@
 		color: BootstrapColor;
 		autoHide: number; // ms
 		icon?: Snippet; // svg
+		animate: boolean;
+		onHide?: () => void;
+		onShow?: () => void;
 	}
 
-	const { title, message, color, autoHide = 5000, icon }: Props = $props();
+	const { title, message, color, autoHide = 5000, icon, animate, onHide, onShow }: Props = $props();
 
 	const start = Date.now();
 	let time = $state('Just now');
@@ -51,34 +55,37 @@
 		if (timeout) clearTimeout(timeout);
 	};
 
-	let doShow = $state(true);
+	let doShow = $state(false);
 
-	export const hide = () => {
+	export const hide = async () => {
+		if (animate) {alert.classList.add('animate__animated', 'animate__slideOutRight');
+		await sleep(1000);
 		doShow = false;
+		setTimeout(() => {
+			alert.classList.remove('animate__animated', 'animate__slideOutRight');
+		}, 1000);} else {
+			doShow = false;
+		}
+		onHide?.();
 	};
-	export const show = () => {
-		doShow = true;
+	export const show = async () => {
+		if (animate) {
+			alert.classList.add('animate__animated', 'animate__slideInRight');
+			doShow = true;
+			await sleep(2000);
+			alert.classList.remove('animate__animated', 'animate__slideInRight');
+		} else {
+			doShow = true;
+		}
+		onShow?.();
 	};
+	let alert: HTMLDivElement;
 
-	let textColor = $state('white');
-	switch (color) {
-		case 'primary':
-		case 'secondary':
-		case 'success':
-		case 'danger':
-		case 'warning':
-		case 'info':
-		case 'light':
-		case 'dark':
-			textColor = 'white';
-			break;
-		default:
-			textColor = 'dark';
-			break;
-	}
+	onMount(() => show());
 </script>
 
 <div
+	bind:this={alert}
 	class="alert alert-{color} alert-dismissible fade p-3"
 	role="alert"
 	class:show={doShow}

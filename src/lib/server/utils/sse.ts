@@ -8,6 +8,7 @@ import type { Notification } from '$lib/types/notification';
 type Stream = ReadableStreamDefaultController<string>;
 
 export class Connection {
+	private readonly controllers = new Set<Stream>();
 	public readonly sessionId: string;
 
 	private readonly emitter = new SimpleEventEmitter<'connect' | 'destroy' | 'close'>();
@@ -28,7 +29,6 @@ export class Connection {
 	private emit = this.emitter.emit.bind(this.emitter);
 
 	constructor(
-		private readonly controller: Stream,
 		public readonly ssid: string,
 		session: Session.SessionData | undefined,
 		public readonly sse: SSE
@@ -53,9 +53,9 @@ export class Connection {
 
 	send(event: string, data: unknown) {
 		return attempt(() => {
-			this.controller.enqueue(
+			this.controllers.forEach(c => c.enqueue(
 				`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`
-			);
+			));
 			this.cache.push({ event, data, id: this.index, date: Date.now() });
 			return this.index;
 		});
@@ -66,7 +66,7 @@ export class Connection {
 			// clearInterval(this.interval);
 			this.send('close', null);
 			this.emit('close');
-			this.controller.close();
+			this.controllers.forEach(c => c.close());
 			this.sse.connections.delete(this.ssid);
 		});
 	}
@@ -81,6 +81,10 @@ export class Connection {
 
 	notify(notif: Notification) {
 		return this.send('notification', notif);
+	}
+
+	addController(controller: Stream) {
+		this.controllers.add(controller);
 	}
 }
 
@@ -161,11 +165,11 @@ class SSE {
 
 	addConnection(controller: Stream, ssid: string, session?: Session.SessionData) {
 		if (this.connections.has(ssid)) {
-			console.log('Closing connection for tab', ssid);
-			this.connections.get(ssid)?.close();
+			this.connections.get(ssid)?.addController(controller);
 		}
 
-		const connection = new Connection(controller, ssid, session, this);
+		const connection = new Connection(ssid, session, this);
+		connection.addController(controller);
 		this.connections.set(ssid, connection);
 		return connection;
 	}
