@@ -373,7 +373,7 @@ const notificationContainer = (() => {
 			'end-0',
 			'd-flex',
 			'justify-content-end',
-			'flex-column',
+			'flex-column'
 		);
 		container.style.zIndex = '0';
 		document.body.appendChild(container);
@@ -388,9 +388,8 @@ type NotificationConfig<Type extends 'toast' | 'alert'> = {
 	color: BootstrapColor;
 	type: Type;
 	autoHide?: number;
-} & (Type extends 'toast' ? {
 	textColor?: BootstrapColor;
-} : never);
+};
 
 const createNotif = () => {
 	if (!browser) return;

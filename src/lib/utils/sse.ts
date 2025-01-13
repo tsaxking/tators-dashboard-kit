@@ -20,12 +20,7 @@ class SSE {
 			// the disconnect function is dynamic, so I run it dynamically rather than pulling it
 			const disconnect = () => d.disconnect();
 
-			const events = [
-				'mousedown',
-				'mouseover',
-				'touch',
-				'scroll'
-			];
+			const events = ['mousedown', 'mouseover', 'touch', 'scroll'];
 
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			let timeout: any;
@@ -33,15 +28,18 @@ class SSE {
 			// if there's no interaction for 5 minutes, disconnect
 			const onEvent = () => {
 				if (timeout) clearTimeout(timeout);
-				setTimeout(() => {
-					disconnect();
-					this.stop = true;
-				}, 1000 * 60 * 5); // 5 minutes
+				setTimeout(
+					() => {
+						disconnect();
+						this.stop = true;
+					},
+					1000 * 60 * 5
+				); // 5 minutes
 				if (this.stop) {
 					this.stop = false;
 					this.connect();
 				}
-			}
+			};
 
 			for (const event of events) {
 				document.addEventListener(event, onEvent);
@@ -92,8 +90,9 @@ class SSE {
 						if (parsed.success)
 							notify({
 								type: 'alert',
-								...parsed.data,
-								color: parsed.data.severity
+								color: parsed.data.severity,
+								title: parsed.data.title,
+								message: parsed.data.message
 							});
 						return;
 					}
@@ -125,13 +124,14 @@ class SSE {
 				window.removeEventListener('beforeunload', close);
 			};
 		};
-		
+
 		const toReturn = {
-			disconnect: connect(),
+			disconnect: connect()
 		};
 
 		// ping the server every 10 seconds, if the server does not respond, reconnect
-		const interval = setInterval(async () => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const interval: any = setInterval(async () => {
 			if (this.stop) return clearInterval(interval);
 			if (!(await this.ping())) {
 				toReturn.disconnect();

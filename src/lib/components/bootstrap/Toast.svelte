@@ -1,5 +1,5 @@
 <script lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
+	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import type { BootstrapColor } from 'colors/color';
 	import { onMount, type Snippet } from 'svelte';
 	import { sleep } from 'ts-utils/sleep';
@@ -16,11 +16,21 @@
 		onShow?: () => void;
 	}
 
-	const { title, message, color, autoHide = 5000, icon, animate, textColor, onHide, onShow }: Props = $props();
+	const {
+		title,
+		message,
+		color,
+		autoHide = 5000,
+		icon,
+		animate,
+		textColor,
+		onHide,
+		onShow
+	}: Props = $props();
 
 	const start = Date.now();
 	let time = $state('Just now');
-	const interval = setInterval(() => {
+	const interval: any = setInterval(() => {
 		switch (true) {
 			case Date.now() - start < 1000:
 				time = 'Just now';
@@ -55,7 +65,6 @@
 
 	let doShow = $state(false);
 
-
 	export const hide = async () => {
 		if (animate) {
 			toast.classList.add('animate__animated', 'animate__slideOutRight');
@@ -84,7 +93,7 @@
 
 	let textColorProxy = $state(textColor);
 	$effect(() => {
-		if (!textColorProxy) {	
+		if (!textColorProxy) {
 			switch (color) {
 				case 'primary':
 				case 'secondary':
@@ -106,7 +115,14 @@
 	onMount(() => show());
 </script>
 
-<div bind:this={toast} class="toast" role="alert" class:show={doShow} aria-atomic="true" aria-live="assertive">
+<div
+	bind:this={toast}
+	class="toast"
+	role="alert"
+	class:show={doShow}
+	aria-atomic="true"
+	aria-live="assertive"
+>
 	<div class="toast-header bg-dark border-0 text-{color}">
 		<strong class="me-auto">{title}</strong>
 		<small>{time}</small>

@@ -35,7 +35,7 @@ export const repeatPrompt = async (
 	attemptAsync(async () => {
 		if (config.clear) console.clear();
 		let firstTime = true;
-		const run = async () => {
+		const run = async (): Promise<string> => {
 			const res = await inquirer.input({
 				message: firstTime ? config.message : 'Invalid input. ' + config.message
 			});

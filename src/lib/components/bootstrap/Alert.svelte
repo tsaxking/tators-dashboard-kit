@@ -1,5 +1,5 @@
 <script lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
+	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import type { BootstrapColor } from 'colors/color';
 	import { onMount, type Snippet } from 'svelte';
 	import { sleep } from 'ts-utils/sleep';
@@ -19,7 +19,7 @@
 
 	const start = Date.now();
 	let time = $state('Just now');
-	const interval = setInterval(() => {
+	const interval: any = setInterval(() => {
 		switch (true) {
 			case Date.now() - start < 1000:
 				time = 'Just now';
@@ -58,12 +58,14 @@
 	let doShow = $state(false);
 
 	export const hide = async () => {
-		if (animate) {alert.classList.add('animate__animated', 'animate__slideOutRight');
-		await sleep(1000);
-		doShow = false;
-		setTimeout(() => {
-			alert.classList.remove('animate__animated', 'animate__slideOutRight');
-		}, 1000);} else {
+		if (animate) {
+			alert.classList.add('animate__animated', 'animate__slideOutRight');
+			await sleep(1000);
+			doShow = false;
+			setTimeout(() => {
+				alert.classList.remove('animate__animated', 'animate__slideOutRight');
+			}, 1000);
+		} else {
 			doShow = false;
 		}
 		onHide?.();

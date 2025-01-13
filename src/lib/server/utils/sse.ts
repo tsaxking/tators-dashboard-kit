@@ -53,9 +53,9 @@ export class Connection {
 
 	send(event: string, data: unknown) {
 		return attempt(() => {
-			this.controllers.forEach(c => c.enqueue(
-				`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`
-			));
+			this.controllers.forEach((c) =>
+				c.enqueue(`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`)
+			);
 			this.cache.push({ event, data, id: this.index, date: Date.now() });
 			return this.index;
 		});
@@ -66,7 +66,7 @@ export class Connection {
 			// clearInterval(this.interval);
 			this.send('close', null);
 			this.emit('close');
-			this.controllers.forEach(c => c.close());
+			this.controllers.forEach((c) => c.close());
 			this.sse.connections.delete(this.ssid);
 		});
 	}
