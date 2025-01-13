@@ -20,7 +20,8 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"build-storybook": "storybook build",
-		"debug": "vite --debug"
+		"debug": "vite --debug",
+		"fix-readme": "node --loader @esbuild-kit/esm-loader ./scripts/fix-readme.ts"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
