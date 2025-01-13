@@ -33,6 +33,7 @@ jobs:
           fetch-depth: 0 # Checkout everything to get access to the tags
           ref: ${{github.event.pull_request.head.ref}}
           repository: ${{github.event.pull_request.head.repo.full_name}}
+          token: ${{ secrets.GH_TOKEN }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
