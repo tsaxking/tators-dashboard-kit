@@ -2,8 +2,8 @@ name: 'Merge Template'
 
 on:
   push:
-    branches:
-      - deploy
+    tags:
+      - '*'
 
 jobs:
   tests:
