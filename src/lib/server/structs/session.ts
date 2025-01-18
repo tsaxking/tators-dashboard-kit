@@ -85,12 +85,11 @@ export namespace Session {
 		});
 	};
 
-	export const signIn = async (account: Account.AccountData, event: RequestEvent) => {
+	export const signIn = async (account: Account.AccountData, session: SessionData) => {
 		return attemptAsync(async () => {
-			const session = (await getSession(event)).unwrap();
-			session.update({
-				accountId: account.id
-			});
+			(await session.update({
+				accountId: account.id,
+			})).unwrap();
 
 			// const universes = (await Universes.getUniverses(account)).unwrap();
 

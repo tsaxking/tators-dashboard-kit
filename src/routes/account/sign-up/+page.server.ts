@@ -3,6 +3,10 @@ import { fail, redirect } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
 import { passwordStrength } from 'check-password-strength';
+import { OAuth2Client } from "google-auth-library";
+import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from "$env/static/private";
+
+const log = (...args: unknown[]) => console.log('[oauth/sign-up]', ...args);
 
 export const actions = {
 	register: async (event) => {
@@ -132,5 +136,26 @@ export const actions = {
 			redirect: '/account/sign-in',
 			success: true
 		};
-	}
+	},
+	OAuth2: async () => {
+		const client = new OAuth2Client({
+			clientSecret: SECRET_OAUTH2_CLIENT_SECRET,
+			clientId: SECRET_OAUTH2_CLIENT_ID,
+			redirectUri: "http://localhost:5173/oauth/sign-up",
+		});
+		// log(client);
+		const authorizeUrl = client.generateAuthUrl({
+			access_type: 'offline',
+			// scope: 'https://www.googleapis.com/auth/userinfo.profile openid email',
+			scope: [
+				'https://www.googleapis.com/auth/userinfo.profile',
+				'https://www.googleapis.com/auth/userinfo.email',
+				'openid',
+			],
+			prompt: 'consent',
+		});
+		// log(authorizeUrl);
+
+		throw redirect(ServerCode.temporaryRedirect, authorizeUrl);
+	},
 };

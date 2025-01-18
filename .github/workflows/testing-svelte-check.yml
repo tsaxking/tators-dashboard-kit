@@ -40,6 +40,19 @@ jobs:
           echo "Installing dependencies..."
           pnpm install --frozen-lockfile
 
+      - name: Load .env variables
+        run: |
+          touch .env
+          echo "DB_HOST=localhost" >> .env
+          echo "DB_PORT=5432" >> .env
+          echo "DB_USER=postgres" >> .env
+          echo "DB_PASS=postgres" >> .env
+          echo "DB_NAME=postgres" >> .env
+          echo "SECRET_OAUTH2_CLIENT_ID=1234567890" >> .env
+          echo "SECRET_OAUTH2_CLIENT_SECRET=1234567890" >> .env
+          export $(cat .env | xargs)
+
+
       - name: Run
         run: |
           echo "Testing..."
