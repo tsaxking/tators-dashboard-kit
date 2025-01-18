@@ -29,7 +29,6 @@ export namespace Session {
 		name: 'session',
 		structure: {
 			accountId: text('account_id').notNull(),
-			tokenId: text('token_id').notNull(),
 			ip: text('ip').notNull(),
 			userAgent: text('user_agent').notNull(),
 			requests: integer('requests').notNull(),
@@ -48,7 +47,6 @@ export namespace Session {
 				const session = (
 					await Session.new({
 						accountId: '',
-						tokenId: '',
 						ip: '',
 						userAgent: '',
 						requests: 0,
@@ -87,11 +85,10 @@ export namespace Session {
 		});
 	};
 
-	export const signIn = async (account: Account.AccountData, session: SessionData, token?: Account.OAuth2TokensData) => {
+	export const signIn = async (account: Account.AccountData, session: SessionData) => {
 		return attemptAsync(async () => {
 			(await session.update({
 				accountId: account.id,
-				tokenId: token?.id,
 			})).unwrap();
 
 			// const universes = (await Universes.getUniverses(account)).unwrap();
