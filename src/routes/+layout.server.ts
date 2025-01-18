@@ -25,4 +25,15 @@ export const load = async (event) => {
 			error: 'Failed to get session'
 		};
 	}
+
+	if (event.url.pathname !== '/account/sign-in' && event.url.pathname !== '/account/sign-up') {
+		session.value.update({
+			prevUrl: event.url.pathname,
+			requests: session.value.data.requests + 1
+		});
+	} else {
+		session.value.update({
+			requests: session.value.data.requests + 1
+		});
+	}
 };

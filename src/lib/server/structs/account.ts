@@ -1,4 +1,4 @@
-import { boolean, pgEnum, text } from 'drizzle-orm/pg-core';
+import { boolean, text, timestamp } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
 import { uuid } from '../utils/uuid';
 import { attempt, attemptAsync } from 'ts-utils/check';
@@ -8,6 +8,8 @@ import { sql } from 'drizzle-orm';
 import type { Notification } from '$lib/types/notification';
 import { Session } from './session';
 import { sse } from '../utils/sse';
+import { OAuth2Client } from 'google-auth-library';
+import { google } from 'googleapis';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -27,6 +29,21 @@ export namespace Account {
 			id: () => (uuid() + uuid() + uuid() + uuid()).replace(/-/g, '')
 		}
 	});
+
+	// export const OAuth2Tokens = new Struct({
+	// 	name: 'oauth2_tokens',
+	// 	structure: {
+	// 		accountId: text('account_id').notNull(),
+	// 		accessToken: text('access_token').notNull(),
+	// 		refreshToken: text('refresh_token').notNull(),
+	// 		scope: text('scope').notNull(),
+	// 		tokenType: text('token_type').notNull(),
+	// 		idToken: text('id_token').notNull(),
+	// 		expiryDate: text('expiry_date').notNull()
+	// 	},
+	// });
+
+	// export type OAuth2TokensData = typeof OAuth2Tokens.sample;
 
 	// Account.bypass('*', (a, b) => a.id === b?.id);
 
@@ -149,8 +166,50 @@ export namespace Account {
 			link: notif.link
 		});
 	};
+
+	export const createAccountFromOauth = (data: {
+		email?: string | null;
+		given_name?: string | null;
+		family_name?: string | null;
+		picture?: string | null;
+	}) => {
+		return attemptAsync(async () => {
+			// const oauth2 = google.oauth2({
+			// 	auth: client,
+			// 	version: 'v2',
+			// });
+			// const userInfo = await oauth2.userinfo.get();
+			const email = data.email;
+			const firstName = data.given_name;
+			const lastName = data.family_name;
+			const picture = data.picture ?? '/';
+
+			if (!email) throw new Error('No email provided');
+			if (!firstName) throw new Error('No first name provided');
+			if (!lastName) throw new Error('No last name provided');
+
+			const username = email.split('@')[0];
+			const verificationId = uuid();
+
+			// send verification email
+
+			// hash and salt are not needed as the authentication is handled by google in this case
+			return (await Account.new({
+				username,
+				email,
+				firstName,
+				lastName,
+				key: '',
+				salt: '',
+				verified: false,
+				verification: verificationId,
+				picture
+			})).unwrap();
+		});
+	}
 }
 
 // for drizzle
 export const _accountTable = Account.Account.table;
+// export const _oauth2TokensTable = Account.OAuth2Tokens.table;
 export const _adminsTable = Account.Admins.table;

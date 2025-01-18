@@ -1,8 +1,12 @@
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { Account } from '$lib/server/structs/account.js';
 import { Session } from '$lib/server/structs/session.js';
 import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
+import { OAuth2Client } from "google-auth-library";
+import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from "$env/static/private";
+
+const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
 
 export const actions = {
 	login: async (event) => {
@@ -23,7 +27,7 @@ export const actions = {
 			});
 		}
 
-		let account: Account.AccountData;
+		let account: Account.AccountData | undefined;
 
 		ACCOUNT: {
 			const user = await Account.Account.fromProperty('username', res.data.username, {
@@ -56,7 +60,15 @@ export const actions = {
 			});
 		}
 
-		const sessionRes = await Session.signIn(account, event);
+		const session = await Session.getSession(event);
+		if (session.isErr()) {
+			return fail(ServerCode.internalServerError, {
+				user: res.data.username,
+				message: 'Failed to create session'
+			});
+		}
+
+		const sessionRes = await Session.signIn(account, session.value);
 		if (sessionRes.isErr()) {
 			console.error(sessionRes.error);
 			return fail(ServerCode.internalServerError, {
@@ -68,8 +80,29 @@ export const actions = {
 		return {
 			message: 'Logged in',
 			user: res.data.username,
-			redirect: sessionRes.value.session.data.prevUrl || '/',
+			redirect: session.value.data.prevUrl || '/',
 			success: true
 		};
-	}
+	},
+    OAuth2: async () => {
+        const client = new OAuth2Client({
+            clientSecret: SECRET_OAUTH2_CLIENT_SECRET,
+            clientId: SECRET_OAUTH2_CLIENT_ID,
+            redirectUri: "http://localhost:5173/oauth/sign-in",
+        });
+		// log(client);
+        const authorizeUrl = client.generateAuthUrl({
+            access_type: 'offline',
+            // scope: 'https://www.googleapis.com/auth/userinfo.profile openid email',
+            scope: [
+                'https://www.googleapis.com/auth/userinfo.profile',
+                'https://www.googleapis.com/auth/userinfo.email',
+                'openid',
+            ],
+            prompt: 'consent',
+        });
+		// log(authorizeUrl);
+
+        throw redirect(ServerCode.temporaryRedirect, authorizeUrl);
+    },
 };

@@ -74,17 +74,19 @@
 		"bootstrap": "^5.3.3",
 		"check-password-strength": "^2.0.10",
 		"cli-table": "^0.3.11",
+		"colors": "git+https://github.com/tsaxking/colors.git",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.38.3",
 		"drizzle-struct": "github:tsaxking/drizzle-struct",
 		"drizzle-zod": "^0.6.1",
 		"fuzzy-search": "^3.2.1",
+		"google-auth-library": "^9.15.0",
+		"googleapis": "^144.0.0",
 		"math": "github:tsaxking/calculations",
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
-		"zod": "^3.24.1",
-		"colors": "git+https://github.com/tsaxking/colors.git"
+		"zod": "^3.24.1"
 	}
 }
