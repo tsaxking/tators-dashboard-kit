@@ -106,3 +106,10 @@ export const _scoutingPitSectionsTable = Scouting.PIT.Sections.table;
 export const _scoutingPitGroupsTable = Scouting.PIT.Groups.table;
 export const _scoutingPitQuestionsTable = Scouting.PIT.Questions.table;
 export const _scoutingPitAnswersTable = Scouting.PIT.Answers.table;
+
+export const _scoutingMatchScoutingVersionTable = Scouting.MatchScouting.versionTable;
+export const _scoutingTeamCommentsVersionTable = Scouting.TeamComments.versionTable;
+export const _scoutingPitSectionsVersionTable = Scouting.PIT.Sections.versionTable;
+export const _scoutingPitGroupsVersionTable = Scouting.PIT.Groups.versionTable;
+export const _scoutingPitQuestionsVersionTable = Scouting.PIT.Questions.versionTable;
+export const _scoutingPitAnswersVersionTable = Scouting.PIT.Answers.versionTable;
