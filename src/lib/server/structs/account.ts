@@ -137,9 +137,9 @@ export namespace Account {
 		});
 	};
 
-	export const notifyPopup = async (account: AccountData, notification: Notification) => {
+	export const notifyPopup = async (accountId: string, notification: Notification) => {
 		return attemptAsync(async () => {
-			Session.Session.fromProperty('accountId', account.id, {
+			Session.Session.fromProperty('accountId', accountId, {
 				type: 'stream'
 			}).pipe((s) => sse.fromSession(s.id)?.notify(notification));
 		});
@@ -150,18 +150,18 @@ export namespace Account {
 	};
 
 	export const sendAccountNotif = (
-		account: AccountData,
+		accountId: string,
 		notif: Notification & {
 			icon: string;
 			link: string;
 		}
 	) => {
-		notifyPopup(account, notif);
+		notifyPopup(accountId, notif);
 		return AccountNotification.new({
 			title: notif.title,
 			severity: notif.severity,
 			message: notif.message,
-			accountId: account.id,
+			accountId: accountId,
 			icon: notif.icon,
 			link: notif.link
 		});

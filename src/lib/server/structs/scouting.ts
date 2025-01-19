@@ -13,9 +13,14 @@ export namespace Scouting {
             scoutId: text('scout_id').notNull(),
             scoutGroup: text('scout_group').notNull(),
             prescouting: boolean('prescouting').notNull(),
+            remote: boolean('remote').notNull(),
             trace: text('trace').notNull(),
             checks: text('checks').notNull(),
         },
+        versionHistory: {
+            type: 'versions',
+            amount: 3,
+        }
     });
 
     export const TeamComments = new Struct({
