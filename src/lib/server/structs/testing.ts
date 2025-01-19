@@ -16,7 +16,8 @@ export namespace Test {
 		versionHistory: {
 			amount: 2,
 			type: 'versions'
-		}
+		},
+		lifetime: 1000 * 60 * 10,
 	});
 }
 

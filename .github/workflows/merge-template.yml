@@ -89,7 +89,7 @@ jobs:
           echo "Setting up identity"
           # Setup the committers identity.
           git config --global user.email "taylorking206@u.boisestate.edu"
-          git config --global user.name "Webpack Bot"
+          git config --global user.name "Sveltekit Bot"
 
           echo "Changing remote"
           # Change the remote to the repository we want to push to.

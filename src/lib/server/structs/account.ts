@@ -8,8 +8,7 @@ import { sql } from 'drizzle-orm';
 import type { Notification } from '$lib/types/notification';
 import { Session } from './session';
 import { sse } from '../utils/sse';
-import { OAuth2Client } from 'google-auth-library';
-import { google } from 'googleapis';
+import { DataAction, PropertyAction } from 'drizzle-struct/types';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -70,9 +69,13 @@ export namespace Account {
 			severity: text('severity').notNull(),
 			message: text('message').notNull(),
 			icon: text('icon').notNull(),
-			link: text('link').notNull()
+			link: text('link').notNull(),
+			read: boolean('read').notNull(),
 		}
 	});
+
+	AccountNotification.bypass(DataAction.Delete, (a, b) => a.id === b?.accountId);
+	AccountNotification.bypass(PropertyAction.Update, (a, b) => a.id === b?.accountId);
 
 	export const newHash = (password: string) => {
 		return attempt(() => {
@@ -137,9 +140,9 @@ export namespace Account {
 		});
 	};
 
-	export const notifyPopup = async (account: AccountData, notification: Notification) => {
+	export const notifyPopup = async (accountId: string, notification: Notification) => {
 		return attemptAsync(async () => {
-			Session.Session.fromProperty('accountId', account.id, {
+			Session.Session.fromProperty('accountId', accountId, {
 				type: 'stream'
 			}).pipe((s) => sse.fromSession(s.id)?.notify(notification));
 		});
@@ -150,20 +153,21 @@ export namespace Account {
 	};
 
 	export const sendAccountNotif = (
-		account: AccountData,
+		accountId: string,
 		notif: Notification & {
 			icon: string;
 			link: string;
 		}
 	) => {
-		notifyPopup(account, notif);
+		notifyPopup(accountId, notif);
 		return AccountNotification.new({
 			title: notif.title,
 			severity: notif.severity,
 			message: notif.message,
-			accountId: account.id,
+			accountId: accountId,
 			icon: notif.icon,
-			link: notif.link
+			link: notif.link,
+			read: false,
 		});
 	};
 

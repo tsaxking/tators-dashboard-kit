@@ -6,7 +6,8 @@ import {
 	type Structable,
 	type GlobalCols,
 	StructData,
-	SingleWritable
+	SingleWritable,
+	DataArr
 } from 'drizzle-struct/front-end';
 import { Requests } from '$lib/utils/requests';
 
@@ -29,7 +30,23 @@ export namespace Account {
 
 	export type AccountData = StructData<typeof Account.data.structure>;
 
-	export const self = new SingleWritable<typeof Account.data.structure>(
+	export const AccountNotification = new Struct({
+		name: 'account_notification',
+		structure: {
+			accountId: 'string',
+			title: 'string',
+			severity: 'string',
+			message: 'string',
+			icon: 'string',
+			link: 'string',
+			read: 'boolean',
+		},
+		socket: sse,
+	});
+
+	export type AccountNotificationData = StructData<typeof AccountNotification.data.structure>;
+
+	const self = new SingleWritable<typeof Account.data.structure>(
 		Account.Generator({
 			username: 'Guest',
 			key: '',
@@ -64,5 +81,24 @@ export namespace Account {
 		});
 
 		return self;
+	};
+
+	const notifs = new DataArr(AccountNotification, []);
+
+	export const getNotifs = (limit: number, offset: number) => {
+		attemptAsync(async () => {
+			const data = (
+				await Requests.get<(PartialStructable<typeof AccountNotification.data.structure> & Structable<GlobalCols>)[]>(
+					`/account/notifications/${limit}/${offset}`,
+					{
+						expectStream: false,
+					}
+				)
+			).unwrap();
+
+			notifs.add(...data.map(n => AccountNotification.Generator(n)));
+		});
+
+		return notifs;
 	};
 }

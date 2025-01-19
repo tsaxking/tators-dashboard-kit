@@ -19,7 +19,7 @@ const saveFile = (file: string, data: string) => fs.promises.writeFile(
 const main = async () => {
     let readme = await readFile('./README.md');
     readme = readme.replaceAll('tsaxking/sveltekit-template', arg);
-    await saveFile('./README.done.md', readme);
+    await saveFile('./README.md', readme);
     process.exit(0);
 };
 main();
