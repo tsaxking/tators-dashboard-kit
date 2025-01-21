@@ -50,6 +50,7 @@ jobs:
           echo "DB_NAME=postgres" >> .env
           echo "SECRET_OAUTH2_CLIENT_ID=1234567890" >> .env
           echo "SECRET_OAUTH2_CLIENT_SECRET=1234567890" >> .env
+          echo "PUBLIC_APP_NAME=test" >> .env
           export $(cat .env | xargs)
 
 
