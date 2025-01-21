@@ -8,21 +8,25 @@
     }
 
     const { notification }: Props = $props();
+
+    const glowColor = $notification.read ? $notification.severity : undefined;
+    const color = $notification.read ? undefined : $notification.severity;
 </script>
 
 
 <Card 
     title={$notification.title || 'Notification'}
-    glowColor={$notification.severity as BootstrapColor || 'primary'}
+    glowColor={glowColor as BootstrapColor}
+    color={color as BootstrapColor}
 >
     {#snippet body()}
         <p>{$notification.message || ''}</p>
-        <button type="button" class="btn btn-outline-danger" onclick={() => notification.delete()}>
+        <button type="button" class="btn btn-outline-dark" onclick={() => notification.delete()}>
             <i class="material-icons">
                 delete
             </i>
         </button>
-        <button type="button" class="btn btn-outline-primary" onclick={() => notification.update(n => ({
+        <button type="button" class="btn btn-outline-dark" onclick={() => notification.update(n => ({
             ...n,
             read: !n.read,
         }))}>

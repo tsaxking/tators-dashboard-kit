@@ -20,7 +20,7 @@
         // Account.AccountNotification.Generator({
 		// 	accountId: 'string',
 		// 	title: 'string',
-		// 	severity: 'secondary',
+		// 	severity: 'danger',
 		// 	message: 'string',
 		// 	icon: 'string',
 		// 	link: 'string',
@@ -43,7 +43,7 @@
     $effect(() => {
         if (browser) {
             notifications = Account.getNotifs(limit, page);
-            notifs = $notifications.length;
+            notifs = $notifications.filter(n => !n.data.read).length;
         }
     });
 </script>

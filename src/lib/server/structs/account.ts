@@ -77,6 +77,17 @@ export namespace Account {
 	AccountNotification.bypass(DataAction.Delete, (a, b) => a.id === b?.accountId);
 	AccountNotification.bypass(PropertyAction.Update, (a, b) => a.id === b?.accountId);
 
+	export const Settings = new Struct({
+		name: 'account_settings',
+		structure: {
+			accountId: text('account_id').notNull(),
+			setting: text('setting').notNull(),
+			value: text('value').notNull(),
+		},
+	}); 
+
+	Settings.bypass('*', (account, setting) => account.id === setting?.accountId);
+
 	export const newHash = (password: string) => {
 		return attempt(() => {
 			const salt = crypto.randomBytes(16).toString('hex');
@@ -210,6 +221,13 @@ export namespace Account {
 				picture
 			})).unwrap();
 		});
+	}
+
+
+	export const getSettings = async (accountId: string) => {
+		return Settings.fromProperty('accountId', accountId, {
+			type: 'stream',
+		}).await();
 	}
 }
 
