@@ -9,12 +9,12 @@
 	let name = $state('');
 
 	onMount(() => {
-		[, ,name] = location.pathname.split('/');
+		[, , name] = location.pathname.split('/');
 	});
 </script>
 
 <main class="dashboard">
-	<Navbar title="{PUBLIC_APP_NAME}" />
+	<Navbar title={PUBLIC_APP_NAME} />
 
 	<h1>{capitalize(name)}</h1>
 	{@render children()}

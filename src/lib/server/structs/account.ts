@@ -70,7 +70,7 @@ export namespace Account {
 			message: text('message').notNull(),
 			icon: text('icon').notNull(),
 			link: text('link').notNull(),
-			read: boolean('read').notNull(),
+			read: boolean('read').notNull()
 		}
 	});
 
@@ -82,9 +82,9 @@ export namespace Account {
 		structure: {
 			accountId: text('account_id').notNull(),
 			setting: text('setting').notNull(),
-			value: text('value').notNull(),
-		},
-	}); 
+			value: text('value').notNull()
+		}
+	});
 
 	Settings.bypass('*', (account, setting) => account.id === setting?.accountId);
 
@@ -178,7 +178,7 @@ export namespace Account {
 			accountId: accountId,
 			icon: notif.icon,
 			link: notif.link,
-			read: false,
+			read: false
 		});
 	};
 
@@ -209,26 +209,27 @@ export namespace Account {
 			// send verification email
 
 			// hash and salt are not needed as the authentication is handled by google in this case
-			return (await Account.new({
-				username,
-				email,
-				firstName,
-				lastName,
-				key: '',
-				salt: '',
-				verified: false,
-				verification: verificationId,
-				picture
-			})).unwrap();
+			return (
+				await Account.new({
+					username,
+					email,
+					firstName,
+					lastName,
+					key: '',
+					salt: '',
+					verified: false,
+					verification: verificationId,
+					picture
+				})
+			).unwrap();
 		});
-	}
-
+	};
 
 	export const getSettings = async (accountId: string) => {
 		return Settings.fromProperty('accountId', accountId, {
-			type: 'stream',
+			type: 'stream'
 		}).await();
-	}
+	};
 }
 
 // for drizzle

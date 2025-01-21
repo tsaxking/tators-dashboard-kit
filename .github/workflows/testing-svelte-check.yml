@@ -52,7 +52,6 @@ jobs:
           echo "SECRET_OAUTH2_CLIENT_SECRET=1234567890" >> .env
           export $(cat .env | xargs)
 
-
       - name: Run
         run: |
           echo "Testing..."

@@ -39,9 +39,9 @@ export namespace Account {
 			message: 'string',
 			icon: 'string',
 			link: 'string',
-			read: 'boolean',
+			read: 'boolean'
 		},
-		socket: sse,
+		socket: sse
 	});
 
 	export type AccountNotificationData = StructData<typeof AccountNotification.data.structure>;
@@ -88,15 +88,14 @@ export namespace Account {
 	export const getNotifs = (limit: number, offset: number) => {
 		attemptAsync(async () => {
 			const data = (
-				await Requests.get<(PartialStructable<typeof AccountNotification.data.structure> & Structable<GlobalCols>)[]>(
-					`/account/notifications/${limit}/${offset}`,
-					{
-						expectStream: false,
-					}
-				)
+				await Requests.get<
+					(PartialStructable<typeof AccountNotification.data.structure> & Structable<GlobalCols>)[]
+				>(`/account/notifications/${limit}/${offset}`, {
+					expectStream: false
+				})
 			).unwrap();
 
-			notifs.add(...data.map(n => AccountNotification.Generator(n)));
+			notifs.add(...data.map((n) => AccountNotification.Generator(n)));
 		});
 
 		return notifs;
