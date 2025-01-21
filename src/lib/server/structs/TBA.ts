@@ -1,9 +1,10 @@
 import { integer } from 'drizzle-orm/pg-core';
-import { boolean, text } from 'drizzle-orm/pg-core';
+import { text } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
-import { attemptAsync, type Result } from 'ts-utils/check';
+import { attemptAsync, resolveAll, type Result } from 'ts-utils/check';
 
 const { TBA_KEY } = process.env;
+if (!TBA_KEY) throw new Error('TBA_KEY not found in .env file');
 
 export namespace TBA {
     const BASE_URL = 'https://www.thebluealliance.com/api/v3'
@@ -23,6 +24,19 @@ export namespace TBA {
             eventKey: text('event_key').notNull(),
             data: text('data').notNull(), // JSON Event Object
         },
+    });
+
+    Events.on('delete', async (e) => {
+        const [teams, matches] = await Promise.all([
+            Teams.fromProperty('eventKey', e.data.eventKey, {type: 'array', limit: 1000, offset: 0}),
+            Matches.fromProperty('eventKey', e.data.eventKey, {type: 'array', limit: 1000, offset: 0}),
+        ]);
+
+        const res = resolveAll(await Promise.all([
+            ...teams.unwrap().map(t => t.delete()),
+            ...matches.unwrap().map(m => m.delete()),
+        ]));
+        if (res.isErr()) console.error(res.error);
     });
 
     export const Teams = new Struct({

@@ -3,14 +3,17 @@ import { Struct } from "drizzle-struct/back-end";
 import { Account } from "./account";
 import { attemptAsync } from "ts-utils";
 import { Scouting } from "./scouting";
+import { FIRST } from "./FIRST";
+import { eq } from "drizzle-orm";
 
 export namespace Potato {
     export const LevelUpMap = {
-        scouting: 25,
-        prescouting: 75,
-        remote: 75,
-        rescout: 125, // added with scouting
-        pit: 10,
+        scouting: 10,
+        prescouting: 5,
+        remote: 5,
+        rescout: 10,
+        pit: 20,
+        teamPicture: 5,
     };
 
     export const Levels = {
@@ -103,6 +106,14 @@ export namespace Potato {
         giveLevels(p.value, LevelUpMap.pit);
     });
 
+
+    FIRST.TeamPictures.on('create', async pic => {
+        const p = await getPotato(pic.data.accountId);
+        if (p.isErr()) return console.error(p.error);
+
+        giveLevels(p.value, LevelUpMap.teamPicture);
+    });
+
     export const getPotato = (accountId: string) => {
         return attemptAsync(async () => {
             const p = (await Friend.fromProperty('account', accountId, {
@@ -119,6 +130,20 @@ export namespace Potato {
                 name: a.data.username + '\'s Potato',
                 lastClicked: new Date().toISOString(),
             })).unwrap();
+        });
+    };
+
+    export const getRankings = async () => {
+        return attemptAsync(async () => {
+            return Friend.database
+                .select({
+                    username: Account.Account.table.username,
+                    level: Friend.table.level,
+                    name: Friend.table.name,
+                })
+                .from(Friend.table)
+                .orderBy(Friend.table.level)
+                .innerJoin(Account.Account.table, eq(Friend.table.account, Account.Account.table.id));
         });
     };
 }

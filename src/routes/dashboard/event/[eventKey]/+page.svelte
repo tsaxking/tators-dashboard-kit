@@ -6,8 +6,8 @@
 </script>
 
 
-<code>
-    {JSON.stringify(event, null, 4)}
-    {JSON.stringify(teams, null, 4)}
+<pre>
+    <!-- {JSON.stringify(event, null, 4)} -->
+    <!-- {JSON.stringify(teams, null, 4)} -->
     {JSON.stringify(matches, null, 4)}
-</code>
+</pre>

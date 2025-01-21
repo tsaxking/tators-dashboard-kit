@@ -33,6 +33,7 @@ export namespace FIRST {
             number: integer('number').notNull(),
             eventKey: text('event_key').notNull(),
             picture: text('picture').notNull(),
+            accountId: text('account_id').notNull(),
         },
     });
 
