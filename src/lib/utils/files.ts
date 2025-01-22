@@ -14,7 +14,9 @@ export class FileUploader {
 
 	sendFile(file: File, fieldName: string) {
 		return attemptAsync(async () => {
+			console.log('Sending file...');
 			const xhr = new XMLHttpRequest();
+			xhr.open(this.config.method, this.endpoint);
 
 			const emitter = new EventEmitter<{
 				load: string;
@@ -22,7 +24,8 @@ export class FileUploader {
 			}>();
 
 			// Handle successful upload
-			xhr.onload = () => {
+			xhr.onload = (event) => {
+				console.log(event);
 				if (xhr.status >= 200 && xhr.status < 300) {
 					emitter.emit(
 						'load',
@@ -33,20 +36,21 @@ export class FileUploader {
 							.parse(JSON.parse(xhr.responseText)).fileId
 					);
 				} else {
+					console.error(xhr.responseText);
 					emitter.emit('error', 'Failed to upload file.');
 				}
 			};
 
 			// Handle upload error
-			xhr.onerror = () => {
+			xhr.onerror = (e) => {
+				console.error(e);
 				emitter.emit('error', 'Failed to upload file.');
 			};
 
-            xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+            // xhr.setRequestHeader('Content-Type', 'multipart/form-data');
             // xhr.setRequestHeader('Content-Disposition', `inline; filename="${file.name}"`);
 
 			// Open and send the request
-			xhr.open(this.config.method, this.endpoint);
 			const formData = new FormData();
 			formData.append(fieldName, file, file.name);
 			xhr.send(formData);
@@ -54,7 +58,7 @@ export class FileUploader {
 			// Provide abort method
 			return {
 				on: emitter.on.bind(emitter),
-				abort: () => xhr.abort()
+				abort: () => xhr.abort(),
 			};
 		});
 	}

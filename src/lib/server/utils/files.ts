@@ -1,7 +1,9 @@
+import { Readable } from 'stream';
+import Busboy from 'busboy';
 import path from 'path';
 import fs from 'fs';
-import { attemptAsync } from 'ts-utils/check';
 import { uuid } from './uuid';
+import { attemptAsync } from 'ts-utils/check';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'static/uploads');
 
@@ -22,94 +24,69 @@ export class FileReceiver {
 
 	async receive({ request }: RequestEvent) {
 		return attemptAsync(async () => {
-			const contentType = request.headers.get('content-type');
-			if (!contentType || !contentType.startsWith('multipart/form-data')) {
+			if (!request.headers.get('content-type')?.startsWith('multipart/form-data')) {
 				throw new Error('Invalid content type. Expected multipart/form-data.');
 			}
-
-			// Extract the boundary string from the content type
-			const boundary = contentType.split('boundary=')[1];
-			if (!boundary) {
-				throw new Error('Boundary not found in content type.');
+	
+			if (!request.body) {
+				throw new Error('No body found in request.');
 			}
-
-			const reader = request.body?.getReader();
-			if (!reader) {
-				throw new Error('Request body is missing.');
-			}
-
-			const decoder = new TextDecoder();
-			let buffer = '';
+	
+			const busboy = Busboy({
+				headers: {
+					'content-type': request.headers.get('content-type') || '',
+				},
+				limits: {
+					fileSize: this.config.maxFileSize,
+					files: this.config.maxFiles,
+				},
+			});
+	
 			const files: { fieldName: string; filePath: string }[] = [];
-			let fileStream: fs.WriteStream | null = null;
-			let currentFilePath = '';
-			let currentFieldName = '';
 			let fileCount = 0;
-			let currentFileSize = 0;
-
-			while (true) {
-				const { done, value } = await reader.read();
-				if (done) break;
-
-				buffer += decoder.decode(value, { stream: true });
-
-				// Split buffer on boundaries
-				const parts = buffer.split(`--${boundary}`);
-
-				for (let i = 0; i < parts.length - 1; i++) {
-					const part = parts[i].trim();
-
-					// Handle file headers and data
-					if (part.includes('Content-Disposition: form-data;')) {
-						// Parse headers
-						const headerMatch = part.match(/name="(.+?)"(?:; filename="(.+?)")?/);
-						if (headerMatch) {
-							currentFieldName = headerMatch[1];
-							const originalFileName = headerMatch[2];
-
-							// If this is a file, prepare to write it
-							if (originalFileName) {
-								if (fileCount >= this.config.maxFiles) {
-									throw new Error(
-										`Exceeded the maximum allowed number of files: ${this.config.maxFiles}`
-									);
-								}
-
-								currentFilePath = path.join(UPLOAD_DIR, `${uuid()}_${originalFileName}`);
-								fileStream = fs.createWriteStream(currentFilePath);
-								fileCount++;
-								currentFileSize = 0; // Reset for the new file
-							}
-						}
-					} else if (fileStream) {
-						const chunk = Buffer.from(part, 'binary');
-						currentFileSize += chunk.length;
-
-						// Check max file size
-						if (currentFileSize > this.config.maxFileSize) {
-							fileStream.close();
-							fs.promises.unlink(currentFilePath).catch(() => {});
-							throw new Error(
-								`File exceeds the maximum allowed size of ${this.config.maxFileSize} bytes.`
-							);
-						}
-
-						// Write file data
-						fileStream.write(chunk);
+	
+			return new Promise<{
+				files: { fieldName: string; filePath: string }[];
+			}>((resolve, reject) => {
+				// Adapt the ReadableStream to a Node.js Readable
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				const nodeStream = Readable.from(request.body as any);
+	
+				busboy.on('file', (fieldName, file, fileInfo) => {
+					if (fileCount >= this.config.maxFiles) {
+						file.resume(); // Discard the rest of the file
+						return reject(new Error('Exceeded the maximum allowed number of files.'));
 					}
-				}
 
-				// Check if we need to reset the buffer
-				buffer = parts[parts.length - 1].trim();
-			}
-
-			// Close the last file stream if open
-			if (fileStream) {
-				fileStream.end();
-				files.push({ fieldName: currentFieldName, filePath: currentFilePath });
-			}
-
-			return { files };
+					const fileName = fileInfo.filename;
+	
+					const safeFileName = `${uuid()}_${fileName}`;
+					const filePath = path.join(UPLOAD_DIR, safeFileName);
+	
+					const writeStream = fs.createWriteStream(filePath);
+					file.pipe(writeStream);
+	
+					fileCount++;
+	
+					file.on('end', () => {
+						files.push({ fieldName, filePath });
+					});
+	
+					file.on('error', (err) => {
+						reject(err);
+					});
+				});
+	
+				busboy.on('finish', () => {
+					resolve({ files });
+				});
+	
+				busboy.on('error', (err) => {
+					reject(err);
+				});
+	
+				nodeStream.pipe(busboy);
+			});
 		});
 	}
 }

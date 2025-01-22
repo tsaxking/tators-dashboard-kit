@@ -1,4 +1,7 @@
+
 <script lang="ts">
+	import 'filepond/dist/filepond.css';
+	import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
 	import FilePond, { registerPlugin, supported, type FilePondFile } from 'svelte-filepond';
 
 	import FilePondPluginImageExifOrientation from 'filepond-plugin-image-exif-orientation';
@@ -12,9 +15,11 @@
 	interface Props {
 		multiple: boolean;
 		uploader: FileUploader;
+		message: string;
+		quality?: number;
 	}
 
-	const { multiple, uploader }: Props = $props();
+	const { multiple, uploader, message, quality = 100 }: Props = $props();
 
 	const emitter = new EventEmitter<{
 		init: void;
@@ -52,12 +57,11 @@
 		bind:this={pond}
 		{name}
 		allowMultiple={multiple}
-		labelIdle="Drag & Drop your team pictures or <span class='filepond--label-action'>Browse</span>"
+		labelIdle={message}
 		oninit={handleInit}
 		allowImageTransform={true}
-		imageTransformOutputQuality={25}
+		imageTransformOutputQuality={quality}
 		imageTransformOutputMimeType="image/jpeg"
-		instantUpload={true}
 		server={{
 			process: async (fieldName, file, metadata, load, error, progress, abort) => {
 				const f = new File([file], file.name, { type: file.type });
@@ -69,6 +73,9 @@
 					res.value.on('error', error);
 
 					return res.value.abort;
+				} else {
+					console.error(res.error);
+					error("Failed to upload file");
 				}
 
 				return () => {};
@@ -91,8 +98,3 @@
 		}}
 	/>
 </div>
-
-<style global>
-	@import 'filepond/dist/filepond.css';
-	@import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
-</style>
