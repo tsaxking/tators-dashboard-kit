@@ -17,7 +17,7 @@ export namespace Test {
 			amount: 2,
 			type: 'versions'
 		},
-		lifetime: 1000 * 60 * 10,
+		lifetime: 1000 * 60 * 10
 	});
 }
 

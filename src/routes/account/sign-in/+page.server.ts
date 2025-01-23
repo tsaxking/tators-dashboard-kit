@@ -3,8 +3,8 @@ import { Account } from '$lib/server/structs/account.js';
 import { Session } from '$lib/server/structs/session.js';
 import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
-import { OAuth2Client } from "google-auth-library";
-import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from "$env/static/private";
+import { OAuth2Client } from 'google-auth-library';
+import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from '$env/static/private';
 
 const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
 
@@ -84,25 +84,25 @@ export const actions = {
 			success: true
 		};
 	},
-    OAuth2: async () => {
-        const client = new OAuth2Client({
-            clientSecret: SECRET_OAUTH2_CLIENT_SECRET,
-            clientId: SECRET_OAUTH2_CLIENT_ID,
-            redirectUri: "http://localhost:5173/oauth/sign-in",
-        });
+	OAuth2: async () => {
+		const client = new OAuth2Client({
+			clientSecret: SECRET_OAUTH2_CLIENT_SECRET,
+			clientId: SECRET_OAUTH2_CLIENT_ID,
+			redirectUri: 'http://localhost:5173/oauth/sign-in'
+		});
 		// log(client);
-        const authorizeUrl = client.generateAuthUrl({
-            access_type: 'offline',
-            // scope: 'https://www.googleapis.com/auth/userinfo.profile openid email',
-            scope: [
-                'https://www.googleapis.com/auth/userinfo.profile',
-                'https://www.googleapis.com/auth/userinfo.email',
-                'openid',
-            ],
-            prompt: 'consent',
-        });
+		const authorizeUrl = client.generateAuthUrl({
+			access_type: 'offline',
+			// scope: 'https://www.googleapis.com/auth/userinfo.profile openid email',
+			scope: [
+				'https://www.googleapis.com/auth/userinfo.profile',
+				'https://www.googleapis.com/auth/userinfo.email',
+				'openid'
+			],
+			prompt: 'consent'
+		});
 		// log(authorizeUrl);
 
-        throw redirect(ServerCode.temporaryRedirect, authorizeUrl);
-    },
+		throw redirect(ServerCode.temporaryRedirect, authorizeUrl);
+	}
 };

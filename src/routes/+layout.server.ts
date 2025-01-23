@@ -6,6 +6,7 @@ import '$lib/server/structs/permissions';
 import '$lib/server/structs/universe';
 import { DB } from '$lib/server/db/';
 import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
+import '$lib/server/utils/files';
 
 config();
 

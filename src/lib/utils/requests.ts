@@ -123,12 +123,14 @@ export namespace Requests {
 		metadata.key = value;
 	};
 
-
-
-	export const uploadFiles = (url: string, files: FileList, config?: {
-		headers?: Record<string, string>;
-		body?: unknown;
-	}) => {
+	export const uploadFiles = (
+		url: string,
+		files: FileList,
+		config?: {
+			headers?: Record<string, string>;
+			body?: unknown;
+		}
+	) => {
 		const emitter = new EventEmitter<{
 			progress: ProgressEvent<EventTarget>;
 			complete: ProgressEvent<EventTarget>;
@@ -156,13 +158,15 @@ export namespace Requests {
 				body = JSON.stringify(config.body);
 			}
 
+			xhr.setRequestHeader('X-Body', body);
+
 			xhr.upload.onprogress = (e) => {
 				emitter.emit('progress', e);
 			};
 
 			xhr.upload.onerror = (e) => {
 				emitter.emit('error', new Error('Upload failed'));
-			}
+			};
 
 			xhr.upload.onloadend = (e) => {
 				if (xhr.readyState === 4) {
@@ -175,12 +179,12 @@ export namespace Requests {
 						}
 					}, 10);
 				}
-			}
-		}).then(r => {
+			};
+		}).then((r) => {
 			if (r.isErr()) {
 				emitter.emit('error', r.error);
 			}
 		});
 		return emitter;
-	}
+	};
 }

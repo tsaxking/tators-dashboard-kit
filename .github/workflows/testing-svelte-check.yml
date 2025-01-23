@@ -53,7 +53,6 @@ jobs:
           echo "PUBLIC_APP_NAME=test" >> .env
           export $(cat .env | xargs)
 
-
       - name: Run
         run: |
           echo "Testing..."
