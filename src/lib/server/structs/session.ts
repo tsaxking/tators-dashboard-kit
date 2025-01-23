@@ -87,9 +87,11 @@ export namespace Session {
 
 	export const signIn = async (account: Account.AccountData, session: SessionData) => {
 		return attemptAsync(async () => {
-			(await session.update({
-				accountId: account.id,
-			})).unwrap();
+			(
+				await session.update({
+					accountId: account.id
+				})
+			).unwrap();
 
 			// const universes = (await Universes.getUniverses(account)).unwrap();
 

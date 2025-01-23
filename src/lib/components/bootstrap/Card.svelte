@@ -1,20 +1,13 @@
 <script lang="ts">
+	import type { BootstrapColor } from 'colors/color';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
 		title: string;
-		color?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info' | 'light' | 'dark';
+		color?: BootstrapColor;
 		body: Snippet;
 		classes?: string;
-		glowColor?:
-			| 'primary'
-			| 'secondary'
-			| 'success'
-			| 'danger'
-			| 'warning'
-			| 'info'
-			| 'light'
-			| 'dark';
+		glowColor?: BootstrapColor;
 	}
 
 	const { title, body, color, classes = '', glowColor }: Props = $props();

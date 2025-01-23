@@ -111,7 +111,7 @@ export namespace Universes {
 			).unwrap();
 
 			(
-				await Account.sendAccountNotif(account, {
+				await Account.sendAccountNotif(account.id, {
 					title: 'Universe Invite',
 					message: `You have been invited to join ${universe.data.name} by ${inviter.data.username}`,
 					severity: 'info',

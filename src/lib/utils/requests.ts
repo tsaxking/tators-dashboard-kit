@@ -2,6 +2,7 @@ import { Loop } from 'ts-utils/loop';
 import { attemptAsync, type Result } from 'ts-utils/check';
 import { Stream } from 'ts-utils/stream';
 import { v4 as uuid } from 'uuid';
+import { EventEmitter } from 'ts-utils/event-emitter';
 export namespace Requests {
 	const metadata: Record<string, string> = {};
 	let requests: ServerRequest[] = [];
@@ -120,5 +121,70 @@ export namespace Requests {
 
 	export const setMeta = (key: string, value: string) => {
 		metadata.key = value;
+	};
+
+	export const uploadFiles = (
+		url: string,
+		files: FileList,
+		config?: {
+			headers?: Record<string, string>;
+			body?: unknown;
+		}
+	) => {
+		const emitter = new EventEmitter<{
+			progress: ProgressEvent<EventTarget>;
+			complete: ProgressEvent<EventTarget>;
+			error: Error;
+		}>();
+		attemptAsync(async () => {
+			const formData = new FormData();
+			for (const file of files) {
+				formData.append('file', file);
+			}
+
+			const xhr = new XMLHttpRequest();
+			xhr.open('POST', url, true);
+			xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+			xhr.setRequestHeader('X-File-Count', files.length.toString());
+
+			if (config?.headers) {
+				for (const [key, value] of Object.entries(config.headers)) {
+					xhr.setRequestHeader(key, value);
+				}
+			}
+
+			let body = '{}';
+			if (config?.body) {
+				body = JSON.stringify(config.body);
+			}
+
+			xhr.setRequestHeader('X-Body', body);
+
+			xhr.upload.onprogress = (e) => {
+				emitter.emit('progress', e);
+			};
+
+			xhr.upload.onerror = (e) => {
+				emitter.emit('error', new Error('Upload failed'));
+			};
+
+			xhr.upload.onloadend = (e) => {
+				if (xhr.readyState === 4) {
+					emitter.emit('complete', e);
+
+					const interval = setInterval(() => {
+						if (xhr.readyState === 4) {
+							clearInterval(interval);
+							emitter.emit('complete', e);
+						}
+					}, 10);
+				}
+			};
+		}).then((r) => {
+			if (r.isErr()) {
+				emitter.emit('error', r.error);
+			}
+		});
+		return emitter;
 	};
 }

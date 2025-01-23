@@ -8,8 +8,7 @@ import { sql } from 'drizzle-orm';
 import type { Notification } from '$lib/types/notification';
 import { Session } from './session';
 import { sse } from '../utils/sse';
-import { OAuth2Client } from 'google-auth-library';
-import { google } from 'googleapis';
+import { DataAction, PropertyAction } from 'drizzle-struct/types';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -70,9 +69,24 @@ export namespace Account {
 			severity: text('severity').notNull(),
 			message: text('message').notNull(),
 			icon: text('icon').notNull(),
-			link: text('link').notNull()
+			link: text('link').notNull(),
+			read: boolean('read').notNull()
 		}
 	});
+
+	AccountNotification.bypass(DataAction.Delete, (a, b) => a.id === b?.accountId);
+	AccountNotification.bypass(PropertyAction.Update, (a, b) => a.id === b?.accountId);
+
+	export const Settings = new Struct({
+		name: 'account_settings',
+		structure: {
+			accountId: text('account_id').notNull(),
+			setting: text('setting').notNull(),
+			value: text('value').notNull()
+		}
+	});
+
+	Settings.bypass('*', (account, setting) => account.id === setting?.accountId);
 
 	export const newHash = (password: string) => {
 		return attempt(() => {
@@ -163,7 +177,8 @@ export namespace Account {
 			message: notif.message,
 			accountId: accountId,
 			icon: notif.icon,
-			link: notif.link
+			link: notif.link,
+			read: false
 		});
 	};
 
@@ -194,19 +209,27 @@ export namespace Account {
 			// send verification email
 
 			// hash and salt are not needed as the authentication is handled by google in this case
-			return (await Account.new({
-				username,
-				email,
-				firstName,
-				lastName,
-				key: '',
-				salt: '',
-				verified: false,
-				verification: verificationId,
-				picture
-			})).unwrap();
+			return (
+				await Account.new({
+					username,
+					email,
+					firstName,
+					lastName,
+					key: '',
+					salt: '',
+					verified: false,
+					verification: verificationId,
+					picture
+				})
+			).unwrap();
 		});
-	}
+	};
+
+	export const getSettings = async (accountId: string) => {
+		return Settings.fromProperty('accountId', accountId, {
+			type: 'stream'
+		}).await();
+	};
 }
 
 // for drizzle

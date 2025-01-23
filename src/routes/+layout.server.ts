@@ -11,6 +11,7 @@ import '$lib/server/structs/strategy'
 import '$lib/server/structs/TBA'; 
 import { DB } from '$lib/server/db/';
 import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
+import '$lib/server/utils/files';
 
 config();
 
