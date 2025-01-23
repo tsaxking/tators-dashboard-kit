@@ -55,7 +55,7 @@ importers:
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
         specifier: github:tsaxking/drizzle-struct
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/e4d477d7c5d89feaeb203e6cac0ff1f7b6bd1471(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/f2b849162324a05e887ecae7340fdccfb08c94c8(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -101,6 +101,9 @@ importers:
       svelte-filepond:
         specifier: ^0.2.2
         version: 0.2.2(filepond@4.32.7)
+      tatorscout-utils:
+        specifier: git+https://github.com/tsaxking/tatorscout-utils.git
+        version: utils@https://codeload.github.com/tsaxking/tatorscout-utils/tar.gz/da9c33ca3c4734532565258036dc6b98678c87a2(@types/node@22.10.4)
       ts-utils:
         specifier: github:tsaxking/global-ts-utilities
         version: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/78515545075c95c433dc44d6bae801e1737f56db
@@ -860,8 +863,21 @@ packages:
       eslint:
         optional: true
 
+  '@eslint/compat@1.2.5':
+    resolution: {integrity: sha512-5iuG/StT+7OfvhoBHPlmxkPA9om6aDUFgmD4+mWKAGsYt4vCe8rypneG03AuseyRHBmcCLXQtIH5S26tIoggLg==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    peerDependencies:
+      eslint: ^9.10.0
+    peerDependenciesMeta:
+      eslint:
+        optional: true
+
   '@eslint/config-array@0.19.1':
     resolution: {integrity: sha512-fo6Mtm5mWyKjA/Chy1BYTdn5mGJoDNjC7C64ug20ADsRDGrA85bN3uK3MaKbeRkRuuIEAR5N33Jr1pbm411/PA==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@eslint/core@0.10.0':
+    resolution: {integrity: sha512-gFHJ+xBOo4G3WRlR1e/3G8A6/KZAH6zcE/hkLRCZTi/B9avAG365QhFA8uOGzTMqgTghpn7/fSnscW++dpMSAw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/core@0.9.1':
@@ -880,12 +896,20 @@ packages:
     resolution: {integrity: sha512-Sxc4hqcs1kTu0iID3kcZDW3JHq2a77HO9P8CP6YEA/FpH3Ll8UXE2r/86Rz9YJLKme39S9vU5OWNjC6Xl0Cr3w==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
+  '@eslint/js@9.18.0':
+    resolution: {integrity: sha512-fK6L7rxcq6/z+AaQMtiFTkvbHkBLNlwyRxHpKawP0x3u9+NC6MQTnFW+AdpwC6gfHTW0051cokQgtTN2FqlxQA==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
   '@eslint/object-schema@2.1.5':
     resolution: {integrity: sha512-o0bhxnL89h5Bae5T318nFoFzGy+YE5i/gGkoPAgkmTVdRKTiv3p8JHevPiPaMwoloKfEiiaHlawCqaZMqRm+XQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@eslint/plugin-kit@0.2.4':
     resolution: {integrity: sha512-zSkKow6H5Kdm0ZUQUB2kV5JIXqoG0+uH5YADhaEHswm664N9Db8dXSi0nMJpacpMf+MyyglF1vnZohpEg5yUtg==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@eslint/plugin-kit@0.2.5':
+    resolution: {integrity: sha512-lB05FkqEdUg2AA0xEbUz0SnkXT1LcCTa438W4IWTUh4hdOnVbQyOJ81OrDXsJk/LSiJHubgGEFoR5EHq1NsH1A==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
   '@humanfs/core@0.19.1':
@@ -2208,8 +2232,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/e4d477d7c5d89feaeb203e6cac0ff1f7b6bd1471:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/e4d477d7c5d89feaeb203e6cac0ff1f7b6bd1471}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/f2b849162324a05e887ecae7340fdccfb08c94c8:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/f2b849162324a05e887ecae7340fdccfb08c94c8}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -2309,6 +2333,12 @@ packages:
     peerDependencies:
       eslint: '>=6.0.0'
 
+  eslint-config-prettier@10.0.1:
+    resolution: {integrity: sha512-lZBts941cyJyeaooiKxAtzoPHTN+GbQTJFAIdQbRhA4/8whaAraEh47Whw/ZFfrjNSnlAxqfm9i0XVAEkULjCw==}
+    hasBin: true
+    peerDependencies:
+      eslint: '>=7.0.0'
+
   eslint-config-prettier@9.1.0:
     resolution: {integrity: sha512-NSWl5BFQWEPi1j4TjVNItzYV7dZXZ+wP6I6ZhrBGpChQhZRUaElihE9uRRkcbRnNb76UMKDF3r+WTmNcGPKsqw==}
     hasBin: true
@@ -2367,6 +2397,16 @@ packages:
       jiti:
         optional: true
 
+  eslint@9.18.0:
+    resolution: {integrity: sha512-+waTfRWQlSbpt3KWE+CjrPPYnbq9kfZIYUqapc0uBXyjTp8aYXZDsUH16m39Ryq3NjAVP4tjuF7KaukeqoCoaA==}
+    engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    hasBin: true
+    peerDependencies:
+      jiti: '*'
+    peerDependenciesMeta:
+      jiti:
+        optional: true
+
   esm-env@1.2.1:
     resolution: {integrity: sha512-U9JedYYjCnadUlXk7e1Kr+aENQhtUaoaV9+gZm1T8LC/YBAPJx3NSPIAurFOC0U5vrdSevnUJS2/wUVxGwPhng==}
 
@@ -2396,6 +2436,9 @@ packages:
 
   esrap@1.3.2:
     resolution: {integrity: sha512-C4PXusxYhFT98GjLSmb20k9PREuUdporer50dhzGuJu9IJXktbMddVCMLAERl5dAHyAi73GWWCE4FVHGP1794g==}
+
+  esrap@1.4.3:
+    resolution: {integrity: sha512-Xddc1RsoFJ4z9nR7W7BFaEPIp4UXoeQ0+077UdWLxbafMQFyU79sQJMk7kxNgRwQ9/aVgaKacCHC2pUACGwmYw==}
 
   esrecurse@4.3.0:
     resolution: {integrity: sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==}
@@ -3176,6 +3219,12 @@ packages:
       prettier: ^3.0.0
       svelte: ^3.2.0 || ^4.0.0-next.0 || ^5.0.0-next.0
 
+  prettier-plugin-svelte@3.3.3:
+    resolution: {integrity: sha512-yViK9zqQ+H2qZD1w/bH7W8i+bVfKrD8GIFjkFe4Thl6kCT9SlAsXVNmt3jCvQOCsnOhcvYgsoVlRV/Eu6x5nNw==}
+    peerDependencies:
+      prettier: ^3.0.0
+      svelte: ^3.2.0 || ^4.0.0-next.0 || ^5.0.0-next.0
+
   prettier@3.4.2:
     resolution: {integrity: sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==}
     engines: {node: '>=14'}
@@ -3678,6 +3727,10 @@ packages:
     resolution: {integrity: sha512-FsA1OjAKMAFSDob6j/Tv2ZV9rY4SeqPd1WXQlQkFkePAozSHLp6tbkU9qa1xJ+uTRzMSM2Vx3USdsYZBXd3H3g==}
     engines: {node: '>=18'}
 
+  svelte@5.19.0:
+    resolution: {integrity: sha512-qvd2GvvYnJxS/MteQKFSMyq8cQrAAut28QZ39ySv9k3ggmhw4Au4Rfcsqva74i0xMys//OhbhVCNfXPrDzL/Bg==}
+    engines: {node: '>=18'}
+
   sveltedoc-parser@4.2.1:
     resolution: {integrity: sha512-sWJRa4qOfRdSORSVw9GhfDEwsbsYsegnDzBevUCF6k/Eis/QqCu9lJ6I0+d/E2wOWCjOhlcJ3+jl/Iur+5mmCw==}
     engines: {node: '>=10.0.0'}
@@ -3810,6 +3863,11 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  typescript@5.7.3:
+    resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
   uid-safe@2.1.5:
     resolution: {integrity: sha512-KPHm4VL5dDXKz01UuEd88Df+KzynaohSL9fBh096KWAxSKZQDI2uBrVqtvRM4rwrIrRRKsdLNML/lnaaVSRioA==}
     engines: {node: '>= 0.8'}
@@ -3848,8 +3906,16 @@ packages:
     resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
     engines: {node: '>= 0.4.0'}
 
+  utils@https://codeload.github.com/tsaxking/tatorscout-utils/tar.gz/da9c33ca3c4734532565258036dc6b98678c87a2:
+    resolution: {tarball: https://codeload.github.com/tsaxking/tatorscout-utils/tar.gz/da9c33ca3c4734532565258036dc6b98678c87a2}
+    version: 1.0.0
+
   uuid@11.0.4:
     resolution: {integrity: sha512-IzL6VtTTYcAhA/oghbFJ1Dkmqev+FpQWnCBaKq/gUluLxliWvO8DPFWfIviRmYbtaavtSQe4WBL++rFjdcGWEg==}
+    hasBin: true
+
+  uuid@11.0.5:
+    resolution: {integrity: sha512-508e6IcKLrhxKdBbcA2b4KQZlLVp2+J5UwQ6F7Drckkc5N9ZJwFa4TgWtsww9UG8fGHbm6gbV19TdM5pQ4GaIA==}
     hasBin: true
 
   uuid@9.0.1:
@@ -4381,11 +4447,20 @@ snapshots:
       eslint: 9.17.0
       eslint-visitor-keys: 3.4.3
 
+  '@eslint-community/eslint-utils@4.4.1(eslint@9.18.0)':
+    dependencies:
+      eslint: 9.18.0
+      eslint-visitor-keys: 3.4.3
+
   '@eslint-community/regexpp@4.12.1': {}
 
   '@eslint/compat@1.2.4(eslint@9.17.0)':
     optionalDependencies:
       eslint: 9.17.0
+
+  '@eslint/compat@1.2.5(eslint@9.18.0)':
+    optionalDependencies:
+      eslint: 9.18.0
 
   '@eslint/config-array@0.19.1':
     dependencies:
@@ -4394,6 +4469,10 @@ snapshots:
       minimatch: 3.1.2
     transitivePeerDependencies:
       - supports-color
+
+  '@eslint/core@0.10.0':
+    dependencies:
+      '@types/json-schema': 7.0.15
 
   '@eslint/core@0.9.1':
     dependencies:
@@ -4429,10 +4508,17 @@ snapshots:
 
   '@eslint/js@9.17.0': {}
 
+  '@eslint/js@9.18.0': {}
+
   '@eslint/object-schema@2.1.5': {}
 
   '@eslint/plugin-kit@0.2.4':
     dependencies:
+      levn: 0.4.1
+
+  '@eslint/plugin-kit@0.2.5':
+    dependencies:
+      '@eslint/core': 0.10.0
       levn: 0.4.1
 
   '@humanfs/core@0.19.1': {}
@@ -5741,30 +5827,30 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/e4d477d7c5d89feaeb203e6cac0ff1f7b6bd1471(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/f2b849162324a05e887ecae7340fdccfb08c94c8(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
     dependencies:
-      '@eslint/compat': 1.2.4(eslint@9.17.0)
+      '@eslint/compat': 1.2.5(eslint@9.18.0)
       '@types/proper-lockfile': 4.1.4
       axios: 1.7.9
       dotenv: 16.4.7
       drizzle-orm: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-zod: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
-      eslint: 9.17.0
-      eslint-config-prettier: 9.1.0(eslint@9.17.0)
-      eslint-plugin-svelte: 2.46.1(eslint@9.17.0)(svelte@5.16.1)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2))
+      eslint: 9.18.0
+      eslint-config-prettier: 9.1.0(eslint@9.18.0)
+      eslint-plugin-svelte: 2.46.1(eslint@9.18.0)(svelte@5.19.0)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2))
       express: 4.21.2
       fuzzy-search: 3.2.1
       math: https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91
       pg: 8.13.1
       postgres: 3.4.5
       prettier: 3.4.2
-      prettier-plugin-svelte: 3.3.2(prettier@3.4.2)(svelte@5.16.1)
+      prettier-plugin-svelte: 3.3.3(prettier@3.4.2)(svelte@5.19.0)
       proper-lockfile: 4.1.2
-      svelte: 5.16.1
-      ts-node: 10.9.2(@types/node@22.10.4)(typescript@5.7.2)
+      svelte: 5.19.0
+      ts-node: 10.9.2(@types/node@22.10.4)(typescript@5.7.3)
       ts-utils: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb
-      typescript: 5.7.2
-      uuid: 11.0.4
+      typescript: 5.7.3
+      uuid: 11.0.5
       zod: 3.24.1
     transitivePeerDependencies:
       - '@aws-sdk/client-rds-data'
@@ -5976,9 +6062,22 @@ snapshots:
       eslint: 9.17.0
       semver: 7.6.3
 
+  eslint-compat-utils@0.5.1(eslint@9.18.0):
+    dependencies:
+      eslint: 9.18.0
+      semver: 7.6.3
+
+  eslint-config-prettier@10.0.1(eslint@9.18.0):
+    dependencies:
+      eslint: 9.18.0
+
   eslint-config-prettier@9.1.0(eslint@9.17.0):
     dependencies:
       eslint: 9.17.0
+
+  eslint-config-prettier@9.1.0(eslint@9.18.0):
+    dependencies:
+      eslint: 9.18.0
 
   eslint-plugin-svelte@2.46.1(eslint@9.17.0)(svelte@5.16.1)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2)):
     dependencies:
@@ -5996,6 +6095,25 @@ snapshots:
       svelte-eslint-parser: 0.43.0(svelte@5.16.1)
     optionalDependencies:
       svelte: 5.16.1
+    transitivePeerDependencies:
+      - ts-node
+
+  eslint-plugin-svelte@2.46.1(eslint@9.18.0)(svelte@5.19.0)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2)):
+    dependencies:
+      '@eslint-community/eslint-utils': 4.4.1(eslint@9.18.0)
+      '@jridgewell/sourcemap-codec': 1.5.0
+      eslint: 9.18.0
+      eslint-compat-utils: 0.5.1(eslint@9.18.0)
+      esutils: 2.0.3
+      known-css-properties: 0.35.0
+      postcss: 8.4.49
+      postcss-load-config: 3.1.4(postcss@8.4.49)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2))
+      postcss-safe-parser: 6.0.0(postcss@8.4.49)
+      postcss-selector-parser: 6.1.2
+      semver: 7.6.3
+      svelte-eslint-parser: 0.43.0(svelte@5.19.0)
+    optionalDependencies:
+      svelte: 5.19.0
     transitivePeerDependencies:
       - ts-node
 
@@ -6102,6 +6220,45 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  eslint@9.18.0:
+    dependencies:
+      '@eslint-community/eslint-utils': 4.4.1(eslint@9.18.0)
+      '@eslint-community/regexpp': 4.12.1
+      '@eslint/config-array': 0.19.1
+      '@eslint/core': 0.10.0
+      '@eslint/eslintrc': 3.2.0
+      '@eslint/js': 9.18.0
+      '@eslint/plugin-kit': 0.2.5
+      '@humanfs/node': 0.16.6
+      '@humanwhocodes/module-importer': 1.0.1
+      '@humanwhocodes/retry': 0.4.1
+      '@types/estree': 1.0.6
+      '@types/json-schema': 7.0.15
+      ajv: 6.12.6
+      chalk: 4.1.2
+      cross-spawn: 7.0.6
+      debug: 4.4.0
+      escape-string-regexp: 4.0.0
+      eslint-scope: 8.2.0
+      eslint-visitor-keys: 4.2.0
+      espree: 10.3.0
+      esquery: 1.6.0
+      esutils: 2.0.3
+      fast-deep-equal: 3.1.3
+      file-entry-cache: 8.0.0
+      find-up: 5.0.0
+      glob-parent: 6.0.2
+      ignore: 5.3.2
+      imurmurhash: 0.1.4
+      is-glob: 4.0.3
+      json-stable-stringify-without-jsonify: 1.0.1
+      lodash.merge: 4.6.2
+      minimatch: 3.1.2
+      natural-compare: 1.4.0
+      optionator: 0.9.4
+    transitivePeerDependencies:
+      - supports-color
+
   esm-env@1.2.1: {}
 
   espree@10.3.0:
@@ -6134,6 +6291,10 @@ snapshots:
       '@types/estree': 1.0.6
 
   esrap@1.3.2:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.0
+
+  esrap@1.4.3:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
 
@@ -6654,7 +6815,7 @@ snapshots:
 
   math@https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91:
     dependencies:
-      typescript: 5.7.2
+      typescript: 5.7.3
 
   mdsvex@0.11.2(svelte@5.16.1):
     dependencies:
@@ -6896,6 +7057,11 @@ snapshots:
     dependencies:
       prettier: 3.4.2
       svelte: 5.16.1
+
+  prettier-plugin-svelte@3.3.3(prettier@3.4.2)(svelte@5.19.0):
+    dependencies:
+      prettier: 3.4.2
+      svelte: 5.19.0
 
   prettier@3.4.2: {}
 
@@ -7341,6 +7507,16 @@ snapshots:
     optionalDependencies:
       svelte: 5.16.1
 
+  svelte-eslint-parser@0.43.0(svelte@5.19.0):
+    dependencies:
+      eslint-scope: 7.2.2
+      eslint-visitor-keys: 3.4.3
+      espree: 9.6.1
+      postcss: 8.4.49
+      postcss-scss: 4.0.9(postcss@8.4.49)
+    optionalDependencies:
+      svelte: 5.19.0
+
   svelte-filepond@0.2.2(filepond@4.32.7):
     dependencies:
       filepond: 4.32.7
@@ -7377,6 +7553,23 @@ snapshots:
       clsx: 2.1.1
       esm-env: 1.2.1
       esrap: 1.3.2
+      is-reference: 3.0.3
+      locate-character: 3.0.0
+      magic-string: 0.30.17
+      zimmerframe: 1.1.2
+
+  svelte@5.19.0:
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@jridgewell/sourcemap-codec': 1.5.0
+      '@types/estree': 1.0.6
+      acorn: 8.14.0
+      acorn-typescript: 1.4.13(acorn@8.14.0)
+      aria-query: 5.3.2
+      axobject-query: 4.1.0
+      clsx: 2.1.1
+      esm-env: 1.2.1
+      esrap: 1.4.3
       is-reference: 3.0.3
       locate-character: 3.0.0
       magic-string: 0.30.17
@@ -7455,6 +7648,24 @@ snapshots:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
+  ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.3):
+    dependencies:
+      '@cspotcode/source-map-support': 0.8.1
+      '@tsconfig/node10': 1.0.11
+      '@tsconfig/node12': 1.0.11
+      '@tsconfig/node14': 1.0.3
+      '@tsconfig/node16': 1.0.4
+      '@types/node': 22.10.4
+      acorn: 8.14.0
+      acorn-walk: 8.3.4
+      arg: 4.1.3
+      create-require: 1.1.1
+      diff: 4.0.2
+      make-error: 1.3.6
+      typescript: 5.7.3
+      v8-compile-cache-lib: 3.0.1
+      yn: 3.1.1
+
   ts-utils@https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb:
     dependencies:
       typescript: 5.7.2
@@ -7494,6 +7705,8 @@ snapshots:
 
   typescript@5.7.2: {}
 
+  typescript@5.7.3: {}
+
   uid-safe@2.1.5:
     dependencies:
       random-bytes: 1.0.0
@@ -7531,7 +7744,31 @@ snapshots:
 
   utils-merge@1.0.1: {}
 
+  utils@https://codeload.github.com/tsaxking/tatorscout-utils/tar.gz/da9c33ca3c4734532565258036dc6b98678c87a2(@types/node@22.10.4):
+    dependencies:
+      '@eslint/compat': 1.2.5(eslint@9.18.0)
+      eslint: 9.18.0
+      eslint-config-prettier: 10.0.1(eslint@9.18.0)
+      eslint-plugin-svelte: 2.46.1(eslint@9.18.0)(svelte@5.19.0)(ts-node@10.9.2(@types/node@22.10.4)(typescript@5.7.2))
+      math: https://codeload.github.com/tsaxking/calculations/tar.gz/6f735b3ade72c81393ee5f07db93647c3d4fff91
+      prettier: 3.4.2
+      prettier-plugin-svelte: 3.3.3(prettier@3.4.2)(svelte@5.19.0)
+      svelte: 5.19.0
+      ts-node: 10.9.2(@types/node@22.10.4)(typescript@5.7.3)
+      ts-utils: https://codeload.github.com/tsaxking/global-ts-utilities/tar.gz/574e1bbb5ab19e4a380a88d06c50b510bb1f8bfb
+      typescript: 5.7.3
+      uuid: 11.0.5
+      zod: 3.24.1
+    transitivePeerDependencies:
+      - '@swc/core'
+      - '@swc/wasm'
+      - '@types/node'
+      - jiti
+      - supports-color
+
   uuid@11.0.4: {}
+
+  uuid@11.0.5: {}
 
   uuid@9.0.1: {}
 

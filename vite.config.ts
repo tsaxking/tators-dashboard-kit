@@ -9,5 +9,8 @@ export default defineConfig({
 
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
+	},
+	server: {
+		port: 2122,
 	}
 });
