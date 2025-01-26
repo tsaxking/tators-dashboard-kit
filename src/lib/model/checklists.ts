@@ -1,4 +1,4 @@
-import { Struct } from 'drizzle-struct/front-end';
+import { type DataArr, Struct, type StructData } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
 
 
@@ -13,6 +13,9 @@ export namespace Checklist {
         socket: sse
     });
 
+    export type ChecklistData = StructData<typeof Checklists.data.structure>;
+    export type ChecklistArr = DataArr<typeof Checklists.data.structure>;
+
     export const Questions = new Struct({
         name: 'checklist_questions',
         structure: {
@@ -23,6 +26,9 @@ export namespace Checklist {
         socket: sse,
     });
 
+    export type QuestionData = StructData<typeof Questions.data.structure>;
+    export type QuestionArr = DataArr<typeof Questions.data.structure>;
+
     export const Assignments = new Struct({
         name: 'checklist_assignments',
         structure: {
@@ -31,6 +37,9 @@ export namespace Checklist {
         },
         socket: sse,
     });
+
+    export type AssignmentData = StructData<typeof Assignments.data.structure>;
+    export type AssignmentArr = DataArr<typeof Assignments.data.structure>;
 
     export const Answers = new Struct({
         name: 'checklist_answers',
@@ -41,4 +50,7 @@ export namespace Checklist {
         },
         socket: sse,
     });
+
+    export type AnswerData = StructData<typeof Answers.data.structure>;
+    export type AnswerArr = DataArr<typeof Answers.data.structure>;
 }

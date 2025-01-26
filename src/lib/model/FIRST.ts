@@ -1,6 +1,5 @@
 import { sse } from '../utils/sse';
-import { Struct } from 'drizzle-struct/front-end';
-
+import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
 
 
 export namespace FIRST {
@@ -14,6 +13,9 @@ export namespace FIRST {
         socket: sse
     });
 
+    export type EventsData = StructData<typeof Events.data.structure>;
+    export type EventsArr = DataArr<typeof Events.data.structure>;
+
     export const Teams = new Struct({
         name: 'teams',
         structure: {
@@ -23,6 +25,9 @@ export namespace FIRST {
         },
         socket: sse,
     });
+
+    export type TeamsData = StructData<typeof Teams.data.structure>;
+    export type TeamsArr = DataArr<typeof Teams.data.structure>;
 
     export const TeamPictures = new Struct({
         name: 'team_pictures',
@@ -35,6 +40,9 @@ export namespace FIRST {
         socket: sse,
     });
 
+    export type TeamPicturesData = StructData<typeof TeamPictures.data.structure>;
+    export type TeamPicturesArr = DataArr<typeof TeamPictures.data.structure>;
+
     export const Matches = new Struct({
         name: 'matches',
         structure: {
@@ -44,6 +52,9 @@ export namespace FIRST {
         },
         socket: sse,
     });
+
+    export type MatchesData = StructData<typeof Matches.data.structure>;
+    export type MatchesArr = DataArr<typeof Matches.data.structure>;
 
     export const CustomMatches = new Struct({
         name: 'custom_matches',
@@ -61,4 +72,7 @@ export namespace FIRST {
         },
         socket: sse,
     });
+
+    export type CustomMatchesData = StructData<typeof CustomMatches.data.structure>;
+    export type CustomMatchesArr = DataArr<typeof CustomMatches.data.structure>;
 };

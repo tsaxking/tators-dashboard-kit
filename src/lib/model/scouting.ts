@@ -1,4 +1,4 @@
-import { Struct } from 'drizzle-struct/front-end';
+import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
 
 
@@ -18,6 +18,9 @@ export namespace Scouting {
         socket: sse
     });
 
+    export type MatchScoutingData = StructData<typeof MatchScouting.data.structure>;
+    export type MatchScoutingArr = DataArr<typeof MatchScouting.data.structure>;
+
 
     export const TeamComments = new Struct({
         name: 'team_comments',
@@ -32,6 +35,9 @@ export namespace Scouting {
         socket: sse
     });
 
+    export type TeamCommentsData = StructData<typeof TeamComments.data.structure>;
+    export type TeamCommentsArr = DataArr<typeof TeamComments.data.structure>;
+
 
     export namespace PIT {
         export const Sections = new Struct({
@@ -43,6 +49,9 @@ export namespace Scouting {
             },
             socket: sse
         });
+
+        export type SectionData = StructData<typeof Sections.data.structure>;
+        export type SectionArr = DataArr<typeof Sections.data.structure>;
 
 
         export const Groups = new Struct({
@@ -56,6 +65,9 @@ export namespace Scouting {
             socket: sse
         });
 
+        export type GroupData = StructData<typeof Groups.data.structure>;
+        export type GroupArr = DataArr<typeof Groups.data.structure>;
+
         export const Qustions = new Struct({
             name: 'pit_questions',
             structure: {
@@ -67,6 +79,9 @@ export namespace Scouting {
             socket: sse
         });
 
+        export type QuestionData = StructData<typeof Qustions.data.structure>;
+        export type QuestionArr = DataArr<typeof Qustions.data.structure>;
+
         export const Answers = new Struct({
             name: 'pit_answers',
             structure: {
@@ -77,5 +92,8 @@ export namespace Scouting {
             },
             socket: sse
         });
+
+        export type AnswerData = StructData<typeof Answers.data.structure>;
+        export type AnswerArr = DataArr<typeof Answers.data.structure>;
     }
 }
