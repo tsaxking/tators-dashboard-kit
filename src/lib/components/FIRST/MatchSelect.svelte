@@ -4,7 +4,7 @@
     interface Props {
         matches: TBAMatch[];
         onSelect?: (match: TBAMatch) => void;
-        selected: TBAMatch;
+        selected?: TBAMatch;
     }
 
     let { matches, onSelect, selected = $bindable() }: Props = $props();
@@ -15,6 +15,7 @@
     const match = matches.find((match) => match.key === matchKey);
     if (match) {
         onSelect?.(match);
+        selected = match;
     }
 }}>
     <option value="" selected disabled>Select a match</option>

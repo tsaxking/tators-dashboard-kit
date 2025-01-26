@@ -4,7 +4,7 @@
     interface Props {
         teams: TBATeam[];
         onSelect?: (match: TBATeam) => void;
-        selected: TBATeam;
+        selected?: TBATeam;
     }
 
     let { teams, onSelect, selected = $bindable() }: Props = $props();
