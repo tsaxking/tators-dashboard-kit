@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Navbar from '$lib/components/general/Navbar.svelte';
+	import Dashboard from '$lib/components/dashboard/Dashboard.svelte';
 	import { PUBLIC_APP_NAME } from '$env/static/public';
 	import { onMount } from 'svelte';
-	import { capitalize } from 'ts-utils/text';
 
 	const { children } = $props();
 
@@ -16,6 +16,9 @@
 <main class="dashboard">
 	<Navbar title={PUBLIC_APP_NAME} />
 
-	<h1>{capitalize(name)}</h1>
-	{@render children()}
+	<Dashboard title={name} >
+		{#snippet body()}
+			{@render children()}
+		{/snippet}
+	</Dashboard>
 </main>
