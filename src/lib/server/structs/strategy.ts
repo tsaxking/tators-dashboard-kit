@@ -6,9 +6,9 @@ export namespace Strategy {
     export const Whiteboards = new Struct({
         name: 'whiteboards',
         structure: {
-            teamNumber: text('team_number').notNull(),
-            board: text('board').notNull(),
             strategyId: text('strategy_id').notNull(),
+            board: text('board').notNull(),
+            name: text('name').notNull(),
         },
     });
 
