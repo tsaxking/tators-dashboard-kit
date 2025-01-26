@@ -1,4 +1,4 @@
-import { Struct } from 'drizzle-struct/front-end';
+import { Struct, type DataArr, type StructData } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
 
 export namespace Potato {
@@ -12,4 +12,7 @@ export namespace Potato {
         },
         socket: sse
     });
+
+    export type FriendData = StructData<typeof Friend.data.structure>;
+    export type FriendArr = DataArr<typeof Friend.data.structure>;
 }
