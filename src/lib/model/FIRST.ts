@@ -1,5 +1,5 @@
 import { sse } from '../utils/sse';
-import { Struct } from 'drizzle-struct/front-end';
+import { DataArr, Struct, type StructData } from 'drizzle-struct/front-end';
 
 
 
@@ -24,6 +24,8 @@ export namespace FIRST {
         socket: sse,
     });
 
+    export type TeamData = StructData<typeof Teams.data.structure>;
+
     export const TeamPictures = new Struct({
         name: 'team_pictures',
         structure: {
@@ -44,6 +46,11 @@ export namespace FIRST {
         },
         socket: sse,
     });
+
+
+    export type MatchData = StructData<typeof Matches.data.structure>;
+
+    export type MatchDataArr = DataArr<typeof Matches.data.structure>;
 
     export const CustomMatches = new Struct({
         name: 'custom_matches',

@@ -1,5 +1,7 @@
-import { Struct } from 'drizzle-struct/front-end';
+import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
+import { attempt } from 'ts-utils/check';
+import { Canvas } from 'canvas';
 
 
 export namespace Scouting {
@@ -18,6 +20,8 @@ export namespace Scouting {
         socket: sse
     });
 
+    export type MatchScoutingData = StructData<typeof MatchScouting.data.structure>;
+    export type MatchScoutings = DataArr<typeof MatchScouting.data.structure>;
 
     export const TeamComments = new Struct({
         name: 'team_comments',
@@ -31,7 +35,6 @@ export namespace Scouting {
         },
         socket: sse
     });
-
 
     export namespace PIT {
         export const Sections = new Struct({
