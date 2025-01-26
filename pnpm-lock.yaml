@@ -39,8 +39,8 @@ importers:
         specifier: ^1.6.0
         version: 1.6.0
       canvas:
-        specifier: git+https://github.com/tsaxking/canvas.git
-        version: https://codeload.github.com/tsaxking/canvas/tar.gz/e7d59968f1927ee4bcc16c1a3b12075f1268c362
+        specifier: github:tsaxking/canvas
+        version: https://codeload.github.com/tsaxking/canvas/tar.gz/2d3bfca9f2a07c2ba9842668ae57d090547c9ea2
       check-password-strength:
         specifier: ^2.0.10
         version: 2.0.10
@@ -1906,8 +1906,8 @@ packages:
     resolution: {integrity: sha512-P8BjAsXvZS+VIDUI11hHCQEv74YT67YUi5JJFNWIqL235sBmjX4+qx9Muvls5ivyNENctx46xQLQ3aTuE7ssaQ==}
     engines: {node: '>=6'}
 
-  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/e7d59968f1927ee4bcc16c1a3b12075f1268c362:
-    resolution: {tarball: https://codeload.github.com/tsaxking/canvas/tar.gz/e7d59968f1927ee4bcc16c1a3b12075f1268c362}
+  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/2d3bfca9f2a07c2ba9842668ae57d090547c9ea2:
+    resolution: {tarball: https://codeload.github.com/tsaxking/canvas/tar.gz/2d3bfca9f2a07c2ba9842668ae57d090547c9ea2}
     version: 1.0.0
 
   chai@5.1.2:
@@ -5645,7 +5645,7 @@ snapshots:
 
   callsites@3.1.0: {}
 
-  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/e7d59968f1927ee4bcc16c1a3b12075f1268c362:
+  canvas@https://codeload.github.com/tsaxking/canvas/tar.gz/2d3bfca9f2a07c2ba9842668ae57d090547c9ea2:
     dependencies:
       colors: https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b
       material-icons: 1.13.13

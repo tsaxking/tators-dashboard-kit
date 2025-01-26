@@ -75,6 +75,7 @@
 		"@types/proper-lockfile": "^4.1.4",
 		"bootstrap": "^5.3.3",
 		"busboy": "^1.6.0",
+		"canvas": "github:tsaxking/canvas",
 		"check-password-strength": "^2.0.10",
 		"cli-table": "^0.3.11",
 		"colors": "git+https://github.com/tsaxking/colors.git",
@@ -96,10 +97,9 @@
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",
 		"svelte-filepond": "^0.2.2",
+		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
-		"zod": "^3.24.1",
-		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git",
-		"canvas": "git+https://github.com/tsaxking/canvas.git"
+		"zod": "^3.24.1"
 	}
 }

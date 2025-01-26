@@ -6,8 +6,8 @@ import {
     Point2D
 } from 'math/point';
 import { Color } from 'colors/color';
-import { CanvasEvent } from 'canvas';
-import { Drawable, DrawableEvent } from 'canvas';
+import { type CanvasEvent } from 'canvas/canvas';
+import { Drawable, type DrawableEvent } from 'canvas/drawable';
 import { Path } from 'canvas';
 import { Polygon } from 'canvas';
 import { Board } from './board';

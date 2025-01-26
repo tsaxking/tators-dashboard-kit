@@ -1,5 +1,5 @@
 import { Point2D } from 'math/point';
-import { Path } from 'canvas/path';
+import { Path } from 'canvas';
 
 export class Stroke extends Path {
     constructor(points: Point2D[], color: string) {
