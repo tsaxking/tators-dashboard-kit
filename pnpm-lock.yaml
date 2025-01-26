@@ -47,6 +47,9 @@ importers:
       colors:
         specifier: git+https://github.com/tsaxking/colors.git
         version: https://codeload.github.com/tsaxking/colors/tar.gz/771b853af59020fbc5768858cba1d695279aae9b
+      datatables.net-dt:
+        specifier: ^2.2.1
+        version: 2.2.1
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7
@@ -86,6 +89,9 @@ importers:
       googleapis:
         specifier: ^144.0.0
         version: 144.0.0
+      jquery:
+        specifier: ^3.7.1
+        version: 3.7.1
       math:
         specifier: github:tsaxking/calculations
         version: calculations@https://codeload.github.com/tsaxking/calculations/tar.gz/e169f626ac0a77ce6f389ea27150be0dadc19dd4
@@ -168,6 +174,9 @@ importers:
       '@types/fuzzy-search':
         specifier: ^2.1.5
         version: 2.1.5
+      '@types/jquery':
+        specifier: ^3.5.32
+        version: 3.5.32
       '@types/multiparty':
         specifier: ^4.2.1
         version: 4.2.1
@@ -1592,6 +1601,9 @@ packages:
   '@types/http-errors@2.0.4':
     resolution: {integrity: sha512-D0CFMMtydbJAegzOyHjtiKPLlvnm3iTZyZRSZoLq2mRhDdmLfIWOCYPfQJ4cu2erKghU++QvjcUjp/5h7hESpA==}
 
+  '@types/jquery@3.5.32':
+    resolution: {integrity: sha512-b9Xbf4CkMqS02YH8zACqN1xzdxc3cO735Qe5AbSUFmyOiaWAbcpqh9Wna+Uk0vgACvoQHpWDg2rGdHkYPLmCiQ==}
+
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
@@ -1633,6 +1645,9 @@ packages:
 
   '@types/serve-static@1.15.7':
     resolution: {integrity: sha512-W8Ym+h8nhuRwaKPaDw34QUkwsGi6Rc4yYqvKFo5rm2FUEhCFbzVWrxXUxuKK8TASjWsysJY0nsmNCGhCOIsrOw==}
+
+  '@types/sizzle@2.3.9':
+    resolution: {integrity: sha512-xzLEyKB50yqCUPUJkIsrVvoWNfFUbIZI+RspLWt8u+tIW/BetMBZtgV2LY/2o+tYH8dRvQ+eoPf3NdhQCcLE2w==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -2026,6 +2041,12 @@ packages:
 
   csstype@3.1.3:
     resolution: {integrity: sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==}
+
+  datatables.net-dt@2.2.1:
+    resolution: {integrity: sha512-ca2hFyyuwkLnZxa8hGuSP5oD+r9gQitOrbXRwuT0bPSnIR5qx39KTHbK7QayUjl2iXTUdYah7PnQT8A80RuTXw==}
+
+  datatables.net@2.2.1:
+    resolution: {integrity: sha512-Hz7f+a77xGdroAzej88aobT5nkQIJ2Oy1JI7yh2cl0QAXQSJDXOKkOLknu+nphVP8CP8w9MtLCmwMst/F8niiQ==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -2828,6 +2849,9 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
+
+  jquery@3.7.1:
+    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -5286,6 +5310,10 @@ snapshots:
 
   '@types/http-errors@2.0.4': {}
 
+  '@types/jquery@3.5.32':
+    dependencies:
+      '@types/sizzle': 2.3.9
+
   '@types/json-schema@7.0.15': {}
 
   '@types/mdx@2.0.13': {}
@@ -5328,6 +5356,8 @@ snapshots:
       '@types/http-errors': 2.0.4
       '@types/node': 22.10.4
       '@types/send': 0.17.4
+
+  '@types/sizzle@2.3.9': {}
 
   '@types/unist@2.0.11': {}
 
@@ -5736,6 +5766,15 @@ snapshots:
   cssesc@3.0.0: {}
 
   csstype@3.1.3: {}
+
+  datatables.net-dt@2.2.1:
+    dependencies:
+      datatables.net: 2.2.1
+      jquery: 3.7.1
+
+  datatables.net@2.2.1:
+    dependencies:
+      jquery: 3.7.1
 
   debug@2.6.9:
     dependencies:
@@ -6730,6 +6769,8 @@ snapshots:
       is-docker: 2.2.1
 
   isexe@2.0.0: {}
+
+  jquery@3.7.1: {}
 
   js-tokens@4.0.0: {}
 

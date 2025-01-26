@@ -42,6 +42,7 @@
 		"@types/cli-table": "^0.3.4",
 		"@types/express": "^5.0.0",
 		"@types/fuzzy-search": "^2.1.5",
+		"@types/jquery": "^3.5.32",
 		"@types/multiparty": "^4.2.1",
 		"@types/node": "^22.10.4",
 		"@types/uuid": "^10.0.0",
@@ -78,6 +79,7 @@
 		"check-password-strength": "^2.0.10",
 		"cli-table": "^0.3.11",
 		"colors": "git+https://github.com/tsaxking/colors.git",
+		"datatables.net-dt": "^2.2.1",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.38.3",
 		"drizzle-struct": "github:tsaxking/drizzle-struct",
@@ -91,14 +93,15 @@
 		"fuzzy-search": "^3.2.1",
 		"google-auth-library": "^9.15.0",
 		"googleapis": "^144.0.0",
+		"jquery": "^3.7.1",
 		"math": "github:tsaxking/calculations",
 		"multiparty": "^4.2.3",
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",
 		"svelte-filepond": "^0.2.2",
+		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
-		"zod": "^3.24.1",
-		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git"
+		"zod": "^3.24.1"
 	}
 }
