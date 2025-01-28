@@ -1,7 +1,9 @@
+import { Account } from '$lib/server/structs/account.js';
 import { Session } from '$lib/server/structs/session.js';
 import { Universes } from '$lib/server/structs/universe.js';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
+import { z } from 'zod';
 
 export const load = async (event) => {
 	const error = (error: Error) => {
@@ -74,3 +76,84 @@ export const load = async (event) => {
 		universeCount: universeCount.value
 	};
 };
+
+
+export const actions = {
+	create: async (event) => {
+		const body = await event.request.formData();
+
+
+		const res = z.object({
+			name: z.string(),
+			description: z.string(),
+			public: z.string(),
+			'agree-tos': z.string(),
+		}).safeParse(Object.fromEntries(body.entries()));
+
+		if (!res.success) {
+			console.log('Zod failed:', body);
+			console.error(res.error);
+			throw fail(ServerCode.badRequest, {
+				message: 'Invalid form data'
+			});
+		}
+
+		if (res.data['agree-tos'] !== 'on') {
+			throw fail(ServerCode.badRequest, {
+				message: 'You must agree to the terms of service'
+			});
+		}
+
+		const session = await Session.getSession(event);
+
+		if (session.isErr()) {
+			console.error(session.error);
+			throw fail(ServerCode.internalServerError, {
+				message: 'Failed to get session'
+			});
+		}
+
+		const account = await Session.getAccount(session.value);
+
+		if (account.isErr()) {
+			console.error(account.error);
+			throw fail(ServerCode.internalServerError, {
+				message: 'Failed to get account'
+			});
+		}
+
+		if (!account.value) {
+			throw fail(ServerCode.unauthorized, {
+				message: 'Not logged in'
+			});
+		}
+
+		
+		// const doFail = (message: string) => {
+		// 	Account.notifyPopup(account.value?.id || '', {
+		// 		message: 'Failed to create universe',
+		// 		title: 'Error',
+		// 		severity: 'danger',
+		// 	})
+		// 	throw fail(ServerCode.badRequest, {
+		// 		success: false,
+		// 		message,
+		// 	});
+		// }
+
+		const universe = await Universes.createUniverse({
+			name: res.data.name,
+			description: res.data.description,
+			public: res.data.public === 'on',
+		}, account.value);
+
+		if (universe.isErr()) {
+			console.error(universe.error);
+			throw fail(ServerCode.internalServerError, {
+				message: 'Failed to create universe'
+			});
+		}
+
+		throw redirect(303, `/universe/${universe.value.id}`);
+	},
+}

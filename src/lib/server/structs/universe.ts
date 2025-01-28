@@ -1,10 +1,12 @@
 import { boolean, text } from 'drizzle-orm/pg-core';
-import { Struct } from 'drizzle-struct/back-end';
+import { Struct, StructStream } from 'drizzle-struct/back-end';
 import { attemptAsync, resolveAll } from 'ts-utils/check';
 import { Account } from './account';
 import { DB } from '../db';
 import { eq, sql } from 'drizzle-orm';
 import { Permissions } from './permissions';
+import { Session } from './session';
+import { z } from 'zod';
 
 export namespace Universes {
 	export const Universe = new Struct({
@@ -14,6 +16,34 @@ export namespace Universes {
 			description: text('description').notNull(),
 			public: boolean('public').notNull()
 		}
+	});
+
+	Account.Account.queryListen('universe-members', async (event, data) => {
+		const session = (await Session.getSession(event)).unwrap();
+		const account = (await Session.getAccount(session)).unwrap();
+
+		if (!account) {
+			throw new Error('Not logged in');
+		}
+
+		const universeId = z.object({
+			universe: z.string(),
+		}).parse(data).universe;
+
+		const universe = (await Universe.fromId(universeId)).unwrap();
+		if (!universe) throw new Error('Universe not found');
+
+		const members = (await getMembers(universe)).unwrap();
+		if (!members.find(m => m.id !== account.id)) {
+			throw new Error('Not a member of this universe, cannot read members');
+		}
+		const stream = new StructStream(Account.Account);
+		setTimeout(() => {
+			for (let i = 0; i < members.length; i++) {
+				stream.add(members[i]);
+			}
+		});
+		return stream;
 	});
 
 	Universe.on('delete', (u) => {
@@ -64,14 +94,16 @@ export namespace Universes {
 		},
 		account: Account.AccountData
 	) => {
-		attemptAsync(async () => {
+		return attemptAsync(async () => {
 			const u = (await Universe.new(config)).unwrap();
 			const admin = (
 				await Permissions.Role.new({
 					universe: u.id,
 					name: 'Admin',
-					permissions: '[*]',
-					description: `${u.data.name} Aministrator`
+					permissions: '["*"]',
+					description: `${u.data.name} Aministrator`,
+				}, {
+					static: true,
 				})
 			).unwrap();
 			const member = (
@@ -79,7 +111,9 @@ export namespace Universes {
 					universe: u.id,
 					name: 'Member',
 					permissions: '[]',
-					description: `${u.data.name} Member`
+					description: `${u.data.name} Member`,
+				}, {
+					static: true,
 				})
 			).unwrap();
 			(await account.addUniverses(u.id)).unwrap();
@@ -93,6 +127,8 @@ export namespace Universes {
 					account: account.id
 				})
 			).unwrap();
+
+			return u;
 		});
 	};
 
@@ -153,7 +189,19 @@ export namespace Universes {
 
 			const a = await (await Account.Account.fromId(account)).unwrap();
 			if (!a) return;
-			(await a.addUniverses(universe)).unwrap();
+
+			const roles = (await Permissions.Role.fromProperty('universe', universe, {
+				type: 'stream',
+			}).await()).unwrap();
+
+			const member = roles.find((r) => r.data.name === 'Member'); // should always succeed because data is static
+
+			if (!member) throw new Error('Member role not found');
+
+			(await Permissions.RoleAccount.new({
+				account: a.id,
+				role: member.id
+			})).unwrap();
 
 			(await invite.delete()).unwrap();
 		});
@@ -161,6 +209,24 @@ export namespace Universes {
 
 	export const declineInvite = async (invite: UniverseInviteData) => {
 		return invite.delete();
+	};
+
+	export const isMember = async (account: Account.AccountData, universe: Universes.UniverseData) => {
+		return attemptAsync(async () => {
+		});
+	};
+
+	export const getMembers = async (universe: UniverseData) => {
+		return attemptAsync(async () => {
+			const data = await Universe.database
+				.select()
+				.from(Account.Account.table)
+				.innerJoin(Permissions.RoleAccount.table, eq(Account.Account.table.id, Permissions.RoleAccount.table.account))
+				.innerJoin(Permissions.Role.table, eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id))
+				.where(eq(Permissions.Role.table.universe, universe.id));
+			
+			return data.map((d) => Account.Account.Generator(d.account));
+		});
 	};
 }
 

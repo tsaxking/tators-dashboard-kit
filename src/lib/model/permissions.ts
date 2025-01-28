@@ -343,7 +343,7 @@ export namespace Permissions {
 	};
 
 	export const getLinks = (role: RoleData) => {
-		return attempt(async () => {
+		return attempt(() => {
 			return role.data.linkAccess?.split(',') || [];
 		});
 	};

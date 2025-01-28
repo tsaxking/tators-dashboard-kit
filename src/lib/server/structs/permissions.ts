@@ -1,4 +1,4 @@
-import { text, json } from 'drizzle-orm/pg-core';
+import { text, json, boolean } from 'drizzle-orm/pg-core';
 import {
 	DataError,
 	Struct,
@@ -47,8 +47,7 @@ export namespace Permissions {
 			name: text('name').notNull(),
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
-			permissions: text('permissions').notNull()
-			// permissions: json('permissions').notNull().$type<DataPermission[]>(),
+			permissions: text('permissions').notNull(),
 		}
 	});
 
@@ -161,7 +160,7 @@ export namespace Permissions {
 				data.filter((v, i, a) => a.findIndex((d) => d.struct.name === v.struct.name) === i).length >
 				1
 			) {
-				throw new DataError('Data must be from the same struct');
+				throw new DataError(Role, 'Data must be from the same struct');
 			}
 
 			const struct = data[0].struct.name;
