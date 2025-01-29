@@ -7,8 +7,16 @@ import { type Blank } from 'drizzle-struct/front-end';
 import { decode, encode } from 'ts-utils/text';
 import { sse } from '$lib/utils/sse';
 import type { DataAction, PropertyAction } from 'drizzle-struct/types';
+import { browser } from '$app/environment';
+
 
 export namespace Permissions {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const getPermissionStructs = (): Struct<any>[] => [
+		Role,
+		Account.Account,
+	];
+
 	export class PermissionError extends Error {
 		constructor(message: string) {
 			super(message);
@@ -61,9 +69,13 @@ export namespace Permissions {
 			};
 		}
 
+		inform() {
+			this.subscribers.forEach((sub) => sub(this.data));
+		}
+
 		set(value: { property: keyof T; update: boolean; read: boolean }) {
 			this.data = value;
-			this.subscribers.forEach((i) => i(value));
+			this.inform();
 		}
 
 		update(
@@ -186,12 +198,12 @@ export namespace Permissions {
 
 		public static getAll(role: RoleData) {
 			if (role.data.permissions === undefined) return [];
-			const all: {
+			const all: ({
 				permission: PropertyAction | DataAction;
 				struct: string;
 				property?: string;
-			}[] = JSON.parse(role.data.permissions);
-			return Array.from(Struct.structs.values()).map((s) => {
+			} | '*')[] = JSON.parse(role.data.permissions);
+			return getPermissionStructs().map((s) => {
 				const p = new StructPermissions(
 					s,
 					role,
@@ -208,7 +220,33 @@ export namespace Permissions {
 					}
 				);
 
-				const filtered = all.filter((i) => i.struct === s.data.name);
+				if (all.includes('*')) {
+					p.set({
+						permissions: {
+							create: true,
+							delete: true,
+							'read-archive': true,
+							archive: true,
+							'restore-archive': true,
+							'read-version-history': true,
+							'restore-version': true,
+							'delete-version': true
+						},
+						properties: p.data.properties.map((sp) => {
+							sp.set({
+								property: sp.data.property,
+								read: true,
+								update: true
+							});
+							return sp;
+						})
+					});
+					return p;
+				}
+
+				const filtered = all
+					.filter((i) => i !== '*')
+					.filter((i) => i.struct === s.data.name);
 
 				for (const f of filtered) {
 					if (f.property) {
@@ -227,6 +265,14 @@ export namespace Permissions {
 				}
 
 				return p;
+			});
+		}
+
+		public static getTrue(role: RoleData) {
+			return StructPermissions.getAll(role).filter((i) => {
+				const properties = i.data.properties.filter((i) => i.data.read || i.data.update);
+				const permissions = Object.values(i.data.permissions).filter((i) => i);
+				return properties.length || permissions.length;
 			});
 		}
 
@@ -253,9 +299,13 @@ export namespace Permissions {
 
 		private _onAllUnsubscribe?: () => void;
 
+		inform() {
+			this.subscribers.forEach((sub) => sub(this.data));
+		}
+
 		set(value: { properties: StructProperty<T>[]; permissions: Permissions }) {
 			this.data = value;
-			this.subscribers.forEach((i) => i(value));
+			this.inform();
 		}
 
 		update(
@@ -312,31 +362,34 @@ export namespace Permissions {
 			universe: 'string',
 			permissions: 'string', // DataPermission[]
 			description: 'string',
-			linkAccess: 'string' // used on the front end to show/hide links (csv)
-		}
+			links: 'string' // used on the front end to show/hide links (csv)
+		},
+		browser,
+		// log: true,
 	});
 
 	export type RoleData = StructData<typeof Role.data.structure>;
 
-	export const RoleAccount = new Struct({
-		name: 'role_account',
-		socket: sse,
-		structure: {
-			role: 'string',
-			account: 'string'
-		}
-	});
+	// export const RoleAccount = new Struct({
+	// 	name: 'role_account',
+	// 	socket: sse,
+	// 	structure: {
+	// 		role: 'string',
+	// 		account: 'string'
+	// 	},
+	// 	browser,
+	// });
 
-	export const removeRole = (account: Account.AccountData, role: RoleData) => {
-		return attemptAsync(async () => {
-			const ra = (
-				await RoleAccount.fromProperty('account', account.data.id, true).await()
-			).unwrap();
-			const roleAccount = ra.find((i) => i.data.role === role.data.id);
-			if (!roleAccount) return;
-			(await roleAccount.delete()).unwrap();
-		});
-	};
+	// export const removeRole = (account: Account.AccountData, role: RoleData) => {
+	// 	return attemptAsync(async () => {
+	// 		const ra = (
+	// 			await RoleAccount.fromProperty('account', account.data.id, true).await()
+	// 		).unwrap();
+	// 		const roleAccount = ra.find((i) => i.data.role === role.data.id);
+	// 		if (!roleAccount) return;
+	// 		(await roleAccount.delete()).unwrap();
+	// 	});
+	// };
 
 	export const givePermissions = async (role: RoleData, permissions: unknown[]) => {
 		return attemptAsync(async () => {});
@@ -344,7 +397,13 @@ export namespace Permissions {
 
 	export const getLinks = (role: RoleData) => {
 		return attempt(() => {
-			return role.data.linkAccess?.split(',') || [];
+			return role.data.links ? JSON.parse(role.data.links) : [];
 		});
-	};
+	}
+	
+	if (browser) {
+		Object.assign(window, {
+			Role
+		});
+	}
 }

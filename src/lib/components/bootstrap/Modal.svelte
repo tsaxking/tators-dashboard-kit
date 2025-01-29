@@ -12,11 +12,12 @@
 		body: Snippet;
 		buttons: Snippet;
 		show?: boolean;
+		size?: 'sm' | 'lg' | 'xl';
 	}
 
 	let self: HTMLDivElement;
 
-	const { title, body, buttons, show: doShow }: Props = $props();
+	const { title, body, buttons, show: doShow, size = 'sm' }: Props = $props();
 
 	const getModal = async () => {
 		return import('bootstrap').then((bs) => {
@@ -55,7 +56,7 @@
 </script>
 
 <div bind:this={self} {id} class="modal fade" aria-modal="true" role="dialog" tabindex="-1">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-{size}">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title">{title}</h5>

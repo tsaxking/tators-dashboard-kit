@@ -12,6 +12,7 @@ import type { Account } from './account';
 import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
 import { Universes } from './universe';
+import { z } from 'zod';
 
 export namespace Permissions {
 	type DP = {
@@ -27,10 +28,11 @@ export namespace Permissions {
 			});
 		}
 
-		static parse(permissions: string): Result<DataPermission[]> {
+		static parse(permissions: string): Result<DataPermission[] | '*'> {
 			return attempt(() => {
-				const result = JSON.parse(permissions) as DP[];
-				return result.map((p) => new DataPermission(p.permission, p.struct, p.property));
+				const result = JSON.parse(permissions) as (DP | '*')[];
+				if (result.includes('*')) return '*';
+				return (result as DP[]).map((p) => new DataPermission(p.permission, p.struct, p.property));
 			});
 		}
 
@@ -48,6 +50,11 @@ export namespace Permissions {
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
 			permissions: text('permissions').notNull(),
+			links: text('links').notNull(),
+		},
+		generators: {
+			permissions: () => JSON.stringify([]),
+			links: () => JSON.stringify([]),
 		}
 	});
 
@@ -58,7 +65,8 @@ export namespace Permissions {
 		structure: {
 			role: text('role').notNull(),
 			account: text('account').notNull()
-		}
+		},
+		frontend: false,
 	});
 
 	export type RoleAccountData = typeof RoleAccount.sample;
@@ -69,7 +77,7 @@ export namespace Permissions {
 		}).await();
 	};
 
-	export const getRoles = async (account: Account.AccountData) => {
+	export const allAccountRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
 			const roleAccounts = (
 				await RoleAccount.fromProperty('account', account.id, {
@@ -87,7 +95,7 @@ export namespace Permissions {
 	export const giveRole = async (account: Account.AccountData, role: RoleData) => {
 		return attemptAsync(async () => {
 			if (role.data.name !== 'root') {
-				const roles = (await getRoles(account)).unwrap();
+				const roles = (await allAccountRoles(account)).unwrap();
 				if (roles.find((r) => r.id === role.id)) {
 					return;
 				}
@@ -123,6 +131,7 @@ export namespace Permissions {
 	export const givePermission = async (role: RoleData, permission: DataPermission) => {
 		return attemptAsync(async () => {
 			const permissions = (await permissionsFromRole(role)).unwrap();
+			if (permissions === '*') return;
 			permissions.push(permission);
 			return setPermissions(role, permissions);
 		});
@@ -131,6 +140,7 @@ export namespace Permissions {
 	export const removePermission = async (role: RoleData, permission: DataPermission) => {
 		return attemptAsync(async () => {
 			const permissions = (await permissionsFromRole(role)).unwrap();
+			if (permissions === '*') return;
 			const index = permissions.findIndex(
 				(p) =>
 					p.permission === permission.permission &&
@@ -169,9 +179,12 @@ export namespace Permissions {
 			}
 
 			const universes = roles.map((r) => r.data.universe);
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
-				.unwrap()
-				.flat()
+			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap().flat();
+			if (allPerms.includes('*')) {
+				return data.map(d => d.data);
+			}
+			const permissions = allPerms
+				.filter(p => p instanceof DataPermission)
 				// TODO: if action is readversionhistory or readarchive, properties should be filtered by the read permissions
 				.filter((p) => p.permission === action && p.struct === struct);
 
@@ -207,11 +220,18 @@ export namespace Permissions {
 	) => {
 		const newStream = new Stream<Partial<Structable<S['data']['structure']>>>();
 
-		(async () => {
+		setTimeout(async () => {
 			const universes = roles.map((r) => r.data.universe);
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
-				.unwrap()
-				.flat()
+			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap().flat();
+			if (allPerms.includes('*')) {
+				stream.pipe((d) =>{
+					newStream.add(d.data);
+				});
+				return;
+			}
+
+			const permissions = allPerms
+				.filter((p) => p instanceof DataPermission)
 				.filter((p) => p.permission === action && p.struct === stream.struct.name);
 
 			stream.pipe((d) => {
@@ -224,7 +244,7 @@ export namespace Permissions {
 					const { data } = d;
 					const properties: string[] = permissions
 						.map((p) => p.property)
-						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes')
+						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes', 'canUpdate')
 						.filter((v, i, a) => a.indexOf(v) === i)
 						.filter(Boolean) as string[];
 
@@ -235,7 +255,7 @@ export namespace Permissions {
 					);
 				}
 			});
-		})();
+		});
 
 		return newStream;
 	};
@@ -243,9 +263,13 @@ export namespace Permissions {
 	// global permissions
 	export const canDo = (roles: RoleData[], struct: Struct<Blank, string>, action: DataAction) => {
 		return attempt(() => {
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
-				.unwrap()
+			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap();
+			if (allPerms.includes('*')) {
+				return true;
+			}
+			const permissions = allPerms
 				.flat()
+				.filter((p) => p instanceof DataPermission)
 				.filter((p) => p.permission === action && p.struct === struct.name);
 
 			return permissions.length > 0;
@@ -309,6 +333,14 @@ export namespace Permissions {
 	//         }
 	//         next();
 	//     };
+
+
+	export const canAccess = (roles: RoleData[], link: string) => {
+		return roles.some((r) => {
+			const links = z.array(z.string()).parse(JSON.parse(r.data.links));
+			return links.includes('*') || links.includes(link);
+		});
+	}
 }
 
 // for drizzle

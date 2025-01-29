@@ -2,6 +2,8 @@ import { sse } from '$lib/utils/sse';
 import { Struct, StructData } from 'drizzle-struct/front-end';
 import { attemptAsync } from 'ts-utils/check';
 import { Account } from './account';
+import { browser } from '$app/environment';
+import { Permissions } from './permissions';
 
 export namespace Universes {
 	export const Universe = new Struct({
@@ -11,7 +13,8 @@ export namespace Universes {
 			name: 'string',
 			description: 'string',
 			public: 'boolean'
-		}
+		},
+		browser,
 	});
 
 	export type UniverseData = StructData<typeof Universe.data.structure>;
@@ -23,7 +26,8 @@ export namespace Universes {
 			universe: 'string',
 			account: 'string',
 			inviter: 'string'
-		}
+		},
+		browser,
 	});
 
 	export type UniverseInviteData = StructData<typeof UniverseInvites.data.structure>;
@@ -54,5 +58,15 @@ export namespace Universes {
 			user,
 			universe: Struct.headers.get('universe'),
 		});
+	};
+
+	export const getRoles = (universe: UniverseData) => {
+		Permissions.Role.on('new', (role) => {
+			console.log('Created new role...', role);
+			if (role.data.universe === universe.data.id) {
+				console.log('Recieved new role:', role);
+			}
+		});
+		return Permissions.Role.fromProperty('universe', universe.data.id, false);
 	};
 }

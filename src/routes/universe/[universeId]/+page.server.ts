@@ -16,6 +16,17 @@ export const load = async (event) => {
 	}
 
 	return {
-		universe: universe.value.safe()
+		universe: universe.value.safe(),
 	};
+};
+
+
+export const actions = {
+	async invite(event) {
+		const body = await event.request.formData();
+		console.log(body);
+		const user = body.get('user');
+		console.log('Invite!', user);
+	},
+	async 'account-list'(event) {},
 };

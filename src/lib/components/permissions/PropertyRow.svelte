@@ -5,10 +5,12 @@
 
 	interface Props {
 		property: Permissions.StructProperty<Blank>;
-		structName: string;
+		struct: Permissions.StructPermissions<Blank>;
 	}
 
-	const { property = $bindable(), structName }: Props = $props();
+	const { property = $bindable(), struct }: Props = $props();
+
+	const structName = struct.struct.data.name;
 
 	const name = property.data.property;
 	let read = $state(false);
@@ -37,6 +39,8 @@
 						update,
 						property: name
 					});
+
+					struct.inform();
 				}}
 			/>
 		</div>
@@ -56,6 +60,8 @@
 						update,
 						property: name
 					});
+
+					struct.inform();
 				}}
 			/>
 		</div>

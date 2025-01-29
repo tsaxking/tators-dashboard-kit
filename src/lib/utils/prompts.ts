@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { type BootstrapColor } from 'colors/color';
 import Modal from '../components/bootstrap/Modal.svelte';
-import { createRawSnippet, mount } from 'svelte';
+import { createRawSnippet, mount, type Snippet } from 'svelte';
 import Toast from '$lib/components/bootstrap/Toast.svelte';
 import Alert from '$lib/components/bootstrap/Alert.svelte';
 
@@ -426,6 +426,19 @@ export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfi
 				notif.remove();
 				console.log('hide');
 			}
+		}
+	});
+};
+
+
+export const modal = (title: string, body: Snippet, buttons: ButtonConfig[]) => {
+	if (!modalTarget) throw new Error('Cannot show modal in non-browser environment');
+	return mount(Modal, {
+		target: modalTarget,
+		props: {
+			title,
+			body,
+			buttons: createButtons(buttons)
 		}
 	});
 };

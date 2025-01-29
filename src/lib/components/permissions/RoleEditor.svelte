@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { type Blank } from 'drizzle-struct/front-end';
-	import { capitalize, fromCamelCase } from 'ts-utils/text';
+	import { capitalize, fromSnakeCase } from 'ts-utils/text';
 	import { Permissions } from '$lib/model/permissions';
 	import { confirm } from '$lib/utils/prompts';
 	import StructTable from './StructTable.svelte';
@@ -27,7 +27,7 @@
 
 <div class="container">
 	<div class="row">
-		<div class="accordion">
+		<div class="accordion" id="role-editor">
 			{#each structs as struct, i}
 				<div class="accordion-item">
 					<div class="accordion-header">
@@ -38,14 +38,14 @@
 							data-bs-target="#role-editor-collapse-{i}"
 							data-bs-toggle="collapse"
 						>
-							{capitalize(fromCamelCase(struct.struct.data.name))}
+							{capitalize(fromSnakeCase(struct.struct.data.name))}
 						</button>
 					</div>
 				</div>
 				<div
 					id="role-editor-collapse-{i}"
 					class="accordion-collapse collapse"
-					data-bs-parent="role-editor"
+					data-bs-parent="#role-editor"
 				>
 					<div class="accordion-body">
 						<StructTable {struct} />

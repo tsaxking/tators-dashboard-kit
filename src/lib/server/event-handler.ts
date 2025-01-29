@@ -38,7 +38,7 @@ export const handleEvent =
 			account = (await Session.getAccount(s)).unwrap();
 			if (!account) return error(new StructError(struct, 'Not logged in'));
 
-			roles = (await Permissions.getRoles(account)).unwrap();
+			roles = (await Permissions.allAccountRoles(account)).unwrap();
 			isAdmin = !!(
 				await Account.Admins.fromProperty('accountId', account.id, {
 					type: 'single'
@@ -260,7 +260,8 @@ export const handleEvent =
 							'archived',
 							'universes',
 							'attributes',
-							'lifetime'
+							'lifetime',
+							'canUpdate',
 						]
 					})
 				)
@@ -394,6 +395,7 @@ export const handleEvent =
 	};
 
 export const connectionEmitter = (struct: Struct) => {
+	if (struct.data.frontend === false) return;
 	// Permission handling
 	const emitToConnections = async (
 		event: string,
@@ -431,7 +433,7 @@ export const connectionEmitter = (struct: Struct) => {
 				return;
 			}
 
-			const roles = await Permissions.getRoles(a);
+			const roles = await Permissions.allAccountRoles(a);
 			if (roles.isErr()) return console.error(roles.error);
 			const r = roles.value;
 

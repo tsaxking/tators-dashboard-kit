@@ -18,6 +18,7 @@ type Inputs = {
     };
     'text': {
         length: number;
+        datalist?: (value: string) => string[] | Promise<string[]>;
     };
     'number': {
         min: number;
@@ -31,6 +32,10 @@ type Inputs = {
     'checkbox': Option[];
     'radio': Option[];
     'select': Option[];
+    'file': {
+        multiple: boolean;
+        accept: string;
+    };
 };
 
 type ReturnTypes = {
@@ -42,6 +47,7 @@ type ReturnTypes = {
     'radio': string;
     'select': string;
     'password': string;
+    'file': FileList;
 }
 
 type InputReturnType<T extends keyof Inputs> = ReturnTypes[T];
@@ -58,6 +64,7 @@ type Input<T extends keyof Inputs> = {
 
 export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
     private eventListeners: { element: HTMLElement; type: string; listener: EventListener }[] = [];
+    private _rendered: HTMLFormElement | undefined;
 
     constructor(
         public readonly action?: string,
@@ -82,7 +89,11 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
     render(config?: Partial<{
         addListeners: boolean;
         submit: boolean;
+        cached?: boolean;
     }>): HTMLFormElement {
+        if (config?.cached && this._rendered) {
+            return this._rendered;
+        }
         const form = document.createElement('form');
         const id = Math.random().toString(36).substring(7);
         form.id = id;
@@ -111,7 +122,30 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
                     if (input.options) {
                         const o = input.options as Inputs['text'];
                         if (o.length) el.maxLength = o.length;
+                        if (o.datalist) {
+                            const datalist = document.createElement('datalist');
+                            datalist.id = id + '-' + name + '-datalist';
+                            el.setAttribute('list', datalist.id);
+                            const updateDatalist = async () => {
+                                try {
+                                    if (!o.datalist) return;
+                                    const options = await o.datalist(el.value);
+                                    datalist.innerHTML = '';
+                                    for (const option of options) {
+                                        const opt = document.createElement('option');
+                                        opt.value = option;
+                                        datalist.appendChild(opt);
+                                    }
+                                } catch (error) {
+                                    console.error(error);
+                                }
+                            };
+                            el.addEventListener('input', updateDatalist);
+                            this.eventListeners.push({ element: el, type: 'input', listener: updateDatalist });
+                            wrapper.appendChild(datalist);
+                        }
                     }
+
                     break;
                 case 'textarea':
                     el = document.createElement('textarea');
@@ -155,13 +189,19 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
                         el.appendChild(opt);
                     }
                     break;
+                case 'file':
+                    el = document.createElement('input');
+                    el.type = 'file';
+                    el.multiple = (input.options as Inputs['file']).multiple;
+                    el.accept = (input.options as Inputs['file']).accept;
+                    break;
                 default:
                     throw new Error(`Unsupported input type: ${input.type}`);
             }
 
             el.name = name;
             el.id = id + '-' + name;
-            el.classList.add('form-control', `input-${id}-${name}`);
+            el.classList.add('form-control', `input-${id}`);
 
             if (input.placeholder) {
                 if (el instanceof HTMLSelectElement) {
@@ -217,6 +257,9 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
             submit.classList.add('btn', 'btn-primary');
             form.appendChild(submit);
         }
+
+        this._rendered = form;
+
         return form;
     }
 
@@ -258,20 +301,28 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
     submit() {
         const form = this.render({
             addListeners: false,
+            cached: true,
         });
+        // form.style.display = 'none';
+        // document.body.appendChild(form);
         form.submit();
+        // document.body.removeChild(form);
     }
 
-    prompt(title: string) {
+    prompt(config: {
+        title: string;
+        send: boolean;
+    }) {
         const self = this;
         return attemptAsync(async () => {
             clearModals();
+            let form: HTMLFormElement;
             return new Promise<{ [key in keyof T]: InputReturnType<T[key]['type']> }>((res, rej) => {
                 if (!modalTarget) return rej('Modal target not found, likely not in the DOM environment');
                 const modal = mount(Modal, {
                     target: modalTarget,
                     props: {
-                        title,
+                        title: config.title,
                         body: createRawSnippet(() => ({
                             render() {
                                 const div = document.createElement('div');
@@ -303,18 +354,33 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
                                         }
                                     }
 
+                                    // (el.querySelector(`.input-${id}`) as HTMLInputElement | undefined)?.focus();
+
                                     i.addEventListener('change', onchange);
                                     self.eventListeners.push({ element: i as HTMLElement, type: 'change', listener: onchange });
                                 });
 
                                 const submit = (e: Event) => {
+                                    // console.log('Sumbitted');
+                                    if (config.send) {
+                                        // console.log('sending...', self.action);
+                                        // send the form to the server
+                                        fetch(self.action || '', {
+                                            method: self.method || 'POST',
+                                            body: new FormData(el),
+                                        });
+                                        return;
+                                    }
                                     e.preventDefault();
                                     res(self.value());
                                     modal.hide();
                                 };
 
+                                // console.log('Adding submit listener');
+
                                 el.addEventListener('submit', submit);
                                 self.eventListeners.push({ element: el, type: 'submit', listener: submit });
+                                form = el;
                                 return () => self.destroy();
                             }
                         })),
@@ -323,6 +389,9 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
                                 text: 'Submit',
                                 color: 'primary',
                                 onClick: () => {
+                                    if (config.send) {
+                                        form?.submit();
+                                    }
                                     res(self.value());
                                     modal.hide();
                                 },
@@ -384,4 +453,4 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 //     .prompt('Enter your details...');
 
 // // document.body.appendChild(f.render());
-// // console.log(f.value());
+// // // console.log(f.value());

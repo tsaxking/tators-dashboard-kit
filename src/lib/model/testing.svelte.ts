@@ -9,7 +9,8 @@ export namespace Test {
 			name: 'string',
 			age: 'number'
 		},
-		socket: sse
+		socket: sse,
+		browser,
 		// log: true
 	});
 
