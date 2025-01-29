@@ -18,33 +18,33 @@ export namespace Universes {
 		}
 	});
 
-	Account.Account.queryListen('universe-members', async (event, data) => {
-		const session = (await Session.getSession(event)).unwrap();
-		const account = (await Session.getAccount(session)).unwrap();
+	// Account.Account.queryListen('universe-members', async (event, data) => {
+	// 	const session = (await Session.getSession(event)).unwrap();
+	// 	const account = (await Session.getAccount(session)).unwrap();
 
-		if (!account) {
-			throw new Error('Not logged in');
-		}
+	// 	if (!account) {
+	// 		throw new Error('Not logged in');
+	// 	}
 
-		const universeId = z.object({
-			universe: z.string(),
-		}).parse(data).universe;
+	// 	const universeId = z.object({
+	// 		universe: z.string(),
+	// 	}).parse(data).universe;
 
-		const universe = (await Universe.fromId(universeId)).unwrap();
-		if (!universe) throw new Error('Universe not found');
+	// 	const universe = (await Universe.fromId(universeId)).unwrap();
+	// 	if (!universe) throw new Error('Universe not found');
 
-		const members = (await getMembers(universe)).unwrap();
-		if (!members.find(m => m.id !== account.id)) {
-			throw new Error('Not a member of this universe, cannot read members');
-		}
-		const stream = new StructStream(Account.Account);
-		setTimeout(() => {
-			for (let i = 0; i < members.length; i++) {
-				stream.add(members[i]);
-			}
-		});
-		return stream;
-	});
+	// 	const members = (await getMembers(universe)).unwrap();
+	// 	if (!members.find(m => m.id !== account.id)) {
+	// 		throw new Error('Not a member of this universe, cannot read members');
+	// 	}
+	// 	const stream = new StructStream(Account.Account);
+	// 	setTimeout(() => {
+	// 		for (let i = 0; i < members.length; i++) {
+	// 			stream.add(members[i]);
+	// 		}
+	// 	});
+	// 	return stream;
+	// });
 
 	Universe.on('delete', (u) => {
 		Struct.each((s) => {
@@ -81,6 +81,32 @@ export namespace Universes {
 			universe: text('universe').notNull(),
 			account: text('account').notNull(),
 			inviter: text('inviter').notNull()
+		}
+	});
+
+	UniverseInvites.callListen('invite', async (event, data) => {
+		const session = (await Session.getSession(event)).unwrap();
+		const account = (await Session.getAccount(session)).unwrap();
+
+		if (!account) {
+			throw new Error('Not logged in');
+		}
+
+		const i = z.object({
+			user: z.string(),
+			universe: z.string(),
+		}).parse(data);
+
+		const invitee = (await Account.Account.fromId(i.user)).unwrap();
+		if (!invitee) throw new Error('Account not found');
+
+		const u = (await Universe.fromId(i.universe)).unwrap();
+		if (!u) throw new Error('Universe not found');
+
+		await invite(u, invitee, account);
+
+		return {
+			success: true,
 		}
 	});
 

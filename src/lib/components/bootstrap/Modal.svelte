@@ -28,11 +28,13 @@
 	export const once = em.once.bind(em);
 
 	export const show = async () => {
+		em.emit('show');
 		const modal = await getModal();
 		modal.show();
 	};
 
 	export const hide = async () => {
+		em.emit('hide');
 		const modal = await getModal();
 		modal.hide();
 	};

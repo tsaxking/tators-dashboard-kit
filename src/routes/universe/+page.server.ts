@@ -11,11 +11,15 @@ export const load = async (event) => {
 		return fail(ServerCode.internalServerError);
 	};
 
+
 	const session = await Session.getSession(event);
 	if (session.isErr()) throw error(session.error);
+
 	const account = await Session.getAccount(session.value);
 	if (account.isErr()) throw error(account.error);
-	if (!account.value) throw fail(ServerCode.unauthorized);
+	if (!account.value) throw redirect(ServerCode.temporaryRedirect, '/account/sign-in');
+
+
 
 	const universes = await Universes.getUniverses(account.value);
 	if (universes.isErr()) throw error(universes.error);

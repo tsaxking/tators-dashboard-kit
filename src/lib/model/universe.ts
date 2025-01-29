@@ -16,7 +16,7 @@ export namespace Universes {
 
 	export type UniverseData = StructData<typeof Universe.data.structure>;
 
-	export const UniverseInvite = new Struct({
+	export const UniverseInvites = new Struct({
 		name: 'universe_invite',
 		socket: sse,
 		structure: {
@@ -26,7 +26,7 @@ export namespace Universes {
 		}
 	});
 
-	export type UniverseInviteData = StructData<typeof UniverseInvite.data.structure>;
+	export type UniverseInviteData = StructData<typeof UniverseInvites.data.structure>;
 
 	export const acceptInvite = async (invite: UniverseInviteData) => {
 		return attemptAsync(async () => {});
@@ -47,5 +47,12 @@ export namespace Universes {
 
 	export const setUniverse = (universe: string) => {
 		Struct.headers.set('universe', universe);
+	};
+
+	export const invite = async (user: string) => {
+		return UniverseInvites.call('invite', {
+			user,
+			universe: Struct.headers.get('universe'),
+		});
 	};
 }

@@ -1,5 +1,5 @@
-import { Universes } from '$lib/model/universe.js'
+// import { Universes } from '$lib/model/universe.js'
 
-export const load = (event) => {
-    Universes.setUniverse(event.params.universeId);
-}
+// export const load = (event) => {
+//     Universes.setUniverse(event.params.universeId);
+// }

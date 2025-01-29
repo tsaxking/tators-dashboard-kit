@@ -5,20 +5,31 @@ import { createRawSnippet, mount } from 'svelte';
 import Toast from '$lib/components/bootstrap/Toast.svelte';
 import Alert from '$lib/components/bootstrap/Alert.svelte';
 
-const modalTarget = (() => {
+export const modalTarget = (() => {
 	if (browser) {
 		const target = document.createElement('div');
+		target.id = 'modal-target';
 		document.body.appendChild(target);
 		return target;
 	}
 	return null;
 })();
 
-const clearModals = () => {
+export const clearModals = async () => {
 	if (modalTarget) {
-		// there can be multiple modals open at once, this will remove the last one, which should be the one that was just closed since they are closed in order
-		const modal = modalTarget.lastChild;
-		if (modal) modalTarget.removeChild(modal);
+		const remove = () => {
+			const modal = modalTarget.lastChild;
+			if (modal) {
+				modalTarget.removeChild(modal);
+				modal.remove();
+				if (modal instanceof Text) {
+					// For some reason, the modal sometimes is a text node, so we remove it again
+					remove();
+				}
+			}
+		};
+
+		remove();
 	}
 };
 
@@ -37,7 +48,7 @@ const createButton = (config: ButtonConfig) => {
 	}));
 };
 
-const createButtons = (buttons: ButtonConfig[]) => {
+export const createButtons = (buttons: ButtonConfig[]) => {
 	return createRawSnippet(() => ({
 		render: () =>
 			`<div>${buttons.map((button, i) => `<button data-id=${i} class="btn btn-${button.color}">${button.text}</button>`).join('')}</div>`,
@@ -122,8 +133,7 @@ export const prompt = async (message: string, config?: PromptConfig) => {
 
 		modal.show();
 
-		modal.once('hide', () => res(null));
-		modal.once('hide', clearModals);
+		modal.once('hide', () => {res(null); clearModals();});
 	});
 };
 
@@ -204,24 +214,24 @@ export const choose = async <A, B>(message: string, A: A, B: B, config?: ChooseC
 						text: 'Cancel',
 						color: 'secondary',
 						onClick: () => {
-							modal.hide();
 							res(null);
+							modal.hide();
 						}
 					},
 					{
 						text: config?.renderA ? config.renderA(A) : 'A',
 						color: 'primary',
 						onClick: () => {
-							modal.hide();
 							res(true);
+							modal.hide();
 						}
 					},
 					{
 						text: config?.renderB ? config.renderB(B) : 'B',
 						color: 'primary',
 						onClick: () => {
-							modal.hide();
 							res(false);
+							modal.hide();
 						}
 					}
 				])
@@ -229,8 +239,9 @@ export const choose = async <A, B>(message: string, A: A, B: B, config?: ChooseC
 		});
 		modal.show();
 
-		modal.once('hide', () => res(false));
-		modal.once('hide', clearModals);
+		modal.once('hide', () => {res(false);
+			clearModals();
+		});
 	});
 };
 
@@ -253,16 +264,16 @@ export const confirm = async (message: string, config?: ConfirmConfig) => {
 						text: config?.yes || 'Yes',
 						color: 'success',
 						onClick: () => {
-							modal.hide();
 							res(true);
+							modal.hide();
 						}
 					},
 					{
 						text: config?.no || 'No',
 						color: 'danger',
 						onClick: () => {
-							modal.hide();
 							res(false);
+							modal.hide();
 						}
 					}
 				])
@@ -270,8 +281,7 @@ export const confirm = async (message: string, config?: ConfirmConfig) => {
 		});
 		modal.show();
 
-		modal.once('hide', () => res(false));
-		modal.once('hide', clearModals);
+		modal.once('hide', () => {res(false); clearModals();});
 	});
 };
 
@@ -299,8 +309,7 @@ export const alert = async (message: string, config?: AlertConfig) => {
 		});
 		modal.show();
 
-		modal.once('hide', () => res());
-		modal.once('hide', clearModals);
+		modal.once('hide', () =>{ res(); clearModals();});
 	});
 };
 
@@ -359,7 +368,7 @@ export const colorPicker = async (message: string, config?: ColorPickerConfig) =
 
 		modal.show();
 
-		modal.once('hide', clearModals);
+		modal.once('hide', () => clearModals());
 	});
 };
 
