@@ -61,7 +61,7 @@ export namespace Permissions {
 		}
 	});
 
-	// Role.block(PropertyAction.Update, () => true, 'Not allowed to update Roles through the API.');
+	Role.block(PropertyAction.Update, () => true, 'Not allowed to update Roles through the API.');
 
 	Role.callListen('update-permissions', async (event, data) => {
 		const session = await Session.getSession(event);

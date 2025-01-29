@@ -41,16 +41,20 @@
 	};
 
 	onMount(() => {
-		self.addEventListener('hidden.bs.modal', () => {
-			em.emit('hide');
-		});
+		const onshow = () => em.emit('show');
+		const onhide = () => em.emit('hide');
 
-		self.addEventListener('shown.bs.modal', () => {
-			em.emit('show');
-		});
+		self.addEventListener('hidden.bs.modal', onhide);
+
+		self.addEventListener('shown.bs.modal', onshow);
 
 		if (doShow) {
 			show();
+		}
+
+		return () => {
+			self.removeEventListener('hidden.bs.modal', onhide);
+			self.removeEventListener('shown.bs.modal', onshow);
 		}
 	});
 </script>

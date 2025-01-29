@@ -19,9 +19,11 @@
     });
 
     const edit = (role: Permissions.RoleData) => {
-        currentRole = role;
-        editModal.show();
-        // const m = modal('Edit role', mount(RoleEditor, {}), [])
+        currentRole = undefined;
+        setTimeout(() => {
+            currentRole = role;
+            editModal.show();
+        });
     };
 
     const remove = async (role: Permissions.RoleData) => {
@@ -49,7 +51,7 @@
 
         if (data.isOk()) {
             const { name, description } = data.value;
-            const res = await Permissions.Role.new({
+            Permissions.Role.new({
                 name,
                 description,
                 universe: universe.data.id,
@@ -60,6 +62,8 @@
     };
 
     let editModal: Modal;
+    let userModal: Modal;
+    let roleEditor: RoleEditor | undefined = $state(undefined);
 </script>
 
 <div class="container">
@@ -100,6 +104,11 @@
                                                 group_remove
                                             </i>
                                         </button>
+                                        <button type="button" class="btn btn-secondary">
+                                            <i class="material-icons">
+                                                manage_accounts
+                                            </i>
+                                        </button>
                                     </td>
                                 </tr>
                             {:else}
@@ -127,12 +136,41 @@
 >
     {#snippet body()}
         {#if currentRole}
-            <RoleEditor role={currentRole} />
+            <RoleEditor bind:this={roleEditor} role={currentRole} />
         {:else}
             <p>No role selected</p>
         {/if}
     {/snippet}
     {#snippet buttons()}
+        <button type="button" class="btn btn-primary" onclick={() => {
+            if (roleEditor) roleEditor.save();
+        }}>
+            Save
+        </button>
+        <button type="button" class="btn btn-secondary" onclick={() => {
+            if (roleEditor) roleEditor.reset();
+        }}>
+            Reset
+        </button>
+        <button type="button" class="btn btn-secondary" onclick={() => {
+            editModal.hide();
+            currentRole = undefined;
+        }}>
+            Cancel
+        </button>
+    {/snippet}
+</Modal>
+<Modal 
+    bind:this={userModal}
+    title="Manage Users"
+    size="lg"
+>
+    {#snippet body()}
     
+    {/snippet}
+    {#snippet buttons()}
+        <button type="button" class="btn btn-secondary" onclick={() => userModal.hide()}>
+            Close
+        </button>
     {/snippet}
 </Modal>

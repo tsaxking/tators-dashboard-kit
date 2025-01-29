@@ -1,8 +1,9 @@
 <script>
 	import { Struct } from 'drizzle-struct/front-end';
+	import { browser } from '$app/environment';
 	
 	setTimeout(() => {
-		Struct.buildAll();
+		if (browser) Struct.buildAll();
 	});
 	const { children } = $props();
 </script>
