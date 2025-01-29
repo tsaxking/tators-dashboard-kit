@@ -13,6 +13,9 @@ import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
 import { Universes } from './universe';
 import { z } from 'zod';
+import { Session } from './session';
+import { DB } from '../db';
+import { and, eq } from 'drizzle-orm';
 
 export namespace Permissions {
 	type DP = {
@@ -58,6 +61,131 @@ export namespace Permissions {
 		}
 	});
 
+	// Role.block(PropertyAction.Update, () => true, 'Not allowed to update Roles through the API.');
+
+	Role.callListen('update-permissions', async (event, data) => {
+		const session = await Session.getSession(event);
+		if (session.isErr()) {
+			return {
+				success: false,
+				message: 'Invalid session',
+			}
+		}
+		const account = await Session.getAccount(session.value);
+		if (account.isErr() || !account.value) {
+			return {
+				success: false,
+				message: 'Invalid account',
+			}
+		}
+
+		const res = z.object({
+			role: z.string(),
+			permissions: z.string(),
+		}).safeParse(data);
+
+		if (res.error) {
+			return {
+				success: false,
+				message: 'Invalid data types recieved',
+			}
+		}
+
+		const role = await Role.fromId(res.data.role);
+		if (role.isErr() || !role.value) {
+			return {
+				success: false,
+				message: 'Invalid role',
+			}
+		}
+
+		const permissions = DataPermission.parse(role.value.data.permissions);
+
+		if (permissions.isErr()) {
+			return {
+				success: false,
+				message: 'Invalid permissions pulled from role',
+			}
+		}
+
+		if (permissions.value === '*') {
+			return {
+				success: false,
+				message: 'Cannot update permissions from a role with global permissions',
+			}
+		}
+
+		const universe = await Universes.Universe.fromId(role.value.data.universe);
+
+		if (universe.isErr() || !universe.value) {
+			return {
+				success: false,
+				message: 'Invalid universe',
+			}
+		}
+
+		const updatePerms = DataPermission.parse(res.data.permissions);
+
+		if (updatePerms.isErr()) {
+			return {
+				success: false,
+				message: 'Invalid permissions',
+			}
+		}
+
+		if (updatePerms.value === '*') {
+			return {
+				success: false,
+				message: 'Cannot set permissions to global',
+			}
+		}
+
+		const roles = await getUniverseAccountRoles(account.value, universe.value);
+		if (roles.isErr()) {
+			return {
+				success: false,
+				message: 'Invalid roles',
+			}
+		}
+
+		const update = async () => (await role.value?.update({
+			permissions: res.data.permissions,
+		}))?.unwrap();
+
+		// a user may not grant permissions they do not have to other roles
+		const userPerms = resolveAll(roles.value.map(r => permissionsFromRole(r))).unwrap().flat();
+		if (userPerms.includes('*')) {
+			update();
+			return {
+				success: true,
+				message: 'Permissions updated',
+			}
+		}
+
+		const userDataPerms = userPerms.filter(p => p instanceof DataPermission);
+		const updateDataPerms = updatePerms.value.filter(p => p instanceof DataPermission);
+
+		const diff = updateDataPerms.filter(p => !userDataPerms.find(up => up.permission === p.permission && up.struct === p.struct && up.property === p.property));
+
+		if (diff.length > 0) {
+			return {
+				success: false,
+				message: 'Invalid permissions',
+			}
+		}
+
+		update();
+
+		return {
+			success: true,
+			message: 'Permissions updated',
+		}
+	});
+
+	// Role.callListen('update-links', async (event, data) => {});
+
+	// Role.callListen('update-role', async (event, data) => {});
+
 	export type RoleData = typeof Role.sample;
 
 	export const RoleAccount = new Struct({
@@ -76,6 +204,22 @@ export namespace Permissions {
 			type: 'stream'
 		}).await();
 	};
+
+	export const getUniverseAccountRoles = async (account: Account.AccountData, universe: Universes.UniverseData) => {
+		return attemptAsync(async () => {
+			const data = await DB.select()
+				.from(Role.table)
+				.innerJoin(RoleAccount.table, eq(Role.table.id, RoleAccount.table.role))
+				.where(
+					and(
+						eq(RoleAccount.table.account, account.id),
+						eq(Role.table.universe, universe.id)
+					)
+				);
+
+			return data.map(d => Role.Generator(d.role));
+		});
+	}
 
 	export const allAccountRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {

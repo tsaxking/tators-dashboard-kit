@@ -187,12 +187,15 @@ export namespace Permissions {
 
 				const [role] = roles;
 
-				return (
-					await role.update((d) => ({
-						...d,
-						permissions: str
-					}))
-				).unwrap();
+				// Cannot save permissions for a role with all permissions.
+				if (role.data.permissions?.includes('"*"')) {
+					return;
+				}
+
+				Role.call('update-permissions', {
+					role: role.data.id,
+					permissions: str,
+				});
 			});
 		}
 
@@ -398,12 +401,6 @@ export namespace Permissions {
 	export const getLinks = (role: RoleData) => {
 		return attempt(() => {
 			return role.data.links ? JSON.parse(role.data.links) : [];
-		});
-	}
-	
-	if (browser) {
-		Object.assign(window, {
-			Role
 		});
 	}
 }

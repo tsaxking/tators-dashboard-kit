@@ -55,7 +55,7 @@ importers:
         version: 0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1)
       drizzle-struct:
         specifier: github:tsaxking/drizzle-struct
-        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/2122d196da7e770d26528d092ea16955e063ead2(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
+        version: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/109672b90d1d244ab83fc6ce44c6df5478254386(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1)
       drizzle-zod:
         specifier: ^0.6.1
         version: 0.6.1(drizzle-orm@0.38.3(@types/react@19.0.2)(pg@8.13.1)(postgres@3.4.5)(react@18.3.1))(zod@3.24.1)
@@ -2212,8 +2212,8 @@ packages:
       sqlite3:
         optional: true
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/2122d196da7e770d26528d092ea16955e063ead2:
-    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/2122d196da7e770d26528d092ea16955e063ead2}
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/109672b90d1d244ab83fc6ce44c6df5478254386:
+    resolution: {tarball: https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/109672b90d1d244ab83fc6ce44c6df5478254386}
     version: 1.0.0
 
   drizzle-zod@0.6.1:
@@ -5747,7 +5747,7 @@ snapshots:
       postgres: 3.4.5
       react: 18.3.1
 
-  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/2122d196da7e770d26528d092ea16955e063ead2(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
+  drizzle-struct@https://codeload.github.com/tsaxking/drizzle-struct/tar.gz/109672b90d1d244ab83fc6ce44c6df5478254386(@types/node@22.10.4)(@types/react@19.0.2)(react@18.3.1):
     dependencies:
       '@eslint/compat': 1.2.4(eslint@9.17.0)
       '@types/proper-lockfile': 4.1.4

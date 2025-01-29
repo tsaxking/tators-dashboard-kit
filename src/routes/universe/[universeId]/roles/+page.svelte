@@ -88,13 +88,6 @@
                                     <td class="text-primary">{role.data.name}</td>
                                     <td><small>{role.data.description}</small></td>
                                     <td>
-                                        {#each Permissions.StructPermissions.getTrue(role) as p}
-                                            <pre>
-                                                {JSON.stringify(p, null, 2)}
-                                            </pre>
-                                        {/each}
-                                    </td>
-                                    <td>
                                         <button type="button" class="btn btn-primary"
                                             onclick={() => edit(role)}
                                         >
@@ -118,7 +111,6 @@
                                     <td>
                                         <em>Cannot change</em>
                                     </td>
-                                    <td></td>
                                 </tr>
                             {/if}
                         {/each}
