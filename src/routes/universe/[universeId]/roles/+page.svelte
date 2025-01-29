@@ -56,8 +56,6 @@
                 links: 'Can I put anything here?',
                 permissions: 'I should not put permissions here',
             });
-
-            alert(JSON.stringify(res));
         }
     };
 

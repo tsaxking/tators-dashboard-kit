@@ -12,12 +12,12 @@
 		body: Snippet;
 		buttons: Snippet;
 		show?: boolean;
-		size?: 'sm' | 'lg' | 'xl';
+		size?: 'sm' | 'md' | 'lg' | 'xl';
 	}
 
 	let self: HTMLDivElement;
 
-	const { title, body, buttons, show: doShow, size = 'sm' }: Props = $props();
+	const { title, body, buttons, show: doShow, size = 'md' }: Props = $props();
 
 	const getModal = async () => {
 		return import('bootstrap').then((bs) => {
