@@ -403,4 +403,13 @@ export namespace Permissions {
 			return role.data.links ? JSON.parse(role.data.links) : [];
 		});
 	}
+
+	export const usersFromRole = (role: RoleData) => {
+		return Account.Account.query('users-from-role', {
+			role: role.data.id,
+		}, {
+			asStream: false,
+			satisfies: () => false,
+		});
+	};
 }

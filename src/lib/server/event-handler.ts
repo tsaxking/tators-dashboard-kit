@@ -433,9 +433,16 @@ export const connectionEmitter = (struct: Struct) => {
 				return;
 			}
 
+			const universes = data.getUniverses();
+			if (universes.isErr()) return console.error(universes.error);
+
 			const roles = await Permissions.allAccountRoles(a);
 			if (roles.isErr()) return console.error(roles.error);
 			const r = roles.value;
+
+			if (!r.some(r => universes.value.includes(r.data.universe))) {
+				return;
+			}
 
 			const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
 			if (res.isErr()) return console.error(res.error);
