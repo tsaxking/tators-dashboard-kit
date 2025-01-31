@@ -14,7 +14,7 @@ export namespace Universes {
 			description: 'string',
 			public: 'boolean'
 		},
-		browser,
+		browser
 	});
 
 	export type UniverseData = StructData<typeof Universe.data.structure>;
@@ -27,7 +27,7 @@ export namespace Universes {
 			account: 'string',
 			inviter: 'string'
 		},
-		browser,
+		browser
 	});
 
 	export type UniverseInviteData = StructData<typeof UniverseInvites.data.structure>;
@@ -41,12 +41,16 @@ export namespace Universes {
 	};
 
 	export const getMembers = (universe: UniverseData) => {
-		return Account.Account.query('universe-members', {
-			universe: universe.data.id,
-		}, {
-			asStream: false,
-			satisfies: _ => false, // no auto update but it's fine 😢
-		});
+		return Account.Account.query(
+			'universe-members',
+			{
+				universe: universe.data.id
+			},
+			{
+				asStream: false,
+				satisfies: (_) => false // no auto update but it's fine 😢
+			}
+		);
 	};
 
 	export const setUniverse = (universe: string) => {
@@ -56,7 +60,7 @@ export namespace Universes {
 	export const invite = async (user: string) => {
 		return UniverseInvites.call('invite', {
 			user,
-			universe: Struct.headers.get('universe'),
+			universe: Struct.headers.get('universe')
 		});
 	};
 

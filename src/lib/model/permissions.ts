@@ -4,18 +4,13 @@ import { attempt, attemptAsync } from 'ts-utils/check';
 import { Account } from './account';
 import { Struct, StructData } from 'drizzle-struct/front-end';
 import { type Blank } from 'drizzle-struct/front-end';
-import { decode, encode } from 'ts-utils/text';
 import { sse } from '$lib/utils/sse';
 import type { DataAction, PropertyAction } from 'drizzle-struct/types';
 import { browser } from '$app/environment';
 
-
 export namespace Permissions {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const getPermissionStructs = (): Struct<any>[] => [
-		Role,
-		Account.Account,
-	];
+	const getPermissionStructs = (): Struct<any>[] => [Role, Account.Account];
 
 	export class PermissionError extends Error {
 		constructor(message: string) {
@@ -194,18 +189,21 @@ export namespace Permissions {
 
 				Role.call('update-permissions', {
 					role: role.data.id,
-					permissions: str,
+					permissions: str
 				});
 			});
 		}
 
 		public static getAll(role: RoleData) {
 			if (role.data.permissions === undefined) return [];
-			const all: ({
-				permission: PropertyAction | DataAction;
-				struct: string;
-				property?: string;
-			} | '*')[] = JSON.parse(role.data.permissions);
+			const all: (
+				| {
+						permission: PropertyAction | DataAction;
+						struct: string;
+						property?: string;
+				  }
+				| '*'
+			)[] = JSON.parse(role.data.permissions);
 			return getPermissionStructs().map((s) => {
 				const p = new StructPermissions(
 					s,
@@ -247,9 +245,7 @@ export namespace Permissions {
 					return p;
 				}
 
-				const filtered = all
-					.filter((i) => i !== '*')
-					.filter((i) => i.struct === s.data.name);
+				const filtered = all.filter((i) => i !== '*').filter((i) => i.struct === s.data.name);
 
 				for (const f of filtered) {
 					if (f.property) {
@@ -367,7 +363,7 @@ export namespace Permissions {
 			description: 'string',
 			links: 'string' // used on the front end to show/hide links (csv)
 		},
-		browser,
+		browser
 		// log: true,
 	});
 
@@ -402,14 +398,18 @@ export namespace Permissions {
 		return attempt(() => {
 			return role.data.links ? JSON.parse(role.data.links) : [];
 		});
-	}
+	};
 
 	export const usersFromRole = (role: RoleData) => {
-		return Account.Account.query('users-from-role', {
-			role: role.data.id,
-		}, {
-			asStream: false,
-			satisfies: () => false,
-		});
+		return Account.Account.query(
+			'users-from-role',
+			{
+				role: role.data.id
+			},
+			{
+				asStream: false,
+				satisfies: () => false
+			}
+		);
 	};
 }

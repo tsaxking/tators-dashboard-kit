@@ -16,7 +16,7 @@
 <main class="dashboard">
 	<Navbar title={PUBLIC_APP_NAME} />
 
-	<Dashboard title={name} >
+	<Dashboard title={name}>
 		{#snippet body()}
 			{@render children()}
 		{/snippet}

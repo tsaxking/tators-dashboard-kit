@@ -1,0 +1,5 @@
+name: hello
+struct: universe
+permissions:
+  - "*"
+scope: global

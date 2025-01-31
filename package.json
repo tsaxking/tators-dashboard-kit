@@ -98,6 +98,7 @@
 		"svelte-filepond": "^0.2.2",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
+		"yaml": "^2.7.0",
 		"zod": "^3.24.1"
 	}
 }

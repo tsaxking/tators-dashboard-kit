@@ -55,7 +55,7 @@
 		return () => {
 			self.removeEventListener('hidden.bs.modal', onhide);
 			self.removeEventListener('shown.bs.modal', onshow);
-		}
+		};
 	});
 </script>
 

@@ -44,15 +44,13 @@
 									<li class="page-item">
 										<a class="page-link" href="/universe/?invitePage={invitePage - 1}">
 											<span aria-hidden="true">
-												<i class="material-icons">
-													chevron_left
-												</i>
+												<i class="material-icons"> chevron_left </i>
 											</span>
 										</a>
 									</li>
 								{/if}
 								{#if inviteCount > 1}
-									{#each Array.from({ length: min(5, inviteCount) }).map((_, i) => i + max(1, invitePage - 2)), i}
+									{#each Array.from( { length: min(5, inviteCount) } ).map((_, i) => i + max(1, invitePage - 2)), i}
 										<li class="page-item">
 											<a class="page-link" href="/universe/?invitePage={i}">
 												{#if i === invitePage}
@@ -68,9 +66,7 @@
 									<li class="page-item">
 										<a class="page-link" href="/universe/?invitePage={invitePage + 1}">
 											<span aria-hidden="true">
-												<i class="material-icons">
-													chevron_right
-												</i>
+												<i class="material-icons"> chevron_right </i>
 											</span>
 										</a>
 									</li>
@@ -88,49 +84,45 @@
 				{#snippet body()}
 					{#if universes.length}
 						<nav>
-                            <ul class="pagination">
-                                <li class="page-item">
-                                    <a class="page-link" href="/universe/?universePage=1">
-                                        <span aria-hidden="true">«</span>
-                                    </a>
-                                </li>
-                                {#if universePage > 1}
-                                    <li class="page-item">
-                                        <a class="page-link" href="/universe/?universePage={universePage - 1}">
-                                            <span aria-hidden="true">
-												<i class="material-icons">
-													chevron_left
-												</i>
+							<ul class="pagination">
+								<li class="page-item">
+									<a class="page-link" href="/universe/?universePage=1">
+										<span aria-hidden="true">«</span>
+									</a>
+								</li>
+								{#if universePage > 1}
+									<li class="page-item">
+										<a class="page-link" href="/universe/?universePage={universePage - 1}">
+											<span aria-hidden="true">
+												<i class="material-icons"> chevron_left </i>
 											</span>
-                                        </a>
-                                    </li>
-                                {/if}
-                                {#if universeCount > 1}
-                                    {#each Array.from({ length: min(5, universeCount) }).map((_, i) => i + max(1, universePage - 2)), i}
-                                        <li class="page-item">
-                                            <a class="page-link" href="/universe/?universePage={i}">
+										</a>
+									</li>
+								{/if}
+								{#if universeCount > 1}
+									{#each Array.from( { length: min(5, universeCount) } ).map((_, i) => i + max(1, universePage - 2)), i}
+										<li class="page-item">
+											<a class="page-link" href="/universe/?universePage={i}">
 												{#if i === universePage}
 													<strong>{i + 1}</strong>
 												{:else}
 													{i + 1}
 												{/if}
-                                            </a>
-                                        </li>
-                                    {/each}
-                                {/if}
-                                {#if universePage < universeCount}
-                                    <li class="page-item">
-                                        <a class="page-link" href="/universe/?universePage={universePage + 1}">
-                                            <span aria-hidden="true">
-												<i class="material-icons">
-													chevron_right
-												</i>
+											</a>
+										</li>
+									{/each}
+								{/if}
+								{#if universePage < universeCount}
+									<li class="page-item">
+										<a class="page-link" href="/universe/?universePage={universePage + 1}">
+											<span aria-hidden="true">
+												<i class="material-icons"> chevron_right </i>
 											</span>
-                                        </a>
-                                    </li>
-                                {/if}
-                            </ul>
-                        </nav>
+										</a>
+									</li>
+								{/if}
+							</ul>
+						</nav>
 						<ul class="list-group">
 							{#each universes as universe}
 								<li class="list-group-item">
@@ -187,19 +179,29 @@
 					<form action="?/create" method="POST">
 						<div class="mb-3">
 							<label for="name" class="form-label">Name</label>
-							<input type="text" class="form-control" id="name" name="name" required>
+							<input type="text" class="form-control" id="name" name="name" required />
 						</div>
 						<div class="mb-3">
 							<label for="description" class="form-label">Description</label>
-							<textarea class="form-control" id="description" name="description" required></textarea>
+							<textarea class="form-control" id="description" name="description" required
+							></textarea>
 						</div>
 						<div class="mb-3">
-							<input class="form-check-input" type="checkbox" id="public" name="public" checked>
+							<input class="form-check-input" type="checkbox" id="public" name="public" checked />
 							<label class="form-check-label" for="public">Public</label>
 						</div>
 						<div class="mb-3">
-							<input class="form-check-input" type="checkbox" id="agree-tos" name="agree-tos" required>
-							<label for="agree-tos" class="form-check-label">I agree to the <a href="/universe/terms-and-conditions">Terms and Conditions</a></label>
+							<input
+								class="form-check-input"
+								type="checkbox"
+								id="agree-tos"
+								name="agree-tos"
+								required
+							/>
+							<label for="agree-tos" class="form-check-label"
+								>I agree to the <a href="/universe/terms-and-conditions">Terms and Conditions</a
+								></label
+							>
 						</div>
 						<button type="submit" class="btn btn-primary">Create</button>
 					</form>

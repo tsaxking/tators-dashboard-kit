@@ -73,9 +73,7 @@
 		<table class="table">
 			<tbody>
 				<tr>
-					<td>
-						Read
-					</td>
+					<td> Read </td>
 					<td>
 						<div class="form-check">
 							{#if typeof canRead === 'boolean'}
@@ -104,9 +102,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Update
-					</td>
+					<td> Update </td>
 					<td>
 						<div class="form-check">
 							{#if typeof canUpdate === 'boolean'}
@@ -135,9 +131,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Create
-					</td>
+					<td> Create </td>
 					<td>
 						<div class="form-check form-switch">
 							<input
@@ -157,9 +151,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Delete
-					</td>
+					<td> Delete </td>
 					<td>
 						{#if $struct.permissions.create}
 							<div class="form-check form-switch">
@@ -181,9 +173,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Read Archive
-					</td>
+					<td> Read Archive </td>
 					<td>
 						<div class="form-check form-switch">
 							<input
@@ -203,9 +193,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Archive / Restore
-					</td>
+					<td> Archive / Restore </td>
 					<td>
 						{#if $struct.permissions['read-archive']}
 							<div class="form-check form-switch">
@@ -227,9 +215,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Read Version History
-					</td>
+					<td> Read Version History </td>
 					<td>
 						<div class="form-check form-switch">
 							<input
@@ -249,9 +235,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Restore Version
-					</td>
+					<td> Restore Version </td>
 					<td>
 						{#if $struct.permissions['read-version-history']}
 							<div class="form-check form-switch">
@@ -273,9 +257,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>
-						Delete Version
-					</td>
+					<td> Delete Version </td>
 					<td>
 						{#if $struct.permissions['read-version-history']}
 							<div class="form-check form-switch">
@@ -311,7 +293,7 @@
 				</thead>
 				<tbody>
 					{#each $struct.properties as _, i}
-						<PropertyRow struct={struct} bind:property={$struct.properties[i]} />
+						<PropertyRow {struct} bind:property={$struct.properties[i]} />
 					{/each}
 				</tbody>
 			</table>

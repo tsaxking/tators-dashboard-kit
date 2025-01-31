@@ -22,14 +22,11 @@
 
 		// if (!user) return;
 
-		const res = await new Form(
-			`?/invite`,
-			'POST',
-		)
+		const res = await new Form(`?/invite`, 'POST')
 			.input('user', {
 				label: 'Username or email',
 				required: true,
-				type: 'text',
+				type: 'text'
 				// options: {
 				// 	datalist: async (value) => {
 
@@ -38,14 +35,14 @@
 			})
 			.prompt({
 				title: 'Invite user',
-				send: true,
+				send: true
 			});
-};
+	};
 
-onMount(() => {
-	members = Universes.getMembers(universe);
-	roles = Universes.getRoles(universe);
-});
+	onMount(() => {
+		members = Universes.getMembers(universe);
+		roles = Universes.getRoles(universe);
+	});
 </script>
 
 <div class="container">
@@ -54,9 +51,7 @@ onMount(() => {
 			<div class="d-flex w-100 justify-content-between">
 				<h1>{$universe.name}</h1>
 				<button type="button" class="btn" onclick={invite}>
-					<i class="material-icons">
-						person_add
-					</i>
+					<i class="material-icons"> person_add </i>
 				</button>
 			</div>
 		</div>
@@ -71,11 +66,11 @@ onMount(() => {
 			</ul>
 		</div>
 		<div class="col-md-6">
-			<h2>Roles <a href="/universe/{$universe.id}/roles" style="text-decoration: none;">
-				<i class="material-icons">
-					edit
-				</i>
-			</a></h2>
+			<h2>
+				Roles <a href="/universe/{$universe.id}/roles" style="text-decoration: none;">
+					<i class="material-icons"> edit </i>
+				</a>
+			</h2>
 			<ul>
 				{#each $roles as role}
 					<li>{role.data.name}</li>

@@ -133,7 +133,10 @@ export const prompt = async (message: string, config?: PromptConfig) => {
 
 		modal.show();
 
-		modal.once('hide', () => {res(null); clearModals();});
+		modal.once('hide', () => {
+			res(null);
+			clearModals();
+		});
 	});
 };
 
@@ -239,7 +242,8 @@ export const choose = async <A, B>(message: string, A: A, B: B, config?: ChooseC
 		});
 		modal.show();
 
-		modal.once('hide', () => {res(false);
+		modal.once('hide', () => {
+			res(false);
 			clearModals();
 		});
 	});
@@ -281,7 +285,10 @@ export const confirm = async (message: string, config?: ConfirmConfig) => {
 		});
 		modal.show();
 
-		modal.once('hide', () => {res(false); clearModals();});
+		modal.once('hide', () => {
+			res(false);
+			clearModals();
+		});
 	});
 };
 
@@ -309,7 +316,10 @@ export const alert = async (message: string, config?: AlertConfig) => {
 		});
 		modal.show();
 
-		modal.once('hide', () =>{ res(); clearModals();});
+		modal.once('hide', () => {
+			res();
+			clearModals();
+		});
 	});
 };
 
@@ -429,7 +439,6 @@ export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfi
 		}
 	});
 };
-
 
 export const modal = (title: string, body: Snippet, buttons: ButtonConfig[]) => {
 	if (!modalTarget) throw new Error('Cannot show modal in non-browser environment');

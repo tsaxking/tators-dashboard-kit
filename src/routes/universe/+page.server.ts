@@ -11,15 +11,12 @@ export const load = async (event) => {
 		return fail(ServerCode.internalServerError);
 	};
 
-
 	const session = await Session.getSession(event);
 	if (session.isErr()) throw error(session.error);
 
 	const account = await Session.getAccount(session.value);
 	if (account.isErr()) throw error(account.error);
 	if (!account.value) throw redirect(ServerCode.temporaryRedirect, '/account/sign-in');
-
-
 
 	const universes = await Universes.getUniverses(account.value);
 	if (universes.isErr()) throw error(universes.error);
@@ -81,18 +78,18 @@ export const load = async (event) => {
 	};
 };
 
-
 export const actions = {
 	create: async (event) => {
 		const body = await event.request.formData();
 
-
-		const res = z.object({
-			name: z.string(),
-			description: z.string(),
-			public: z.string(),
-			'agree-tos': z.string(),
-		}).safeParse(Object.fromEntries(body.entries()));
+		const res = z
+			.object({
+				name: z.string(),
+				description: z.string(),
+				public: z.string(),
+				'agree-tos': z.string()
+			})
+			.safeParse(Object.fromEntries(body.entries()));
 
 		if (!res.success) {
 			console.log('Zod failed:', body);
@@ -132,7 +129,6 @@ export const actions = {
 			});
 		}
 
-		
 		// const doFail = (message: string) => {
 		// 	Account.notifyPopup(account.value?.id || '', {
 		// 		message: 'Failed to create universe',
@@ -145,11 +141,14 @@ export const actions = {
 		// 	});
 		// }
 
-		const universe = await Universes.createUniverse({
-			name: res.data.name,
-			description: res.data.description,
-			public: res.data.public === 'on',
-		}, account.value);
+		const universe = await Universes.createUniverse(
+			{
+				name: res.data.name,
+				description: res.data.description,
+				public: res.data.public === 'on'
+			},
+			account.value
+		);
 
 		if (universe.isErr()) {
 			console.error(universe.error);
@@ -159,5 +158,5 @@ export const actions = {
 		}
 
 		throw redirect(303, `/universe/${universe.value.id}`);
-	},
-}
+	}
+};

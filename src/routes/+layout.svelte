@@ -1,7 +1,7 @@
 <script>
 	import { Struct } from 'drizzle-struct/front-end';
 	import { browser } from '$app/environment';
-	
+
 	setTimeout(() => {
 		if (browser) Struct.buildAll();
 	});

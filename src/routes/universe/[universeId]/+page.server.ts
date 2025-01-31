@@ -16,10 +16,9 @@ export const load = async (event) => {
 	}
 
 	return {
-		universe: universe.value.safe(),
+		universe: universe.value.safe()
 	};
 };
-
 
 export const actions = {
 	async invite(event) {
@@ -28,5 +27,5 @@ export const actions = {
 		const user = body.get('user');
 		console.log('Invite!', user);
 	},
-	async 'account-list'(event) {},
+	async 'account-list'(event) {}
 };

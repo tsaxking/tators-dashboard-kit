@@ -35,7 +35,7 @@ export namespace Session {
 			prevUrl: text('prev_url').notNull()
 		},
 		universeLimit: 1,
-		frontend: false,
+		frontend: false
 	});
 
 	export type SessionData = typeof Session.sample;

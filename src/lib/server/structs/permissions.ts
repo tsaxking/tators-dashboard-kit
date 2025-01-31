@@ -18,34 +18,6 @@ import { DB } from '../db';
 import { and, eq } from 'drizzle-orm';
 
 export namespace Permissions {
-	type DP = {
-		permission: PropertyAction | DataAction;
-		struct: string;
-		property?: string;
-	};
-
-	export class DataPermission {
-		static stringify(permissions: DataPermission[]): Result<string> {
-			return attempt(() => {
-				return JSON.stringify(permissions);
-			});
-		}
-
-		static parse(permissions: string): Result<DataPermission[] | '*'> {
-			return attempt(() => {
-				const result = JSON.parse(permissions) as (DP | '*')[];
-				if (result.includes('*')) return '*';
-				return (result as DP[]).map((p) => new DataPermission(p.permission, p.struct, p.property));
-			});
-		}
-
-		constructor(
-			public readonly permission: PropertyAction | DataAction,
-			public readonly struct: string,
-			public readonly property?: string // If property is undefined, it means the permission is for the whole struct
-		) {}
-	}
-
 	export const Role = new Struct({
 		name: 'role',
 		structure: {
@@ -53,11 +25,11 @@ export namespace Permissions {
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
 			permissions: text('permissions').notNull(),
-			links: text('links').notNull(),
+			links: text('links').notNull()
 		},
 		generators: {
 			permissions: () => JSON.stringify([]),
-			links: () => JSON.stringify([]),
+			links: () => JSON.stringify([])
 		}
 	});
 
@@ -68,35 +40,37 @@ export namespace Permissions {
 		if (session.isErr()) {
 			return {
 				success: false,
-				message: 'Invalid session',
-			}
+				message: 'Invalid session'
+			};
 		}
 		const account = await Session.getAccount(session.value);
 		if (account.isErr() || !account.value) {
 			return {
 				success: false,
-				message: 'Invalid account',
-			}
+				message: 'Invalid account'
+			};
 		}
 
-		const res = z.object({
-			role: z.string(),
-			permissions: z.string(),
-		}).safeParse(data);
+		const res = z
+			.object({
+				role: z.string(),
+				permissions: z.string()
+			})
+			.safeParse(data);
 
 		if (res.error) {
 			return {
 				success: false,
-				message: 'Invalid data types recieved',
-			}
+				message: 'Invalid data types recieved'
+			};
 		}
 
 		const role = await Role.fromId(res.data.role);
 		if (role.isErr() || !role.value) {
 			return {
 				success: false,
-				message: 'Invalid role',
-			}
+				message: 'Invalid role'
+			};
 		}
 
 		const permissions = DataPermission.parse(role.value.data.permissions);
@@ -104,15 +78,15 @@ export namespace Permissions {
 		if (permissions.isErr()) {
 			return {
 				success: false,
-				message: 'Invalid permissions pulled from role',
-			}
+				message: 'Invalid permissions pulled from role'
+			};
 		}
 
 		if (permissions.value === '*') {
 			return {
 				success: false,
-				message: 'Cannot update permissions from a role with global permissions',
-			}
+				message: 'Cannot update permissions from a role with global permissions'
+			};
 		}
 
 		const universe = await Universes.Universe.fromId(role.value.data.universe);
@@ -120,8 +94,8 @@ export namespace Permissions {
 		if (universe.isErr() || !universe.value) {
 			return {
 				success: false,
-				message: 'Invalid universe',
-			}
+				message: 'Invalid universe'
+			};
 		}
 
 		const updatePerms = DataPermission.parse(res.data.permissions);
@@ -129,57 +103,68 @@ export namespace Permissions {
 		if (updatePerms.isErr()) {
 			return {
 				success: false,
-				message: 'Invalid permissions',
-			}
+				message: 'Invalid permissions'
+			};
 		}
 
 		if (updatePerms.value === '*') {
 			return {
 				success: false,
-				message: 'Cannot set permissions to global',
-			}
+				message: 'Cannot set permissions to global'
+			};
 		}
 
 		const roles = await getUniverseAccountRoles(account.value, universe.value);
 		if (roles.isErr()) {
 			return {
 				success: false,
-				message: 'Invalid roles',
-			}
+				message: 'Invalid roles'
+			};
 		}
 
-		const update = async () => (await role.value?.update({
-			permissions: res.data.permissions,
-		}))?.unwrap();
+		const update = async () =>
+			(
+				await role.value?.update({
+					permissions: res.data.permissions
+				})
+			)?.unwrap();
 
 		// a user may not grant permissions they do not have to other roles
-		const userPerms = resolveAll(roles.value.map(r => permissionsFromRole(r))).unwrap().flat();
+		const userPerms = resolveAll(roles.value.map((r) => permissionsFromRole(r)))
+			.unwrap()
+			.flat();
 		if (userPerms.includes('*')) {
 			update();
 			return {
 				success: true,
-				message: 'Permissions updated',
-			}
+				message: 'Permissions updated'
+			};
 		}
 
-		const userDataPerms = userPerms.filter(p => p instanceof DataPermission);
-		const updateDataPerms = updatePerms.value.filter(p => p instanceof DataPermission);
+		const userDataPerms = userPerms.filter((p) => p instanceof DataPermission);
+		const updateDataPerms = updatePerms.value.filter((p) => p instanceof DataPermission);
 
-		const diff = updateDataPerms.filter(p => !userDataPerms.find(up => up.permission === p.permission && up.struct === p.struct && up.property === p.property));
+		const diff = updateDataPerms.filter(
+			(p) =>
+				!userDataPerms.find(
+					(up) =>
+						up.permission === p.permission && up.struct === p.struct && up.property === p.property
+				)
+		);
 
 		if (diff.length > 0) {
 			return {
 				success: false,
-				message: 'Invalid permissions',
-			}
+				message: 'Invalid permissions'
+			};
 		}
 
 		update();
 
 		return {
 			success: true,
-			message: 'Permissions updated',
-		}
+			message: 'Permissions updated'
+		};
 	});
 
 	// Role.callListen('update-links', async (event, data) => {});
@@ -194,7 +179,7 @@ export namespace Permissions {
 			role: text('role').notNull(),
 			account: text('account').notNull()
 		},
-		frontend: false,
+		frontend: false
 	});
 
 	export type RoleAccountData = typeof RoleAccount.sample;
@@ -205,21 +190,21 @@ export namespace Permissions {
 		}).await();
 	};
 
-	export const getUniverseAccountRoles = async (account: Account.AccountData, universe: Universes.UniverseData) => {
+	export const getUniverseAccountRoles = async (
+		account: Account.AccountData,
+		universe: Universes.UniverseData
+	) => {
 		return attemptAsync(async () => {
 			const data = await DB.select()
 				.from(Role.table)
 				.innerJoin(RoleAccount.table, eq(Role.table.id, RoleAccount.table.role))
 				.where(
-					and(
-						eq(RoleAccount.table.account, account.id),
-						eq(Role.table.universe, universe.id)
-					)
+					and(eq(RoleAccount.table.account, account.id), eq(Role.table.universe, universe.id))
 				);
 
-			return data.map(d => Role.Generator(d.role));
+			return data.map((d) => Role.Generator(d.role));
 		});
-	}
+	};
 
 	export const allAccountRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
@@ -323,12 +308,14 @@ export namespace Permissions {
 			}
 
 			const universes = roles.map((r) => r.data.universe);
-			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap().flat();
+			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r)))
+				.unwrap()
+				.flat();
 			if (allPerms.includes('*')) {
-				return data.map(d => d.data);
+				return data.map((d) => d.data);
 			}
 			const permissions = allPerms
-				.filter(p => p instanceof DataPermission)
+				.filter((p) => p instanceof DataPermission)
 				// TODO: if action is readversionhistory or readarchive, properties should be filtered by the read permissions
 				.filter((p) => p.permission === action && p.struct === struct);
 
@@ -366,9 +353,11 @@ export namespace Permissions {
 
 		setTimeout(async () => {
 			const universes = roles.map((r) => r.data.universe);
-			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap().flat();
+			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r)))
+				.unwrap()
+				.flat();
 			if (allPerms.includes('*')) {
-				stream.pipe((d) =>{
+				stream.pipe((d) => {
 					newStream.add(d.data);
 				});
 				return;
@@ -388,7 +377,16 @@ export namespace Permissions {
 					const { data } = d;
 					const properties: string[] = permissions
 						.map((p) => p.property)
-						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes', 'canUpdate')
+						.concat(
+							'id',
+							'created',
+							'updated',
+							'archived',
+							'universes',
+							'lifetime',
+							'attributes',
+							'canUpdate'
+						)
 						.filter((v, i, a) => a.indexOf(v) === i)
 						.filter(Boolean) as string[];
 
@@ -420,71 +418,12 @@ export namespace Permissions {
 		});
 	};
 
-	// const cantAccess = (req: Req) =>
-	//     new Status(
-	//         {
-	//             code: 403,
-	//             message: 'You do not have permission to access this resource',
-	//             color: 'danger',
-	//             instructions: ''
-	//         },
-	//         'Permissions',
-	//         'Invalid',
-	//         '{}',
-	//         req
-	//     );
-
-	// export const canAccess =
-	//     (
-	//         fn: (
-	//             account: Account.AccountData,
-	//             roles: RoleData[]
-	//         ) => Promise<boolean> | boolean
-	//     ): ServerFunction =>
-	//     async (req, res, next) => {
-	//         if (!(await req.getSession()).unwrap().data.accountId) {
-	//             return res.sendCustomStatus(cantAccess(req));
-	//         }
-
-	//         const account = (await Session.getAccount(req.sessionId)).unwrap();
-
-	//         if (!account) return res.sendCustomStatus(cantAccess(req));
-
-	//         const roles = (await getRoles(account)).unwrap();
-
-	//         if (!(await fn(account, roles)))
-	//             return res.sendCustomStatus(cantAccess(req));
-
-	//         next();
-	//     };
-
-	// export const forceUniverse =
-	//     (
-	//         getUniverse: (
-	//             session: Session.SessionData
-	//         ) => Promise<UniverseData | undefined> | UniverseData | undefined
-	//     ): ServerFunction =>
-	//     async (req, res, next) => {
-	//         const session = (await req.getSession()).unwrap();
-	//         if (!session) throw new Error('Session not found');
-	//         const universe = await getUniverse(session);
-	//         if (universe) {
-	//             req.universe = universe.id;
-	//             const rooms = req.socket?.rooms;
-	//             if (rooms && !rooms.has(universe.id)) {
-	//                 req.socket.join(universe.id);
-	//             }
-	//         }
-	//         next();
-	//     };
-
-
 	export const canAccess = (roles: RoleData[], link: string) => {
 		return roles.some((r) => {
 			const links = z.array(z.string()).parse(JSON.parse(r.data.links));
 			return links.includes('*') || links.includes(link);
 		});
-	}
+	};
 }
 
 // for drizzle

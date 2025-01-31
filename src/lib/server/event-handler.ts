@@ -261,7 +261,7 @@ export const handleEvent =
 							'universes',
 							'attributes',
 							'lifetime',
-							'canUpdate',
+							'canUpdate'
 						]
 					})
 				)
@@ -325,7 +325,8 @@ export const handleEvent =
 
 		if (event.action === DataAction.Archive) {
 			const archive = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError(struct, 'Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
@@ -348,7 +349,8 @@ export const handleEvent =
 
 		if (event.action === DataAction.Delete) {
 			const remove = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError(struct, 'Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
@@ -371,7 +373,8 @@ export const handleEvent =
 
 		if (event.action === DataAction.RestoreArchive) {
 			const restore = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError(struct, 'Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
 				if (!found) return error(new DataError(struct, 'Data not found'));
@@ -440,7 +443,7 @@ export const connectionEmitter = (struct: Struct) => {
 			if (roles.isErr()) return console.error(roles.error);
 			const r = roles.value;
 
-			if (!r.some(r => universes.value.includes(r.data.universe))) {
+			if (!r.some((r) => universes.value.includes(r.data.universe))) {
 				return;
 			}
 

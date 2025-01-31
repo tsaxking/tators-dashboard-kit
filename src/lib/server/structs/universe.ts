@@ -7,6 +7,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { Permissions } from './permissions';
 import { Session } from './session';
 import { z } from 'zod';
+import { createEntitlement } from '../utils/entitlements';
 
 export namespace Universes {
 	export const Universe = new Struct({
@@ -26,15 +27,17 @@ export namespace Universes {
 			throw new Error('Not logged in');
 		}
 
-		const universeId = z.object({
-			universe: z.string(),
-		}).parse(data).universe;
+		const universeId = z
+			.object({
+				universe: z.string()
+			})
+			.parse(data).universe;
 
 		const universe = (await Universe.fromId(universeId)).unwrap();
 		if (!universe) throw new Error('Universe not found');
 
 		const members = (await getMembers(universe)).unwrap();
-		if (!members.find(m => m.data.id == account.data.id)) {
+		if (!members.find((m) => m.data.id == account.data.id)) {
 			throw new Error('Not a member of this universe, cannot read members');
 		}
 		const stream = new StructStream(Account.Account);
@@ -73,14 +76,19 @@ export namespace Universes {
 			// 	.unwrap()
 			// 	.filter(Boolean) as Universes.UniverseData[];
 
-			const data = await DB
-				.select()
+			const data = await DB.select()
 				.from(Universe.table)
-				.innerJoin(Permissions.RoleAccount.table, eq(Permissions.RoleAccount.table.account, accountId))
-				.innerJoin(Permissions.Role.table, eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id))
+				.innerJoin(
+					Permissions.RoleAccount.table,
+					eq(Permissions.RoleAccount.table.account, accountId)
+				)
+				.innerJoin(
+					Permissions.Role.table,
+					eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id)
+				)
 				.where(eq(Permissions.Role.table.name, 'Member'));
 
-			return data.map(d => Universe.Generator(d.universe));
+			return data.map((d) => Universe.Generator(d.universe));
 		});
 	};
 
@@ -101,10 +109,12 @@ export namespace Universes {
 			throw new Error('Not logged in');
 		}
 
-		const i = z.object({
-			user: z.string(),
-			universe: z.string(),
-		}).parse(data);
+		const i = z
+			.object({
+				user: z.string(),
+				universe: z.string()
+			})
+			.parse(data);
 
 		const invitee = (await Account.Account.fromId(i.user)).unwrap();
 		if (!invitee) throw new Error('Account not found');
@@ -115,8 +125,8 @@ export namespace Universes {
 		await invite(u, invitee, account);
 
 		return {
-			success: true,
-		}
+			success: true
+		};
 	});
 
 	export type UniverseInviteData = typeof UniverseInvites.sample;
@@ -132,26 +142,32 @@ export namespace Universes {
 		return attemptAsync(async () => {
 			const u = (await Universe.new(config)).unwrap();
 			const admin = (
-				await Permissions.Role.new({
-					universe: u.id,
-					name: 'Admin',
-					permissions: '["*"]',
-					description: `${u.data.name} Aministrator`,
-					links: '["*"]'
-				}, {
-					static: true,
-				})
+				await Permissions.Role.new(
+					{
+						universe: u.id,
+						name: 'Admin',
+						permissions: '["*"]',
+						description: `${u.data.name} Aministrator`,
+						links: '["*"]'
+					},
+					{
+						static: true
+					}
+				)
 			).unwrap();
 			const member = (
-				await Permissions.Role.new({
-					universe: u.id,
-					name: 'Member',
-					permissions: '[]',
-					description: `${u.data.name} Member`,
-					links: '[]'
-				}, {
-					static: true,
-				})
+				await Permissions.Role.new(
+					{
+						universe: u.id,
+						name: 'Member',
+						permissions: '[]',
+						description: `${u.data.name} Member`,
+						links: '[]'
+					},
+					{
+						static: true
+					}
+				)
 			).unwrap();
 			await Permissions.RoleAccount.new({
 				role: admin.id,
@@ -226,18 +242,22 @@ export namespace Universes {
 			const a = await (await Account.Account.fromId(account)).unwrap();
 			if (!a) return;
 
-			const roles = (await Permissions.Role.fromProperty('universe', universe, {
-				type: 'stream',
-			}).await()).unwrap();
+			const roles = (
+				await Permissions.Role.fromProperty('universe', universe, {
+					type: 'stream'
+				}).await()
+			).unwrap();
 
 			const member = roles.find((r) => r.data.name === 'Member'); // should always succeed because data is static
 
 			if (!member) throw new Error('Member role not found');
 
-			(await Permissions.RoleAccount.new({
-				account: a.id,
-				role: member.id
-			})).unwrap();
+			(
+				await Permissions.RoleAccount.new({
+					account: a.id,
+					role: member.id
+				})
+			).unwrap();
 
 			(await invite.delete()).unwrap();
 		});
@@ -247,18 +267,25 @@ export namespace Universes {
 		return invite.delete();
 	};
 
-	export const isMember = async (account: Account.AccountData, universe: Universes.UniverseData) => {
-		return attemptAsync(async () => {
-		});
+	export const isMember = async (
+		account: Account.AccountData,
+		universe: Universes.UniverseData
+	) => {
+		return attemptAsync(async () => {});
 	};
 
 	export const getMembers = async (universe: UniverseData) => {
 		return attemptAsync(async () => {
-			const data = await DB
-				.select()
+			const data = await DB.select()
 				.from(Account.Account.table)
-				.innerJoin(Permissions.RoleAccount.table, eq(Account.Account.table.id, Permissions.RoleAccount.table.account))
-				.innerJoin(Permissions.Role.table, eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id))
+				.innerJoin(
+					Permissions.RoleAccount.table,
+					eq(Account.Account.table.id, Permissions.RoleAccount.table.account)
+				)
+				.innerJoin(
+					Permissions.Role.table,
+					eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id)
+				)
 				.where(eq(Permissions.Role.table.universe, universe.id));
 			return data
 				.filter((v, i, a) => a.findIndex((t) => t.account.id === v.account.id) === i)
@@ -270,7 +297,10 @@ export namespace Universes {
 		return attemptAsync(async () => {
 			const data = await DB.select()
 				.from(Permissions.RoleAccount.table)
-				.innerJoin(Permissions.Role.table, eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id))
+				.innerJoin(
+					Permissions.Role.table,
+					eq(Permissions.RoleAccount.table.role, Permissions.Role.table.id)
+				)
 				.where(
 					and(
 						eq(Permissions.RoleAccount.table.account, account.id),
@@ -278,9 +308,18 @@ export namespace Universes {
 					)
 				);
 
-			return data.map(d => Permissions.Role.Generator(d.role));
+			return data.map((d) => Permissions.Role.Generator(d.role));
 		});
 	};
+
+
+
+	createEntitlement({
+		name: 'hello',
+		struct: Universe,
+		permissions: ['*'],
+		scope: 'global',
+	});
 }
 
 export const _universeTable = Universes.Universe.table;
