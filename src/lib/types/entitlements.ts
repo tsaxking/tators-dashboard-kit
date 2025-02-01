@@ -1,3 +1,3 @@
-export type Entitlements = 
-    'admin'
-  | 'hello';
+export type Entitlement = 
+    'default'
+  | 'manage-universe';

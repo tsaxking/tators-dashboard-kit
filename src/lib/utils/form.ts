@@ -426,38 +426,3 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 		});
 	}
 }
-
-// // Usage
-// const f = new Form()
-//     .input('name', {
-//         type: 'text',
-//         required: true,
-//         label: 'Name',
-//         placeholder: 'Enter your name'
-//     })
-//     .input('age', {
-//         type: 'number',
-//         required: true,
-//         label: 'Age',
-//         options: { min: 18, max: 100, step: 1 }
-//     })
-//     .input('gender', {
-//         type: 'radio',
-//         required: true,
-//         label: 'Gender',
-//         options: ['Male', 'Female', 'Other']
-//     })
-//     .input('preferences', {
-//         type: 'checkbox',
-//         required: false,
-//         label: 'Preferences',
-//         options: [
-//             { value: 'sports', label: 'Sports' },
-//             { value: 'music', label: 'Music' },
-//             { value: 'tech', label: 'Technology' }
-//         ]
-//     })
-//     .prompt('Enter your details...');
-
-// // document.body.appendChild(f.render());
-// // // console.log(f.value());

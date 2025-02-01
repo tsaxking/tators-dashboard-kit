@@ -66,8 +66,9 @@ export namespace Account {
 			archived: false,
 			universes: '[]',
 			attributes: '[]',
-			lifetime: 0
-		})
+			lifetime: 0,
+			canUpdate: false,
+		}),
 	);
 
 	export const getSelf = (): SingleWritable<typeof Account.data.structure> => {
@@ -102,5 +103,14 @@ export namespace Account {
 		});
 
 		return notifs;
+	};
+
+	export const getUsersFromUniverse = (universe: string) => {
+		return Account.query('from-universe', {
+			universe,
+		}, {
+			asStream: false,
+			satisfies: () => false,
+		});
 	};
 }

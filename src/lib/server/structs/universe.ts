@@ -7,7 +7,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { Permissions } from './permissions';
 import { Session } from './session';
 import { z } from 'zod';
-import { createEntitlement } from '../utils/entitlements';
+import { createEntitlement, readEntitlement } from '../utils/entitlements';
 
 export namespace Universes {
 	export const Universe = new Struct({
@@ -146,9 +146,9 @@ export namespace Universes {
 					{
 						universe: u.id,
 						name: 'Admin',
-						permissions: '["*"]',
 						description: `${u.data.name} Aministrator`,
-						links: '["*"]'
+						links: '["*"]',
+						entitlements: '[]',
 					},
 					{
 						static: true
@@ -160,9 +160,9 @@ export namespace Universes {
 					{
 						universe: u.id,
 						name: 'Member',
-						permissions: '[]',
 						description: `${u.data.name} Member`,
-						links: '[]'
+						links: '[]',
+						entitlements: '[]'
 					},
 					{
 						static: true
@@ -315,11 +315,15 @@ export namespace Universes {
 
 
 	createEntitlement({
-		name: 'hello',
+		name: 'manage-universe',
 		struct: Universe,
-		permissions: ['*'],
-		scope: 'global',
+		permissions: [
+			'read:name',
+		],
+		scope: 'universe',
 	});
+
+	readEntitlement('manage-universe');
 }
 
 export const _universeTable = Universes.Universe.table;

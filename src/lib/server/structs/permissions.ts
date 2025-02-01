@@ -16,6 +16,8 @@ import { z } from 'zod';
 import { Session } from './session';
 import { DB } from '../db';
 import { and, eq } from 'drizzle-orm';
+import { readEntitlement, type EntitlementPermission } from '../utils/entitlements';
+import type { Entitlement } from '$lib/types/entitlements';
 
 export namespace Permissions {
 	export const Role = new Struct({
@@ -24,154 +26,31 @@ export namespace Permissions {
 			name: text('name').notNull(),
 			universe: text('universe').notNull(),
 			description: text('description').notNull(),
-			permissions: text('permissions').notNull(),
-			links: text('links').notNull()
+			links: text('links').notNull(),
+			entitlements: text('entitlements').notNull().default('[]'),
 		},
 		generators: {
-			permissions: () => JSON.stringify([]),
-			links: () => JSON.stringify([])
+			links: () => JSON.stringify([]),
+			entitlements: () => JSON.stringify([]),
 		}
 	});
 
 	Role.block(PropertyAction.Update, () => true, 'Not allowed to update Roles through the API.');
-
-	Role.callListen('update-permissions', async (event, data) => {
-		const session = await Session.getSession(event);
-		if (session.isErr()) {
-			return {
-				success: false,
-				message: 'Invalid session'
-			};
-		}
-		const account = await Session.getAccount(session.value);
-		if (account.isErr() || !account.value) {
-			return {
-				success: false,
-				message: 'Invalid account'
-			};
-		}
-
-		const res = z
-			.object({
-				role: z.string(),
-				permissions: z.string()
-			})
-			.safeParse(data);
-
-		if (res.error) {
-			return {
-				success: false,
-				message: 'Invalid data types recieved'
-			};
-		}
-
-		const role = await Role.fromId(res.data.role);
-		if (role.isErr() || !role.value) {
-			return {
-				success: false,
-				message: 'Invalid role'
-			};
-		}
-
-		const permissions = DataPermission.parse(role.value.data.permissions);
-
-		if (permissions.isErr()) {
-			return {
-				success: false,
-				message: 'Invalid permissions pulled from role'
-			};
-		}
-
-		if (permissions.value === '*') {
-			return {
-				success: false,
-				message: 'Cannot update permissions from a role with global permissions'
-			};
-		}
-
-		const universe = await Universes.Universe.fromId(role.value.data.universe);
-
-		if (universe.isErr() || !universe.value) {
-			return {
-				success: false,
-				message: 'Invalid universe'
-			};
-		}
-
-		const updatePerms = DataPermission.parse(res.data.permissions);
-
-		if (updatePerms.isErr()) {
-			return {
-				success: false,
-				message: 'Invalid permissions'
-			};
-		}
-
-		if (updatePerms.value === '*') {
-			return {
-				success: false,
-				message: 'Cannot set permissions to global'
-			};
-		}
-
-		const roles = await getUniverseAccountRoles(account.value, universe.value);
-		if (roles.isErr()) {
-			return {
-				success: false,
-				message: 'Invalid roles'
-			};
-		}
-
-		const update = async () =>
-			(
-				await role.value?.update({
-					permissions: res.data.permissions
-				})
-			)?.unwrap();
-
-		// a user may not grant permissions they do not have to other roles
-		const userPerms = resolveAll(roles.value.map((r) => permissionsFromRole(r)))
-			.unwrap()
-			.flat();
-		if (userPerms.includes('*')) {
-			update();
-			return {
-				success: true,
-				message: 'Permissions updated'
-			};
-		}
-
-		const userDataPerms = userPerms.filter((p) => p instanceof DataPermission);
-		const updateDataPerms = updatePerms.value.filter((p) => p instanceof DataPermission);
-
-		const diff = updateDataPerms.filter(
-			(p) =>
-				!userDataPerms.find(
-					(up) =>
-						up.permission === p.permission && up.struct === p.struct && up.property === p.property
-				)
-		);
-
-		if (diff.length > 0) {
-			return {
-				success: false,
-				message: 'Invalid permissions'
-			};
-		}
-
-		update();
-
-		return {
-			success: true,
-			message: 'Permissions updated'
-		};
-	});
 
 	// Role.callListen('update-links', async (event, data) => {});
 
 	// Role.callListen('update-role', async (event, data) => {});
 
 	export type RoleData = typeof Role.sample;
+
+	export const entitlementsFromRole = async (role: RoleData) => {
+		return attemptAsync(async () => {
+			const entitlements = JSON.parse(role.data.entitlements);
+			return resolveAll<EntitlementPermission>(await Promise.all(entitlements.map((e: string) => {
+				return readEntitlement(e as Entitlement);
+			}))).unwrap();
+		});
+	};
 
 	export const RoleAccount = new Struct({
 		name: 'role_account',
@@ -239,51 +118,6 @@ export namespace Permissions {
 		});
 	};
 
-	export const permissionsFromRole = (role: RoleData) => {
-		return DataPermission.parse(role.data.permissions);
-	};
-
-	// export const permissionsFromAccount = async (
-	//     account: Account.AccountData
-	// ) => {
-	//     return attemptAsync(async () => {
-	//         // TODO: Make permissionsFromAccount()
-	//     });
-	// };
-
-	export const setPermissions = async (role: RoleData, permissions: DataPermission[]) => {
-		return role.update({
-			permissions: DataPermission.stringify(permissions).unwrap()
-		});
-	};
-
-	export const givePermission = async (role: RoleData, permission: DataPermission) => {
-		return attemptAsync(async () => {
-			const permissions = (await permissionsFromRole(role)).unwrap();
-			if (permissions === '*') return;
-			permissions.push(permission);
-			return setPermissions(role, permissions);
-		});
-	};
-
-	export const removePermission = async (role: RoleData, permission: DataPermission) => {
-		return attemptAsync(async () => {
-			const permissions = (await permissionsFromRole(role)).unwrap();
-			if (permissions === '*') return;
-			const index = permissions.findIndex(
-				(p) =>
-					p.permission === permission.permission &&
-					p.struct === permission.struct &&
-					p.property === permission.property
-			);
-			if (index === -1) {
-				return;
-			}
-
-			permissions.splice(index, 1);
-			return (await setPermissions(role, permissions)).unwrap();
-		});
-	};
 
 	// TODO: This isn't really typed correctly. As of right now, the output is using the generic Struct<Blank, string> type rather than the actual struct type that's passed in.
 	export const filterAction = async <
@@ -308,16 +142,13 @@ export namespace Permissions {
 			}
 
 			const universes = roles.map((r) => r.data.universe);
-			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r)))
+			const allEntitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
 				.unwrap()
 				.flat();
-			if (allPerms.includes('*')) {
-				return data.map((d) => d.data);
-			}
-			const permissions = allPerms
-				.filter((p) => p instanceof DataPermission)
+
+			const usedEntitlements = allEntitlements
 				// TODO: if action is readversionhistory or readarchive, properties should be filtered by the read permissions
-				.filter((p) => p.permission === action && p.struct === struct);
+				.filter((p) => p.struct === struct && p.permissions.some(p => p.action === action || p.action === '*'));
 
 			return data
 				.filter((d) => {
@@ -326,8 +157,9 @@ export namespace Permissions {
 				})
 				.map((d) => {
 					const { data } = d;
-					const properties: string[] = permissions
-						.map((p) => p.property)
+					const properties: string[] = usedEntitlements
+						.map((e) => e.permissions.map(perm => perm.property))
+						.flat()
 						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes')
 						.filter((v, i, a) => a.indexOf(v) === i)
 						.filter(Boolean) as string[];
@@ -353,30 +185,24 @@ export namespace Permissions {
 
 		setTimeout(async () => {
 			const universes = roles.map((r) => r.data.universe);
-			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r)))
-				.unwrap()
-				.flat();
-			if (allPerms.includes('*')) {
-				stream.pipe((d) => {
-					newStream.add(d.data);
-				});
-				return;
-			}
 
-			const permissions = allPerms
-				.filter((p) => p instanceof DataPermission)
-				.filter((p) => p.permission === action && p.struct === stream.struct.name);
+			const entitlements = resolveAll(await Promise.all(roles.map(r => entitlementsFromRole(r))))
+				.unwrap()
+				.flat()
+				.filter(e => e.permissions.some(p => p.action === action) && e.struct === stream.struct.data.name);
+
 
 			stream.pipe((d) => {
 				if (bypass.some((b) => b(account, d))) {
-					return newStream.add(d.data);
+					return newStream.add(d.safe());
 				}
 
 				const dataUniverses = d.getUniverses().unwrap();
 				if (dataUniverses.some((du) => universes.includes(du))) {
 					const { data } = d;
-					const properties: string[] = permissions
-						.map((p) => p.property)
+					const properties: string[] = entitlements
+						.map(e => e.permissions.map(p => p.property))
+						.flat()
 						.concat(
 							'id',
 							'created',
@@ -404,25 +230,16 @@ export namespace Permissions {
 
 	// global permissions
 	export const canDo = (roles: RoleData[], struct: Struct<Blank, string>, action: DataAction) => {
-		return attempt(() => {
-			const allPerms = resolveAll(roles.map((r) => permissionsFromRole(r))).unwrap();
-			if (allPerms.includes('*')) {
-				return true;
-			}
-			const permissions = allPerms
-				.flat()
-				.filter((p) => p instanceof DataPermission)
-				.filter((p) => p.permission === action && p.struct === struct.name);
-
-			return permissions.length > 0;
+		return attemptAsync(async () => {
 		});
 	};
 
 	export const canAccess = (roles: RoleData[], link: string) => {
-		return roles.some((r) => {
-			const links = z.array(z.string()).parse(JSON.parse(r.data.links));
-			return links.includes('*') || links.includes(link);
-		});
+		return attemptAsync(async () => {});
+	};
+
+	export const isEntitled = (roles: RoleData[], entitlement: string, universe?: Universes.UniverseData) => {
+		return attemptAsync(async () => {});
 	};
 }
 

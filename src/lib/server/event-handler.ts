@@ -283,7 +283,7 @@ export const handleEvent =
 			if (runBypass()) {
 				return create();
 			}
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, this as any, DataAction.Create).unwrap()))
 				return invalidPermissions;
 
 			return create();
@@ -342,7 +342,7 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return archive();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create).unwrap()))
 				return invalidPermissions;
 			return archive();
 		}
@@ -365,7 +365,7 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return remove();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 
 			return remove();
@@ -389,7 +389,7 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return restore();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 			return restore();
 		}
