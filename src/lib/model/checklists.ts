@@ -1,6 +1,6 @@
 import { type DataArr, Struct, type StructData } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
-
+import { browser } from '$app/environment';
 
 export namespace Checklist {
     export const Checklists = new Struct({
@@ -10,7 +10,8 @@ export namespace Checklist {
             eventKey: 'string',
             description: 'string',
         },
-        socket: sse
+        socket: sse,
+        browser
     });
 
     export type ChecklistData = StructData<typeof Checklists.data.structure>;
@@ -24,6 +25,7 @@ export namespace Checklist {
             interval: 'number',
         },
         socket: sse,
+        browser
     });
 
     export type QuestionData = StructData<typeof Questions.data.structure>;
@@ -36,6 +38,7 @@ export namespace Checklist {
             accountId: 'string',
         },
         socket: sse,
+        browser
     });
 
     export type AssignmentData = StructData<typeof Assignments.data.structure>;
@@ -49,6 +52,7 @@ export namespace Checklist {
             matchId: 'string',
         },
         socket: sse,
+        browser
     });
 
     export type AnswerData = StructData<typeof Answers.data.structure>;

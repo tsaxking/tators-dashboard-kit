@@ -1,5 +1,6 @@
 import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
+import { browser } from '$app/environment';
 
 
 export namespace Scouting {
@@ -15,7 +16,8 @@ export namespace Scouting {
             trace: 'string',
             checks: 'string',
         },
-        socket: sse
+        socket: sse,
+        browser
     });
 
     export type MatchScoutingData = StructData<typeof MatchScouting.data.structure>;
@@ -32,7 +34,8 @@ export namespace Scouting {
             type: 'string',
             eventKey: 'string',
         },
-        socket: sse
+        socket: sse,
+        browser
     });
 
     export type TeamCommentsData = StructData<typeof TeamComments.data.structure>;
@@ -47,7 +50,8 @@ export namespace Scouting {
                 multiple: 'boolean',
                 accountId: 'string',
             },
-            socket: sse
+            socket: sse,
+            browser
         });
 
         export type SectionData = StructData<typeof Sections.data.structure>;
@@ -62,7 +66,8 @@ export namespace Scouting {
                 name: 'string',
                 accountId: 'string',
             },
-            socket: sse
+            socket: sse,
+            browser
         });
 
         export type GroupData = StructData<typeof Groups.data.structure>;
@@ -76,7 +81,8 @@ export namespace Scouting {
                 type: 'string',
                 accountId: 'string',
             },
-            socket: sse
+            socket: sse,
+            browser
         });
 
         export type QuestionData = StructData<typeof Qustions.data.structure>;
@@ -90,7 +96,8 @@ export namespace Scouting {
                 value: 'string',
                 matchId: 'string',
             },
-            socket: sse
+            socket: sse,
+            browser
         });
 
         export type AnswerData = StructData<typeof Answers.data.structure>;
