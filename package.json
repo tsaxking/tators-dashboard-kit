@@ -21,7 +21,8 @@
 		"db:studio": "drizzle-kit studio",
 		"build-storybook": "storybook build",
 		"debug": "vite --debug",
-		"fix-readme": "node --loader @esbuild-kit/esm-loader ./scripts/fix-readme.ts"
+		"fix-readme": "node --loader @esbuild-kit/esm-loader ./scripts/fix-readme.ts",
+		"script": "node --loader @esbuild-kit/esm-loader ./scripts/index.ts"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
