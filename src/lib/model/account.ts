@@ -64,11 +64,11 @@ export namespace Account {
 			updated: '0',
 			created: '0',
 			archived: false,
-			universes: '[]',
+			universe: '',
 			attributes: '[]',
 			lifetime: 0,
-			canUpdate: false,
-		}),
+			canUpdate: false
+		})
 	);
 
 	export const getSelf = (): SingleWritable<typeof Account.data.structure> => {
@@ -106,11 +106,15 @@ export namespace Account {
 	};
 
 	export const getUsersFromUniverse = (universe: string) => {
-		return Account.query('from-universe', {
-			universe,
-		}, {
-			asStream: false,
-			satisfies: () => false,
-		});
+		return Account.query(
+			'from-universe',
+			{
+				universe
+			},
+			{
+				asStream: false,
+				satisfies: () => false
+			}
+		);
 	};
 }

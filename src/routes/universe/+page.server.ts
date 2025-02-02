@@ -21,11 +21,6 @@ export const load = async (event) => {
 	const universes = await Universes.getUniverses(account.value.id);
 	if (universes.isErr()) throw error(universes.error);
 
-	// const currentUniverse = await Universes.Universe.fromId(
-	// 	session.value.getUniverses().unwrap()[0] || ''
-	// );
-	// if (currentUniverse.isErr()) throw error(currentUniverse.error);
-
 	const invitePage = parseInt(event.url.searchParams.get('invitePage') || '0');
 	const inviteNumber = parseInt(event.url.searchParams.get('inviteNumber') || '0');
 	const inviteOffset = invitePage * inviteNumber;
@@ -63,7 +58,6 @@ export const load = async (event) => {
 
 	return {
 		universes: universes.value.map((u) => u.safe()),
-		// current: currentUniverse.value?.safe(),
 		invites: invites.value.map((i) => ({
 			invite: i.invite.safe(),
 			universe: i.universe.safe()

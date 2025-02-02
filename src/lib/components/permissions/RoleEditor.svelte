@@ -21,7 +21,7 @@
 	let value = $state(new Set<string>());
 
 	export const save = () => {
-		Permissions.saveEntitlements(role, Array.from(value)).then(e => {
+		Permissions.saveEntitlements(role, Array.from(value)).then((e) => {
 			console.log(e);
 		});
 	};
@@ -31,16 +31,16 @@
 	};
 
 	onMount(() => {
-		Permissions.getEntitlements().then(e => {
+		Permissions.getEntitlements().then((e) => {
 			if (e.isOk()) {
 				entitlements = e.value.reduce((acc, ent) => {
-					const has = acc.find(e => e.struct === ent.struct);
+					const has = acc.find((e) => e.struct === ent.struct);
 					if (has) {
 						has.permission.push(ent.name);
 					} else {
 						acc.push({
 							struct: ent.struct,
-							permission: [ent.name],
+							permission: [ent.name]
 						});
 					}
 					return acc;
@@ -48,7 +48,7 @@
 			}
 		});
 
-		return role.subscribe(e => {
+		return role.subscribe((e) => {
 			value = new Set(JSON.parse(e.entitlements ?? '[]'));
 		});
 	});
@@ -62,23 +62,23 @@
 			</h4>
 			<ul class="list-unstyled">
 				{#each e.permission as p}
-				<li>
-					<input
-						type="checkbox"
-						id="permission-{i}-{p}"
-						onchange={(e) => {
-							if (e.currentTarget.checked) {
-								value.add(p);
-							} else {
-								value.delete(p);
-							}
-						}}
-						checked={value.has(p)}
-					/>
-					<label for="permission-{i}-{p}" class="ms-2">
-						{capitalize(fromSnakeCase(p, '-'))}
-					</label>
-				</li>
+					<li>
+						<input
+							type="checkbox"
+							id="permission-{i}-{p}"
+							onchange={(e) => {
+								if (e.currentTarget.checked) {
+									value.add(p);
+								} else {
+									value.delete(p);
+								}
+							}}
+							checked={value.has(p)}
+						/>
+						<label for="permission-{i}-{p}" class="ms-2">
+							{capitalize(fromSnakeCase(p, '-'))}
+						</label>
+					</li>
 				{/each}
 			</ul>
 		{/each}

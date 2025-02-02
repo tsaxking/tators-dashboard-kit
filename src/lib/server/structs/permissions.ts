@@ -14,7 +14,11 @@ import { Stream } from 'ts-utils/stream';
 import { Universes } from './universe';
 import { DB } from '../db';
 import { and, eq } from 'drizzle-orm';
-import { readEntitlement, type EntitlementPermission, createEntitlement } from '../utils/entitlements';
+import {
+	readEntitlement,
+	type EntitlementPermission,
+	createEntitlement
+} from '../utils/entitlements';
 import type { Entitlement } from '$lib/types/entitlements';
 import { z } from 'zod';
 import { Session } from './session';
@@ -27,11 +31,11 @@ export namespace Permissions {
 			// universe: text('universe').notNull(),
 			description: text('description').notNull(),
 			links: text('links').notNull(),
-			entitlements: text('entitlements').notNull().default('[]'),
+			entitlements: text('entitlements').notNull().default('[]')
 		},
 		generators: {
 			links: () => JSON.stringify([]),
-			entitlements: () => JSON.stringify([]),
+			entitlements: () => JSON.stringify([])
 		}
 	});
 
@@ -45,14 +49,16 @@ export namespace Permissions {
 			console.error('No Account');
 			return {
 				success: false,
-				reason: 'Not logged in',
-			}
+				reason: 'Not logged in'
+			};
 		}
 
-		const body = z.object({
-			role: z.string(),
-			permissions: z.array(z.string())
-		}).parse(data);
+		const body = z
+			.object({
+				role: z.string(),
+				permissions: z.array(z.string())
+			})
+			.parse(data);
 
 		const role = (await Role.fromId(body.role)).unwrap();
 
@@ -60,8 +66,8 @@ export namespace Permissions {
 			console.error('No Role');
 			return {
 				success: false,
-				reason: 'Role not found',
-			}
+				reason: 'Role not found'
+			};
 		}
 
 		const universe = (await Universes.Universe.fromId(role.data.universe)).unwrap();
@@ -69,40 +75,39 @@ export namespace Permissions {
 			console.error('No Universe');
 			return {
 				success: false,
-				reason: 'Universe not found',
-			}
+				reason: 'Universe not found'
+			};
 		}
 
 		const roles = (await getUniverseAccountRoles(account, universe)).unwrap();
-		if (!(await isEntitled(
-			roles,
-			'manage-roles',
-		)).unwrap()) {
+		if (!(await isEntitled(roles, 'manage-roles')).unwrap()) {
 			console.error('No Entitlement');
 			return {
 				success: false,
-				reason: 'Not entitled',
-			}
+				reason: 'Not entitled'
+			};
 		}
 
-		const entitlements = (await entitlementsFromRoles(roles)).unwrap().map(e => e.name);
+		const entitlements = (await entitlementsFromRoles(roles)).unwrap().map((e) => e.name);
 		// a user can only give permissions they have
-		const permissions = body.permissions.filter(p => entitlements.includes(p as Entitlement));
+		const permissions = body.permissions.filter((p) => entitlements.includes(p as Entitlement));
 		if (permissions.length !== body.permissions.length) {
 			console.error('Invalid Permissions');
 			return {
 				success: false,
-				reason: 'Invalid Permissions, cannot give permissions you do not have',
-			}
+				reason: 'Invalid Permissions, cannot give permissions you do not have'
+			};
 		}
 
-		(await role.update({
-			entitlements: JSON.stringify(permissions)
-		})).unwrap();
+		(
+			await role.update({
+				entitlements: JSON.stringify(permissions)
+			})
+		).unwrap();
 
 		return {
-			success: true,
-		}
+			success: true
+		};
 	});
 
 	// Role.callListen('update-links', async (event, data) => {});
@@ -114,9 +119,13 @@ export namespace Permissions {
 	export const entitlementsFromRole = async (role: RoleData) => {
 		return attemptAsync(async () => {
 			const entitlements = JSON.parse(role.data.entitlements);
-			return resolveAll<EntitlementPermission>(await Promise.all(entitlements.map((e: string) => {
-				return readEntitlement(e as Entitlement);
-			}))).unwrap();
+			return resolveAll<EntitlementPermission>(
+				await Promise.all(
+					entitlements.map((e: string) => {
+						return readEntitlement(e as Entitlement);
+					})
+				)
+			).unwrap();
 		});
 	};
 
@@ -139,14 +148,16 @@ export namespace Permissions {
 
 	export const entitlementsFromRoles = (roles: RoleData[]) => {
 		return attemptAsync(async () => {
-			return resolveAll(await Promise.all(roles.map(r => entitlementsFromRole(r)))).unwrap().flat();
+			return resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+				.unwrap()
+				.flat();
 		});
-	}
+	};
 
 	export const isEntitled = (roles: RoleData[], ...entitlements: Entitlement[]) => {
 		return attemptAsync(async () => {
 			const has = (await entitlementsFromRoles(roles)).unwrap();
-			return has.some(e => entitlements.includes(e.name));
+			return has.some((e) => entitlements.includes(e.name));
 		});
 	};
 
@@ -199,7 +210,6 @@ export namespace Permissions {
 		});
 	};
 
-
 	// TODO: This isn't really typed correctly. As of right now, the output is using the generic Struct<Blank, string> type rather than the actual struct type that's passed in.
 	export const filterAction = async <
 		S extends Struct<Blank, string>,
@@ -223,14 +233,19 @@ export namespace Permissions {
 			}
 
 			const universes = roles.map((r) => r.data.universe);
-			const allEntitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+			const allEntitlements = resolveAll(
+				await Promise.all(roles.map((r) => entitlementsFromRole(r)))
+			)
 				.unwrap()
 				.flat();
 
 			const usedEntitlements = allEntitlements
 				// TODO: if action is readversionhistory or readarchive, properties should be filtered by the read permissions
-				.filter((p) => p.struct === struct && p.permissions.some(p => p.action === action || p.action === '*'));
-
+				.filter(
+					(p) =>
+						p.struct === struct &&
+						p.permissions.some((p) => p.action === action || p.action === '*')
+				);
 
 			return data
 				.filter((d) => {
@@ -241,7 +256,7 @@ export namespace Permissions {
 				.map((d) => {
 					const { data } = d;
 					const properties: string[] = usedEntitlements
-						.map((e) => e.permissions.map(perm => perm.property))
+						.map((e) => e.permissions.map((perm) => perm.property))
 						.flat()
 						.concat('id', 'created', 'updated', 'archived', 'universe', 'lifetime', 'attributes')
 						.filter((v, i, a) => a.indexOf(v) === i)
@@ -273,11 +288,14 @@ export namespace Permissions {
 		setTimeout(async () => {
 			const universes = roles.map((r) => r.data.universe);
 
-			const entitlements = resolveAll(await Promise.all(roles.map(r => entitlementsFromRole(r))))
+			const entitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
 				.unwrap()
 				.flat()
-				.filter(e => e.permissions.some(p => p.action === action || p.action === '*') && e.struct === stream.struct.data.name);
-
+				.filter(
+					(e) =>
+						e.permissions.some((p) => p.action === action || p.action === '*') &&
+						e.struct === stream.struct.data.name
+				);
 
 			stream.pipe((d) => {
 				// console.log('Testing:', d);
@@ -291,7 +309,7 @@ export namespace Permissions {
 				if (universes.includes(d.universe)) {
 					const { data } = d;
 					const properties = entitlements
-						.map(e => e.permissions.map(p => p.property))
+						.map((e) => e.permissions.map((p) => p.property))
 						.flat()
 						.filter(Boolean)
 						.concat(
@@ -321,28 +339,36 @@ export namespace Permissions {
 		return newStream;
 	};
 
-	export const canDo = (
-		roles: RoleData[],
-		struct: Struct,
-		action: DataAction,
-	) => {
+	export const canDo = (roles: RoleData[], struct: Struct, action: DataAction) => {
 		return attemptAsync(async () => {
 			if (!struct) throw new Error('Struct not found');
-			const entitlements = resolveAll(await Promise.all(roles.map(r => entitlementsFromRole(r)))).unwrap().flat();
+			const entitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+				.unwrap()
+				.flat();
 			// console.log(JSON.stringify(entitlements, null, 4));
-			const res = entitlements.some(e => e.permissions.some(p => (p.action === action || p.action === '*') && e.struct === struct.data.name));
+			const res = entitlements.some((e) =>
+				e.permissions.some(
+					(p) => (p.action === action || p.action === '*') && e.struct === struct.data.name
+				)
+			);
 			console.log(res);
 			return res;
 		});
-	}
+	};
 
-	export const canAccess = (roles: RoleData[], link: string, linkUniverse: Universes.UniverseData) => {
+	export const canAccess = (
+		roles: RoleData[],
+		link: string,
+		linkUniverse: Universes.UniverseData
+	) => {
 		return attemptAsync(async () => {
-			if (!roles.some(r => r.data.universe === linkUniverse.id)) {
+			if (!roles.some((r) => r.data.universe === linkUniverse.id)) {
 				return false;
 			}
-			return resolveAll(await Promise.all(roles.map(r => entitlementsFromRole(r)))
-			).unwrap().flat().filter(e => e.pages.includes(link) || e.pages.includes('*'));
+			return resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+				.unwrap()
+				.flat()
+				.filter((e) => e.pages.includes(link) || e.pages.includes('*'));
 		});
 	};
 
@@ -352,28 +378,21 @@ export namespace Permissions {
 				.from(Account.Account.table)
 				.innerJoin(RoleAccount.table, eq(Account.Account.table.id, RoleAccount.table.account))
 				.where(eq(RoleAccount.table.role, role.id));
-			return res.map(r => Account.Account.Generator(r.account));
+			return res.map((r) => Account.Account.Generator(r.account));
 		});
 	};
 
 	createEntitlement({
 		name: 'manage-roles',
 		struct: Role,
-		permissions: [
-			'*'
-		],
-		pages: [
-			'roles',
-		],
+		permissions: ['*'],
+		pages: ['roles']
 	});
 
 	createEntitlement({
 		name: 'view-roles',
 		struct: Role,
-		permissions: [
-			'read:name',
-			'read:description',
-		]
+		permissions: ['read:name', 'read:description']
 	});
 }
 

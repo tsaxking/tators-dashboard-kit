@@ -9,7 +9,6 @@
 	const { data } = $props();
 	const universes = data.universes;
 	const publicUniverses = data.publicUniverses;
-	const current = data.current;
 	const invites = data.invites;
 
 	// const self = Account.getSelf();
@@ -208,7 +207,7 @@
 				{/snippet}
 			</Card>
 		</div>
-		<div class="col-md-6 mb-5">
+		<!-- <div class="col-md-6 mb-5">
 			<Card title="Current Universe" glowColor="warning">
 				{#snippet body()}
 					{#if $current}
@@ -228,6 +227,6 @@
 					{/if}
 				{/snippet}
 			</Card>
-		</div>
+		</div> -->
 	</div>
 </div>

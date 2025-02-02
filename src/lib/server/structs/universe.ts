@@ -112,33 +112,28 @@ export namespace Universes {
 		return attemptAsync(async () => {
 			const u = (await Universe.new(config)).unwrap();
 			const admin = (
-				await Permissions.Role.new(
-					{
-						universe: u.id,
-						name: 'Admin',
-						description: `${u.data.name} Aministrator`,
-						links: '[]',
-						entitlements: '[]'
-					}
-				)
+				await Permissions.Role.new({
+					universe: u.id,
+					name: 'Admin',
+					description: `${u.data.name} Aministrator`,
+					links: '[]',
+					entitlements: '[]'
+				})
 			).unwrap();
 			const member = (
-				await Permissions.Role.new(
-					{
-						universe: u.id,
-						name: 'Member',
-						description: `${u.data.name} Member`,
-						links: '[]',
-						entitlements: '[]',
-					}
-				)
+				await Permissions.Role.new({
+					universe: u.id,
+					name: 'Member',
+					description: `${u.data.name} Member`,
+					links: '[]',
+					entitlements: '[]'
+				})
 			).unwrap();
-			(await admin.update({
-				entitlements: JSON.stringify([
-					'manage-roles',
-					'manage-universe'
-				]),
-			})).unwrap();
+			(
+				await admin.update({
+					entitlements: JSON.stringify(['manage-roles', 'manage-universe'])
+				})
+			).unwrap();
 			(await admin.setStatic(true)).unwrap();
 			await Permissions.RoleAccount.new({
 				role: admin.id,
@@ -150,12 +145,11 @@ export namespace Universes {
 					account: account.id
 				})
 			).unwrap();
-			(await member.update({
-				entitlements: JSON.stringify([
-					'view-roles',
-					'view-universe'
-				]),
-			})).unwrap();
+			(
+				await member.update({
+					entitlements: JSON.stringify(['view-roles', 'view-universe'])
+				})
+			).unwrap();
 			(await member.setStatic(true)).unwrap();
 
 			return u;
@@ -293,19 +287,13 @@ export namespace Universes {
 	createEntitlement({
 		name: 'manage-universe',
 		struct: Universe,
-		permissions: [
-			'*',
-		],
+		permissions: ['*']
 	});
 
 	createEntitlement({
 		name: 'view-universe',
 		struct: Universe,
-		permissions: [
-			'read:name',
-			'read:description',
-			'read:public',
-		],
+		permissions: ['read:name', 'read:description', 'read:public']
 	});
 }
 

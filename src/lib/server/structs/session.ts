@@ -34,7 +34,7 @@ export namespace Session {
 			requests: integer('requests').notNull(),
 			prevUrl: text('prev_url').notNull()
 		},
-		frontend: false,
+		frontend: false
 	});
 
 	export type SessionData = typeof Session.sample;

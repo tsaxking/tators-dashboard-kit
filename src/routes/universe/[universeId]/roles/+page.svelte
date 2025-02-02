@@ -95,10 +95,14 @@
 										<button type="button" class="btn btn-danger" onclick={() => remove(role)}>
 											<i class="material-icons"> group_remove </i>
 										</button>
-										<button type="button" class="btn btn-secondary" onclick={() => {
-											currentRole = role;
-											userModal.show();
-										}}>
+										<button
+											type="button"
+											class="btn btn-secondary"
+											onclick={() => {
+												currentRole = role;
+												userModal.show();
+											}}
+										>
 											<i class="material-icons"> manage_accounts </i>
 										</button>
 									</td>

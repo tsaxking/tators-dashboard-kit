@@ -20,7 +20,7 @@ export namespace Permissions {
 			description: 'string',
 			links: 'string' // used on the front end to show/hide links (csv)
 		},
-		browser,
+		browser
 		// log: true,
 	});
 
@@ -29,28 +29,34 @@ export namespace Permissions {
 	export type RoleData = StructData<typeof Role.data.structure>;
 
 	export const getEntitlements = () => {
-		return Requests.get<{
-			name: string;
-			struct: string;
-		}[]>('/struct/entitlements', {
+		return Requests.get<
+			{
+				name: string;
+				struct: string;
+			}[]
+		>('/struct/entitlements', {
 			expectStream: false,
-			cache: true,
+			cache: true
 		});
 	};
 
 	export const saveEntitlements = async (role: RoleData, permissions: string[]) => {
 		return Role.call('update-entitlements', {
 			role: role.data.id,
-			permissions,
+			permissions
 		});
 	};
 
 	export const usersFromRole = (role: RoleData) => {
-		return Account.Account.query('role-members', {
-			role: role.data.id,
-		}, {
-			asStream: false,
-			satisfies: (_) => false,
-		});
+		return Account.Account.query(
+			'role-members',
+			{
+				role: role.data.id
+			},
+			{
+				asStream: false,
+				satisfies: (_) => false
+			}
+		);
 	};
 }

@@ -20,14 +20,15 @@ export const handleEvent =
 	(struct: Struct) =>
 	async (event: RequestAction): Promise<Response> => {
 		// console.log('Handling event:', event);
-		const error = (error: Error) =>{
+		const error = (error: Error) => {
 			return new Response(
 				JSON.stringify({
 					success: false,
 					message: error.message
 				}),
 				{ status: 200 }
-			);}
+			);
+		};
 		const s = (await Session.getSession(event.request)).unwrap();
 		if (!s) return error(new StructError(struct, 'Session not found'));
 
@@ -187,7 +188,7 @@ export const handleEvent =
 					// 	type: 'stream'
 					// });
 					streamer = struct.fromProperty('universe', (event.data as any).args.universe, {
-						type: 'stream',
+						type: 'stream'
 					});
 					break;
 				default:
@@ -216,7 +217,7 @@ export const handleEvent =
 							PropertyAction.Read,
 							bypass
 						);
-						stream.pipe((d) => { 
+						stream.pipe((d) => {
 							// console.log('Sending:', d);
 							controller.enqueue(`${encode(JSON.stringify(d))}\n\n`);
 						});
@@ -260,11 +261,18 @@ export const handleEvent =
 			const create = async () => {
 				console.log(event.data);
 				const validateRes = struct.validate(event.data, {
-					optionals: ['id', 'created', 'updated', 'archived', 'universe', 'attributes', 'lifetime', 'canUpdate'],
+					optionals: [
+						'id',
+						'created',
+						'updated',
+						'archived',
+						'universe',
+						'attributes',
+						'lifetime',
+						'canUpdate'
+					]
 				});
-				if (
-					!validateRes.success
-				)
+				if (!validateRes.success)
 					return error(new DataError(struct, `Invalid data: ${validateRes.reason}`));
 
 				const created = (await struct.new(event.data as any)).unwrap();
@@ -423,9 +431,7 @@ export const connectionEmitter = (struct: Struct) => {
 			const a = account.value;
 			if (!a) return;
 
-			if (
-				(await Account.isAdmin(account.value)).unwrap()
-			) {
+			if ((await Account.isAdmin(account.value)).unwrap()) {
 				connection.send(`struct:${struct.name}`, {
 					event,
 					data: data.data
@@ -441,7 +447,7 @@ export const connectionEmitter = (struct: Struct) => {
 			const r = roles.value;
 
 			// if (!r.some((r) => universes.value.includes(r.data.universe))) {
-			if (!r.some(r => r.universe === data.universe)) {
+			if (!r.some((r) => r.universe === data.universe)) {
 				return;
 			}
 

@@ -122,26 +122,34 @@ export namespace Account {
 
 	export const isAdmin = (account: AccountData) => {
 		return attemptAsync(async () => {
-			return (await Admins.fromProperty('accountId', account.id, {
-				type: 'count',
-			})).unwrap() > 0;
+			return (
+				(
+					await Admins.fromProperty('accountId', account.id, {
+						type: 'count'
+					})
+				).unwrap() > 0
+			);
 		});
 	};
 
 	export const Developers = new Struct({
-		name: 'developers', 
+		name: 'developers',
 		structure: {
-			accountId: text('account_id').notNull().unique(),
+			accountId: text('account_id').notNull().unique()
 		}
 	});
 
 	export const isDeveloper = (account: AccountData) => {
 		return attemptAsync(async () => {
-			return (await Developers.fromProperty('accountId', account.id, {
-				type: 'count',
-			})).unwrap() > 0;
+			return (
+				(
+					await Developers.fromProperty('accountId', account.id, {
+						type: 'count'
+					})
+				).unwrap() > 0
+			);
 		});
-	}
+	};
 
 	export type AccountData = typeof Account.sample;
 
