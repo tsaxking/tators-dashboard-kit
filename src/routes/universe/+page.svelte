@@ -1,24 +1,16 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Card from '$lib/components/bootstrap/Card.svelte';
-	// import { Account } from '$lib/model/account';
-	import { Universes } from '$lib/model/universe';
-
-	const { max, ceil, min } = Math;
+	const { max, min } = Math;
 
 	const { data } = $props();
 	const universes = data.universes;
 	const publicUniverses = data.publicUniverses;
 	const invites = data.invites;
 
-	// const self = Account.getSelf();
-
 	const universePage = data.universePage;
 	const invitePage = data.invitePage;
 	const universeCount = data.universeCount;
 	const inviteCount = data.inviteCount;
-
-	// TODO: Implement pagination
 </script>
 
 <div class="container">
@@ -49,7 +41,7 @@
 									</li>
 								{/if}
 								{#if inviteCount > 1}
-									{#each Array.from( { length: min(5, inviteCount) } ).map((_, i) => i + max(1, invitePage - 2)), i}
+									{#each Array.from({ length: Math.min(5, inviteCount) }, (_, i) => i + Math.max(1, invitePage - 2)) as i}
 										<li class="page-item">
 											<a class="page-link" href="/universe/?invitePage={i}">
 												{#if i === invitePage}
@@ -61,6 +53,7 @@
 										</li>
 									{/each}
 								{/if}
+
 								{#if invitePage < inviteCount}
 									<li class="page-item">
 										<a class="page-link" href="/universe/?invitePage={invitePage + 1}">
@@ -99,7 +92,7 @@
 									</li>
 								{/if}
 								{#if universeCount > 1}
-									{#each Array.from( { length: min(5, universeCount) } ).map((_, i) => i + max(1, universePage - 2)), i}
+									{#each Array.from({ length: Math.min(5, universeCount) }, (_, i) => i + Math.max(1, universePage - 2)) as i}
 										<li class="page-item">
 											<a class="page-link" href="/universe/?universePage={i}">
 												{#if i === universePage}
@@ -111,6 +104,7 @@
 										</li>
 									{/each}
 								{/if}
+
 								{#if universePage < universeCount}
 									<li class="page-item">
 										<a class="page-link" href="/universe/?universePage={universePage + 1}">
@@ -207,26 +201,5 @@
 				{/snippet}
 			</Card>
 		</div>
-		<!-- <div class="col-md-6 mb-5">
-			<Card title="Current Universe" glowColor="warning">
-				{#snippet body()}
-					{#if $current}
-						<div class="d-flex justify-content-between">
-							<div>
-								<h5 class="mb-1">{$current.name}</h5>
-								<p class="mb-1">{$current.description}</p>
-							</div>
-							<div>
-								<a href="/universe/{$current.id}">
-									<button class="btn btn-primary">View</button>
-								</a>
-							</div>
-						</div>
-					{:else}
-						<p>No current universe</p>
-					{/if}
-				{/snippet}
-			</Card>
-		</div> -->
 	</div>
 </div>

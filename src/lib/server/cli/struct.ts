@@ -475,7 +475,7 @@ export const dataActions = {
 			}
 
 			return doNext('Universes set', undefined, next);
-		}),
+		})
 };
 
 export const selectDataAction = (data: StructData, next?: Next) =>

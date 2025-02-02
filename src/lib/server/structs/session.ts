@@ -60,7 +60,7 @@ export namespace Session {
 					httpOnly: true,
 					domain: PUBLIC_DOMAIN ?? '',
 					path: '/',
-					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0')),
+					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
 				});
 
 				return session;
