@@ -7,9 +7,11 @@
 	import { alert, confirm } from '$lib/utils/prompts.js';
 	import Modal from '$lib/components/bootstrap/Modal.svelte';
 	import RoleEditor from '$lib/components/permissions/RoleEditor.svelte';
+	import RoleUsersTable from '$lib/components/permissions/RoleUsersTable.svelte';
 
 	const { data } = $props();
 	const { universe } = data;
+	Universes.setUniverse(universe.data.id || '');
 	let currentRole: Permissions.RoleData | undefined = $state(undefined);
 
 	let roles = $state(new DataArr(Permissions.Role, []));
@@ -22,6 +24,7 @@
 		currentRole = undefined;
 		setTimeout(() => {
 			currentRole = role;
+			console.log(currentRole.data.entitlements);
 			editModal.show();
 		});
 	};
@@ -54,9 +57,9 @@
 			Permissions.Role.new({
 				name,
 				description,
-				universe: universe.data.id,
+				// universe: universe.data.id,
 				links: 'Can I put anything here?',
-				permissions: 'I should not put permissions here'
+				entitlements: 'I should not put permissions here'
 			});
 		}
 	};
@@ -92,7 +95,10 @@
 										<button type="button" class="btn btn-danger" onclick={() => remove(role)}>
 											<i class="material-icons"> group_remove </i>
 										</button>
-										<button type="button" class="btn btn-secondary">
+										<button type="button" class="btn btn-secondary" onclick={() => {
+											currentRole = role;
+											userModal.show();
+										}}>
 											<i class="material-icons"> manage_accounts </i>
 										</button>
 									</td>
@@ -128,6 +134,7 @@
 			class="btn btn-primary"
 			onclick={() => {
 				if (roleEditor) roleEditor.save();
+				editModal?.hide();
 			}}
 		>
 			Save
@@ -154,7 +161,13 @@
 	{/snippet}
 </Modal>
 <Modal bind:this={userModal} title="Manage Users" size="lg">
-	{#snippet body()}{/snippet}
+	{#snippet body()}
+		{#if currentRole}
+			<RoleUsersTable role={currentRole} />
+		{:else}
+			<p>No role selected</p>
+		{/if}
+	{/snippet}
 	{#snippet buttons()}
 		<button type="button" class="btn btn-secondary" onclick={() => userModal.hide()}>
 			Close

@@ -9,5 +9,13 @@ export default defineConfig({
 
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}']
-	}
+	},
+	build: {
+		watch: {
+			exclude: [
+				'private/**', 
+				'**/types/entitlment.ts',
+			],
+		},
+	},
 });

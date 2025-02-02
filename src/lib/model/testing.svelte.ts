@@ -10,7 +10,7 @@ export namespace Test {
 			age: 'number'
 		},
 		socket: sse,
-		browser
+		browser,
 		// log: true
 	});
 

@@ -3,7 +3,7 @@
 	import { capitalize, fromSnakeCase } from 'ts-utils/text';
 	import { Permissions } from '$lib/model/permissions';
 	import { confirm } from '$lib/utils/prompts';
-	import StructTable from './StructTable.svelte';
+	import { onMount } from 'svelte';
 
 	interface Props {
 		role: Permissions.RoleData;
@@ -11,47 +11,76 @@
 
 	const { role }: Props = $props();
 
-	let structs = $state(Permissions.StructPermissions.getAll(role));
+	type S = {
+		struct: string;
+		permission: string[];
+	};
 
-	export const save = async () => {
-		const confirmed = await confirm('Are you sure you want to save these changes?');
-		if (confirmed) {
-			Permissions.StructPermissions.save(structs);
-		}
+	let entitlements: S[] = $state([]);
+
+	let value = $state(new Set<string>());
+
+	export const save = () => {
+		Permissions.saveEntitlements(role, Array.from(value)).then(e => {
+			console.log(e);
+		});
 	};
 
 	export const reset = () => {
-		for (const s of structs) s.reset();
+		value = new Set(JSON.parse(role.data.entitlements ?? '[]'));
 	};
+
+	onMount(() => {
+		Permissions.getEntitlements().then(e => {
+			if (e.isOk()) {
+				entitlements = e.value.reduce((acc, ent) => {
+					const has = acc.find(e => e.struct === ent.struct);
+					if (has) {
+						has.permission.push(ent.name);
+					} else {
+						acc.push({
+							struct: ent.struct,
+							permission: [ent.name],
+						});
+					}
+					return acc;
+				}, [] as S[]);
+			}
+		});
+
+		return role.subscribe(e => {
+			value = new Set(JSON.parse(e.entitlements ?? '[]'));
+		});
+	});
 </script>
 
 <div class="container">
 	<div class="row">
-		<div class="accordion" id="role-editor">
-			{#each structs as struct, i}
-				<div class="accordion-item">
-					<div class="accordion-header">
-						<button
-							type="button"
-							class="accordion-button collapsed"
-							aria-controls="role-editor-collapse-{i}"
-							data-bs-target="#role-editor-collapse-{i}"
-							data-bs-toggle="collapse"
-						>
-							{capitalize(fromSnakeCase(struct.struct.data.name))}
-						</button>
-					</div>
-				</div>
-				<div
-					id="role-editor-collapse-{i}"
-					class="accordion-collapse collapse"
-					data-bs-parent="#role-editor"
-				>
-					<div class="accordion-body">
-						<StructTable {struct} />
-					</div>
-				</div>
-			{/each}
-		</div>
+		{#each entitlements as e, i}
+			<h4>
+				{e.struct}
+			</h4>
+			<ul class="list-unstyled">
+				{#each e.permission as p}
+				<li>
+					<input
+						type="checkbox"
+						id="permission-{i}-{p}"
+						onchange={(e) => {
+							if (e.currentTarget.checked) {
+								value.add(p);
+							} else {
+								value.delete(p);
+							}
+						}}
+						checked={value.has(p)}
+					/>
+					<label for="permission-{i}-{p}" class="ms-2">
+						{capitalize(fromSnakeCase(p, '-'))}
+					</label>
+				</li>
+				{/each}
+			</ul>
+		{/each}
 	</div>
 </div>

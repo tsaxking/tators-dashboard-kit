@@ -19,14 +19,15 @@ import { sse } from '$lib/server/utils/sse';
 export const handleEvent =
 	(struct: Struct) =>
 	async (event: RequestAction): Promise<Response> => {
-		const error = (error: Error) =>
-			new Response(
+		// console.log('Handling event:', event);
+		const error = (error: Error) =>{
+			return new Response(
 				JSON.stringify({
 					success: false,
 					message: error.message
 				}),
 				{ status: 200 }
-			);
+			);}
 		const s = (await Session.getSession(event.request)).unwrap();
 		if (!s) return error(new StructError(struct, 'Session not found'));
 
@@ -182,8 +183,11 @@ export const handleEvent =
 				case 'universe':
 					if (!Object.hasOwn((event.data as any).args, 'universe'))
 						return error(new DataError(struct, 'Missing Read universe'));
-					streamer = struct.fromUniverse((event.data as any).args.universe, {
-						type: 'stream'
+					// streamer = struct.fromUniverse((event.data as any).args.universe, {
+					// 	type: 'stream'
+					// });
+					streamer = struct.fromProperty('universe', (event.data as any).args.universe, {
+						type: 'stream',
 					});
 					break;
 				default:
@@ -212,7 +216,10 @@ export const handleEvent =
 							PropertyAction.Read,
 							bypass
 						);
-						stream.pipe((d) => controller.enqueue(`${encode(JSON.stringify(d))}\n\n`));
+						stream.pipe((d) => { 
+							// console.log('Sending:', d);
+							controller.enqueue(`${encode(JSON.stringify(d))}\n\n`);
+						});
 					},
 					cancel() {
 						streamer.off('end');
@@ -251,27 +258,20 @@ export const handleEvent =
 
 		if (event.action === DataAction.Create) {
 			const create = async () => {
+				console.log(event.data);
+				const validateRes = struct.validate(event.data, {
+					optionals: ['id', 'created', 'updated', 'archived', 'universe', 'attributes', 'lifetime', 'canUpdate'],
+				});
 				if (
-					!struct.validate(event.data, {
-						optionals: [
-							'id',
-							'created',
-							'updated',
-							'archived',
-							'universes',
-							'attributes',
-							'lifetime',
-							'canUpdate'
-						]
-					})
+					!validateRes.success
 				)
-					return error(new DataError(struct, 'Invalid data'));
+					return error(new DataError(struct, `Invalid data: ${validateRes.reason}`));
 
 				const created = (await struct.new(event.data as any)).unwrap();
 
 				const universe = event.request.request.headers.get('universe');
 				if (universe) {
-					(await created.setUniverses([universe])).unwrap();
+					(await created.setUniverse(universe)).unwrap();
 				}
 				return new Response(
 					JSON.stringify({
@@ -283,8 +283,9 @@ export const handleEvent =
 			if (runBypass()) {
 				return create();
 			}
-			if (!(await Permissions.canDo(roles, this as any, DataAction.Create).unwrap()))
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap()) {
 				return invalidPermissions;
+			}
 
 			return create();
 		}
@@ -342,7 +343,7 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return archive();
-			if (!(await Permissions.canDo(roles, struct, DataAction.Create).unwrap()))
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 			return archive();
 		}
@@ -423,11 +424,7 @@ export const connectionEmitter = (struct: Struct) => {
 			if (!a) return;
 
 			if (
-				(
-					await Account.Admins.fromProperty('accountId', a.id, {
-						type: 'single'
-					})
-				).unwrap()
+				(await Account.isAdmin(account.value)).unwrap()
 			) {
 				connection.send(`struct:${struct.name}`, {
 					event,
@@ -436,14 +433,15 @@ export const connectionEmitter = (struct: Struct) => {
 				return;
 			}
 
-			const universes = data.getUniverses();
-			if (universes.isErr()) return console.error(universes.error);
+			// const universes = data.getUniverses();
+			// if (universes.isErr()) return console.error(universes.error);
 
 			const roles = await Permissions.allAccountRoles(a);
 			if (roles.isErr()) return console.error(roles.error);
 			const r = roles.value;
 
-			if (!r.some((r) => universes.value.includes(r.data.universe))) {
+			// if (!r.some((r) => universes.value.includes(r.data.universe))) {
+			if (!r.some(r => r.universe === data.universe)) {
 				return;
 			}
 

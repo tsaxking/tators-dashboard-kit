@@ -35,7 +35,7 @@ export const load = async (event) => {
 		throw fail(ServerCode.internalServerError);
 	}
 
-	if (!Permissions.canAccess(roles.value, 'roles')) {
+	if (!(await Permissions.canAccess(roles.value, 'roles', universe.value)).unwrap()) {
 		throw redirect(ServerCode.permanentRedirect, '/404');
 	}
 

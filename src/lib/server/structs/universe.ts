@@ -19,43 +19,13 @@ export namespace Universes {
 		}
 	});
 
-	Account.Account.queryListen('universe-members', async (event, data) => {
-		const session = (await Session.getSession(event)).unwrap();
-		const account = (await Session.getAccount(session)).unwrap();
-
-		if (!account) {
-			throw new Error('Not logged in');
-		}
-
-		const universeId = z
-			.object({
-				universe: z.string()
-			})
-			.parse(data).universe;
-
-		const universe = (await Universe.fromId(universeId)).unwrap();
-		if (!universe) throw new Error('Universe not found');
-
-		const members = (await getMembers(universe)).unwrap();
-		if (!members.find((m) => m.data.id == account.data.id)) {
-			throw new Error('Not a member of this universe, cannot read members');
-		}
-		const stream = new StructStream(Account.Account);
-		setTimeout(() => {
-			for (let i = 0; i < members.length; i++) {
-				stream.add(members[i]);
-			}
-		});
-		return stream;
-	});
-
 	Universe.on('delete', (u) => {
 		Struct.each((s) => {
 			s.each((d) => {
-				d.removeUniverses(u.id);
+				d.setUniverse('');
 			});
 
-			UniverseInvites.fromProperty('universe', u.id, {
+			UniverseInvite.fromProperty('universe', u.id, {
 				type: 'stream'
 			}).pipe((i) => i.delete());
 		});
@@ -92,7 +62,7 @@ export namespace Universes {
 		});
 	};
 
-	export const UniverseInvites = new Struct({
+	export const UniverseInvite = new Struct({
 		name: 'universe_invite',
 		structure: {
 			universe: text('universe').notNull(),
@@ -101,7 +71,7 @@ export namespace Universes {
 		}
 	});
 
-	UniverseInvites.callListen('invite', async (event, data) => {
+	UniverseInvite.callListen('invite', async (event, data) => {
 		const session = (await Session.getSession(event)).unwrap();
 		const account = (await Session.getAccount(session)).unwrap();
 
@@ -129,7 +99,7 @@ export namespace Universes {
 		};
 	});
 
-	export type UniverseInviteData = typeof UniverseInvites.sample;
+	export type UniverseInviteData = typeof UniverseInvite.sample;
 
 	export const createUniverse = async (
 		config: {
@@ -147,11 +117,8 @@ export namespace Universes {
 						universe: u.id,
 						name: 'Admin',
 						description: `${u.data.name} Aministrator`,
-						links: '["*"]',
-						entitlements: '[]',
-					},
-					{
-						static: true
+						links: '[]',
+						entitlements: '[]'
 					}
 				)
 			).unwrap();
@@ -162,13 +129,17 @@ export namespace Universes {
 						name: 'Member',
 						description: `${u.data.name} Member`,
 						links: '[]',
-						entitlements: '[]'
-					},
-					{
-						static: true
+						entitlements: '[]',
 					}
 				)
 			).unwrap();
+			(await admin.update({
+				entitlements: JSON.stringify([
+					'manage-roles',
+					'manage-universe'
+				]),
+			})).unwrap();
+			(await admin.setStatic(true)).unwrap();
 			await Permissions.RoleAccount.new({
 				role: admin.id,
 				account: account.id
@@ -179,6 +150,13 @@ export namespace Universes {
 					account: account.id
 				})
 			).unwrap();
+			(await member.update({
+				entitlements: JSON.stringify([
+					'view-roles',
+					'view-universe'
+				]),
+			})).unwrap();
+			(await member.setStatic(true)).unwrap();
 
 			return u;
 		});
@@ -191,7 +169,7 @@ export namespace Universes {
 	) => {
 		return attemptAsync(async () => {
 			const invite = (
-				await UniverseInvites.new({
+				await UniverseInvite.new({
 					universe: universe.id,
 					account: account.id,
 					inviter: inviter.id
@@ -222,14 +200,14 @@ export namespace Universes {
 	) => {
 		return attemptAsync(async () => {
 			const res = await DB.select()
-				.from(UniverseInvites.table)
-				.innerJoin(Universe.table, eq(UniverseInvites.table.universe, Universe.table.id))
+				.from(UniverseInvite.table)
+				.innerJoin(Universe.table, eq(UniverseInvite.table.universe, Universe.table.id))
 				.limit(config.limit)
 				.offset(config.offset)
-				.where(sql`${UniverseInvites.table.account} = ${account.id}`);
+				.where(sql`${UniverseInvite.table.account} = ${account.id}`);
 
 			return res.map((r) => ({
-				invite: UniverseInvites.Generator(r.universe_invite),
+				invite: UniverseInvite.Generator(r.universe_invite),
 				universe: Universe.Generator(r.universe)
 			}));
 		});
@@ -312,19 +290,24 @@ export namespace Universes {
 		});
 	};
 
-
-
 	createEntitlement({
 		name: 'manage-universe',
 		struct: Universe,
 		permissions: [
-			'read:name',
+			'*',
 		],
-		scope: 'universe',
 	});
 
-	readEntitlement('manage-universe');
+	createEntitlement({
+		name: 'view-universe',
+		struct: Universe,
+		permissions: [
+			'read:name',
+			'read:description',
+			'read:public',
+		],
+	});
 }
 
 export const _universeTable = Universes.Universe.table;
-export const _universeInviteTable = Universes.UniverseInvites.table;
+export const _universeInviteTable = Universes.UniverseInvite.table;

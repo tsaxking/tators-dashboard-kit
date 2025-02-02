@@ -3,7 +3,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
 
 export const load = async (event) => {
-	const invite = await Universes.UniverseInvites.fromId(event.params.inviteId);
+	const invite = await Universes.UniverseInvite.fromId(event.params.inviteId);
 	if (invite.isErr()) {
 		throw fail(ServerCode.internalServerError);
 	}
@@ -26,7 +26,7 @@ export const load = async (event) => {
 
 export const actions = {
 	accept: async (event) => {
-		const invite = await Universes.UniverseInvites.fromId(event.params.inviteId);
+		const invite = await Universes.UniverseInvite.fromId(event.params.inviteId);
 		if (invite.isErr()) {
 			throw fail(ServerCode.internalServerError);
 		}
@@ -43,7 +43,7 @@ export const actions = {
 		}
 	},
 	decline: async (event) => {
-		const invite = await Universes.UniverseInvites.fromId(event.params.inviteId);
+		const invite = await Universes.UniverseInvite.fromId(event.params.inviteId);
 		if (invite.isErr()) {
 			throw fail(ServerCode.internalServerError);
 		}

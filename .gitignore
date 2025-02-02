@@ -29,4 +29,6 @@ vite.config.ts.timestamp-*
 
 **/uploads/*
 
-**/entitlements/*
+**/entitlements/*.yaml
+
+*.log

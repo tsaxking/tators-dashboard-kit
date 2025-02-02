@@ -65,12 +65,12 @@ export namespace Universes {
 	};
 
 	export const getRoles = (universe: UniverseData) => {
-		Permissions.Role.on('new', (role) => {
-			console.log('Created new role...', role);
-			if (role.data.universe === universe.data.id) {
-				console.log('Recieved new role:', role);
-			}
-		});
-		return Permissions.Role.fromProperty('universe', universe.data.id, false);
+		// Permissions.Role.on('new', (role) => {
+		// 	console.log('Created new role...', role);
+		// 	if (role.data.universe === universe.data.id) {
+		// 		console.log('Recieved new role:', role);
+		// 	}
+		// });
+		return Permissions.Role.fromProperty('universe', universe.data.id || '', false);
 	};
 }

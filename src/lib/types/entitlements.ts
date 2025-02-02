@@ -1,3 +1,5 @@
 export type Entitlement = 
-    'default'
-  | 'manage-universe';
+    'manage-roles'
+  | 'manage-universe'
+  | 'view-roles'
+  | 'view-universe';

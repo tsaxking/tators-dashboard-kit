@@ -12,26 +12,23 @@ import type { Entitlement } from '$lib/types/entitlements';
 const ENTITLEMENT_DIR = path.join(process.cwd(), 'private', 'entitlements');
 const ENTITLEMENT_FILE = path.join(process.cwd(), 'src', 'lib', 'types', 'entitlements.ts');
 
+export const getEntitlementNames = async () => {
+    return attemptAsync(async () => {
+        return (await fs.promises.readdir(ENTITLEMENT_DIR)).filter(f => f.endsWith('.yaml') && !f.includes('example')).map(f => f.replace('.yaml', ''));
+    });
+};
+
 export const getEntitlements = async () => {
     return attemptAsync(async () => {
-        const files = await fs.promises.readdir(ENTITLEMENT_DIR) as Entitlement[];
-
-        return resolveAll(
-            await Promise.all(
-                files
-                    .filter(f => f.endsWith('.yaml') && !f.includes('example'))
-                    .map(readEntitlement),
-            ),
-        );
+        return resolveAll(await Promise.all((await getEntitlementNames()).unwrap().map(e => readEntitlement(e as Entitlement)))).unwrap();
     });
 };
 
 export class EntitlementPermission {
     public readonly permissions: { action: string, property: string }[];
-    constructor (public readonly name: string,
+    constructor (public readonly name: Entitlement,
     public readonly struct: string,
     permissions: string[],
-    public readonly scope: 'global' | 'universe',
     public readonly pages: string[],) {
         this.permissions = permissions.map(p => {
             if (p === '*') return { action: '*', property: '*' };
@@ -65,22 +62,20 @@ export const readEntitlement = (entitlement: Entitlement) => {
             name: z.string(),
             struct: z.string(),
             permissions: z.array(z.string()),
-            scope: z.enum(['global', 'universe']),
             pages: z.array(z.string()),
         }).parse(YAML.parse(await fs.promises.readFile(path.join(ENTITLEMENT_DIR, entitlement + '.yaml'), 'utf8')));
-        const E = new EntitlementPermission(e.name, e.struct, e.permissions, e.scope, e.pages);
+        const E = new EntitlementPermission(e.name as Entitlement, e.struct, e.permissions, e.pages);
         entitlements.set(entitlement, E);
         return E;
     });
 };
 
-const getCurrentEntitlements = async (): Promise<string[]> => {
-    const file = await fs.promises.readFile(ENTITLEMENT_FILE, 'utf-8');
-    return file.match(/'[a-zA-Z0-9]+'/)?.map(e => e.replace(/'/g, '')) ?? [];
-};
-
-const saveEntitlements = (entitlements: string[]) => {
-    return fs.promises.writeFile(ENTITLEMENT_FILE, `export type Entitlement = \n    ${entitlements.map(e => `'${e}'`).join('\n  | ')};`);
+const saveEntitlements = async () => {
+    const entitlements = await getEntitlementNames();
+    if (entitlements.isErr()) {
+        return console.error(entitlements);
+    }
+    return fs.promises.writeFile(ENTITLEMENT_FILE, `export type Entitlement = \n    ${entitlements.value.map(e => `'${e}'`).join('\n  | ')};`);
 }
 
 // This create process does not need to be optimized because it only runs at the startup process.
@@ -94,7 +89,6 @@ export const createEntitlement = async <T extends Blank, N extends string>(entit
     name: string;
 	struct: Struct<T, N>;
 	permissions: Permission<T & GlobalCols>[];
-	scope: 'global' | 'universe';
     pages?: string[];
 }) => {
     if (!/[a-z0-9-]+/.test(entitlement.name)) {
@@ -105,13 +99,11 @@ export const createEntitlement = async <T extends Blank, N extends string>(entit
         name: entitlement.name,
         struct: entitlement.struct.data.name,
         permissions: entitlement.permissions,
-        scope: entitlement.scope,
         pages: entitlement.pages ?? [],
     }));
 
     if (timeout) clearTimeout(timeout);
     setTimeout(async () => {
-        const current = await getCurrentEntitlements();
-        saveEntitlements(Array.from(new Set([...current, entitlement.name])));
-    }, 500);
+        saveEntitlements();
+    });
 };
