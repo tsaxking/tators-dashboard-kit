@@ -4,7 +4,7 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"cli": "node --loader @esbuild-kit/esm-loader ./src/lib/server/cli/index.ts",
+		"cli": "npx vite-node ./src/lib/server/cli/index.ts",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
@@ -21,8 +21,8 @@
 		"db:studio": "drizzle-kit studio",
 		"build-storybook": "storybook build",
 		"debug": "vite --debug",
-		"fix-readme": "node --loader @esbuild-kit/esm-loader ./scripts/fix-readme.ts",
-		"script": "node --loader @esbuild-kit/esm-loader ./scripts/index.ts"
+		"fix-readme": "npx vite-node ./scripts/fix-readme.ts",
+		"script": "npx vite-node ./scripts/index.ts"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
@@ -99,6 +99,7 @@
 		"svelte-filepond": "^0.2.2",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
+		"vite-node": "^3.0.4",
 		"yaml": "^2.7.0",
 		"zod": "^3.24.1"
 	}
