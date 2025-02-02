@@ -10,6 +10,7 @@ import {
 	DataArr
 } from 'drizzle-struct/front-end';
 import { Requests } from '$lib/utils/requests';
+import { browser } from '$app/environment';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -25,7 +26,8 @@ export namespace Account {
 			verified: 'boolean',
 			verification: 'string'
 		},
-		socket: sse
+		socket: sse,
+		browser
 	});
 
 	export type AccountData = StructData<typeof Account.data.structure>;
@@ -41,7 +43,8 @@ export namespace Account {
 			link: 'string',
 			read: 'boolean'
 		},
-		socket: sse
+		socket: sse,
+		browser
 	});
 
 	export type AccountNotificationData = StructData<typeof AccountNotification.data.structure>;
@@ -61,9 +64,10 @@ export namespace Account {
 			updated: '0',
 			created: '0',
 			archived: false,
-			universes: '[]',
+			universe: '',
 			attributes: '[]',
-			lifetime: 0
+			lifetime: 0,
+			canUpdate: false
 		})
 	);
 
@@ -99,5 +103,18 @@ export namespace Account {
 		});
 
 		return notifs;
+	};
+
+	export const getUsersFromUniverse = (universe: string) => {
+		return Account.query(
+			'from-universe',
+			{
+				universe
+			},
+			{
+				asStream: false,
+				satisfies: () => false
+			}
+		);
 	};
 }

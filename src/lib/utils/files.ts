@@ -47,8 +47,8 @@ export class FileUploader {
 				emitter.emit('error', 'Failed to upload file.');
 			};
 
-            // xhr.setRequestHeader('Content-Type', 'multipart/form-data');
-            // xhr.setRequestHeader('Content-Disposition', `inline; filename="${file.name}"`);
+			// xhr.setRequestHeader('Content-Type', 'multipart/form-data');
+			// xhr.setRequestHeader('Content-Disposition', `inline; filename="${file.name}"`);
 
 			// Open and send the request
 			const formData = new FormData();
@@ -58,7 +58,7 @@ export class FileUploader {
 			// Provide abort method
 			return {
 				on: emitter.on.bind(emitter),
-				abort: () => xhr.abort(),
+				abort: () => xhr.abort()
 			};
 		});
 	}

@@ -12,11 +12,12 @@
 		body: Snippet;
 		buttons: Snippet;
 		show?: boolean;
+		size?: 'sm' | 'md' | 'lg' | 'xl';
 	}
 
 	let self: HTMLDivElement;
 
-	const { title, body, buttons, show: doShow }: Props = $props();
+	const { title, body, buttons, show: doShow, size = 'md' }: Props = $props();
 
 	const getModal = async () => {
 		return import('bootstrap').then((bs) => {
@@ -28,32 +29,38 @@
 	export const once = em.once.bind(em);
 
 	export const show = async () => {
+		em.emit('show');
 		const modal = await getModal();
 		modal.show();
 	};
 
 	export const hide = async () => {
+		em.emit('hide');
 		const modal = await getModal();
 		modal.hide();
 	};
 
 	onMount(() => {
-		self.addEventListener('hidden.bs.modal', () => {
-			em.emit('hide');
-		});
+		const onshow = () => em.emit('show');
+		const onhide = () => em.emit('hide');
 
-		self.addEventListener('shown.bs.modal', () => {
-			em.emit('show');
-		});
+		self.addEventListener('hidden.bs.modal', onhide);
+
+		self.addEventListener('shown.bs.modal', onshow);
 
 		if (doShow) {
 			show();
 		}
+
+		return () => {
+			self.removeEventListener('hidden.bs.modal', onhide);
+			self.removeEventListener('shown.bs.modal', onshow);
+		};
 	});
 </script>
 
 <div bind:this={self} {id} class="modal fade" aria-modal="true" role="dialog" tabindex="-1">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-{size}">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h5 class="modal-title">{title}</h5>

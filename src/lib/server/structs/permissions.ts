@@ -1,4 +1,4 @@
-import { text, json } from 'drizzle-orm/pg-core';
+import { text } from 'drizzle-orm/pg-core';
 import {
 	DataError,
 	Struct,
@@ -8,58 +8,134 @@ import {
 	type Structable
 } from 'drizzle-struct/back-end';
 import { attempt, attemptAsync, resolveAll, type Result } from 'ts-utils/check';
-import type { Account } from './account';
+import { Account } from './account';
 import { PropertyAction, DataAction } from 'drizzle-struct/types';
 import { Stream } from 'ts-utils/stream';
 import { Universes } from './universe';
+import { DB } from '../db';
+import { and, eq } from 'drizzle-orm';
+import {
+	readEntitlement,
+	type EntitlementPermission,
+	createEntitlement
+} from '../utils/entitlements';
+import type { Entitlement } from '$lib/types/entitlements';
+import { z } from 'zod';
+import { Session } from './session';
 
 export namespace Permissions {
-	type DP = {
-		permission: PropertyAction | DataAction;
-		struct: string;
-		property?: string;
-	};
-
-	export class DataPermission {
-		static stringify(permissions: DataPermission[]): Result<string> {
-			return attempt(() => {
-				return JSON.stringify(permissions);
-			});
-		}
-
-		static parse(permissions: string): Result<DataPermission[]> {
-			return attempt(() => {
-				const result = JSON.parse(permissions) as DP[];
-				return result.map((p) => new DataPermission(p.permission, p.struct, p.property));
-			});
-		}
-
-		constructor(
-			public readonly permission: PropertyAction | DataAction,
-			public readonly struct: string,
-			public readonly property?: string // If property is undefined, it means the permission is for the whole struct
-		) {}
-	}
-
 	export const Role = new Struct({
 		name: 'role',
 		structure: {
 			name: text('name').notNull(),
-			universe: text('universe').notNull(),
+			// universe: text('universe').notNull(),
 			description: text('description').notNull(),
-			permissions: text('permissions').notNull()
-			// permissions: json('permissions').notNull().$type<DataPermission[]>(),
+			links: text('links').notNull(),
+			entitlements: text('entitlements').notNull().default('[]')
+		},
+		generators: {
+			links: () => JSON.stringify([]),
+			entitlements: () => JSON.stringify([])
 		}
 	});
 
+	Role.block(PropertyAction.Update, () => true, 'Not allowed to update Roles through the API.');
+
+	Role.callListen('update-entitlements', async (event, data) => {
+		const session = (await Session.getSession(event)).unwrap();
+		const account = (await Session.getAccount(session)).unwrap();
+
+		if (!account) {
+			console.error('No Account');
+			return {
+				success: false,
+				reason: 'Not logged in'
+			};
+		}
+
+		const body = z
+			.object({
+				role: z.string(),
+				permissions: z.array(z.string())
+			})
+			.parse(data);
+
+		const role = (await Role.fromId(body.role)).unwrap();
+
+		if (!role) {
+			console.error('No Role');
+			return {
+				success: false,
+				reason: 'Role not found'
+			};
+		}
+
+		const universe = (await Universes.Universe.fromId(role.data.universe)).unwrap();
+		if (!universe) {
+			console.error('No Universe');
+			return {
+				success: false,
+				reason: 'Universe not found'
+			};
+		}
+
+		const roles = (await getUniverseAccountRoles(account, universe)).unwrap();
+		if (!(await isEntitled(roles, 'manage-roles')).unwrap()) {
+			console.error('No Entitlement');
+			return {
+				success: false,
+				reason: 'Not entitled'
+			};
+		}
+
+		const entitlements = (await entitlementsFromRoles(roles)).unwrap().map((e) => e.name);
+		// a user can only give permissions they have
+		const permissions = body.permissions.filter((p) => entitlements.includes(p as Entitlement));
+		if (permissions.length !== body.permissions.length) {
+			console.error('Invalid Permissions');
+			return {
+				success: false,
+				reason: 'Invalid Permissions, cannot give permissions you do not have'
+			};
+		}
+
+		(
+			await role.update({
+				entitlements: JSON.stringify(permissions)
+			})
+		).unwrap();
+
+		return {
+			success: true
+		};
+	});
+
+	// Role.callListen('update-links', async (event, data) => {});
+
+	// Role.callListen('update-role', async (event, data) => {});
+
 	export type RoleData = typeof Role.sample;
+
+	export const entitlementsFromRole = async (role: RoleData) => {
+		return attemptAsync(async () => {
+			const entitlements = JSON.parse(role.data.entitlements);
+			return resolveAll<EntitlementPermission>(
+				await Promise.all(
+					entitlements.map((e: string) => {
+						return readEntitlement(e as Entitlement);
+					})
+				)
+			).unwrap();
+		});
+	};
 
 	export const RoleAccount = new Struct({
 		name: 'role_account',
 		structure: {
 			role: text('role').notNull(),
 			account: text('account').notNull()
-		}
+		},
+		frontend: false
 	});
 
 	export type RoleAccountData = typeof RoleAccount.sample;
@@ -70,7 +146,38 @@ export namespace Permissions {
 		}).await();
 	};
 
-	export const getRoles = async (account: Account.AccountData) => {
+	export const entitlementsFromRoles = (roles: RoleData[]) => {
+		return attemptAsync(async () => {
+			return resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+				.unwrap()
+				.flat();
+		});
+	};
+
+	export const isEntitled = (roles: RoleData[], ...entitlements: Entitlement[]) => {
+		return attemptAsync(async () => {
+			const has = (await entitlementsFromRoles(roles)).unwrap();
+			return has.some((e) => entitlements.includes(e.name));
+		});
+	};
+
+	export const getUniverseAccountRoles = async (
+		account: Account.AccountData,
+		universe: Universes.UniverseData
+	) => {
+		return attemptAsync(async () => {
+			const data = await DB.select()
+				.from(Role.table)
+				.innerJoin(RoleAccount.table, eq(Role.table.id, RoleAccount.table.role))
+				.where(
+					and(eq(RoleAccount.table.account, account.id), eq(Role.table.universe, universe.id))
+				);
+
+			return data.map((d) => Role.Generator(d.role));
+		});
+	};
+
+	export const allAccountRoles = async (account: Account.AccountData) => {
 		return attemptAsync(async () => {
 			const roleAccounts = (
 				await RoleAccount.fromProperty('account', account.id, {
@@ -88,7 +195,7 @@ export namespace Permissions {
 	export const giveRole = async (account: Account.AccountData, role: RoleData) => {
 		return attemptAsync(async () => {
 			if (role.data.name !== 'root') {
-				const roles = (await getRoles(account)).unwrap();
+				const roles = (await allAccountRoles(account)).unwrap();
 				if (roles.find((r) => r.id === role.id)) {
 					return;
 				}
@@ -100,50 +207,6 @@ export namespace Permissions {
 					account: account.id
 				})
 			).unwrap();
-		});
-	};
-
-	export const permissionsFromRole = (role: RoleData) => {
-		return DataPermission.parse(role.data.permissions);
-	};
-
-	// export const permissionsFromAccount = async (
-	//     account: Account.AccountData
-	// ) => {
-	//     return attemptAsync(async () => {
-	//         // TODO: Make permissionsFromAccount()
-	//     });
-	// };
-
-	export const setPermissions = async (role: RoleData, permissions: DataPermission[]) => {
-		return role.update({
-			permissions: DataPermission.stringify(permissions).unwrap()
-		});
-	};
-
-	export const givePermission = async (role: RoleData, permission: DataPermission) => {
-		return attemptAsync(async () => {
-			const permissions = (await permissionsFromRole(role)).unwrap();
-			permissions.push(permission);
-			return setPermissions(role, permissions);
-		});
-	};
-
-	export const removePermission = async (role: RoleData, permission: DataPermission) => {
-		return attemptAsync(async () => {
-			const permissions = (await permissionsFromRole(role)).unwrap();
-			const index = permissions.findIndex(
-				(p) =>
-					p.permission === permission.permission &&
-					p.struct === permission.struct &&
-					p.property === permission.property
-			);
-			if (index === -1) {
-				return;
-			}
-
-			permissions.splice(index, 1);
-			return (await setPermissions(role, permissions)).unwrap();
 		});
 	};
 
@@ -161,7 +224,7 @@ export namespace Permissions {
 				data.filter((v, i, a) => a.findIndex((d) => d.struct.name === v.struct.name) === i).length >
 				1
 			) {
-				throw new DataError('Data must be from the same struct');
+				throw new DataError(Role, 'Data must be from the same struct');
 			}
 
 			const struct = data[0].struct.name;
@@ -170,24 +233,38 @@ export namespace Permissions {
 			}
 
 			const universes = roles.map((r) => r.data.universe);
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
+			const allEntitlements = resolveAll(
+				await Promise.all(roles.map((r) => entitlementsFromRole(r)))
+			)
 				.unwrap()
-				.flat()
+				.flat();
+
+			const usedEntitlements = allEntitlements
 				// TODO: if action is readversionhistory or readarchive, properties should be filtered by the read permissions
-				.filter((p) => p.permission === action && p.struct === struct);
+				.filter(
+					(p) =>
+						p.struct === struct &&
+						p.permissions.some((p) => p.action === action || p.action === '*')
+				);
 
 			return data
 				.filter((d) => {
-					const dataUniverses = d.getUniverses().unwrap();
-					return dataUniverses.some((du) => universes.includes(du));
+					// const dataUniverses = d.getUniverses().unwrap();
+					// return dataUniverses.some((du) => universes.includes(du));
+					return universes.includes(d.universe);
 				})
 				.map((d) => {
 					const { data } = d;
-					const properties: string[] = permissions
-						.map((p) => p.property)
-						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes')
+					const properties: string[] = usedEntitlements
+						.map((e) => e.permissions.map((perm) => perm.property))
+						.flat()
+						.concat('id', 'created', 'updated', 'archived', 'universe', 'lifetime', 'attributes')
 						.filter((v, i, a) => a.indexOf(v) === i)
 						.filter(Boolean) as string[];
+
+					if (properties.includes('*')) {
+						return d.safe();
+					}
 
 					return Object.fromEntries(properties.map((p) => [p, data[p]])) as Partial<
 						Structable<S['data']['structure']>
@@ -208,27 +285,48 @@ export namespace Permissions {
 	) => {
 		const newStream = new Stream<Partial<Structable<S['data']['structure']>>>();
 
-		(async () => {
+		setTimeout(async () => {
 			const universes = roles.map((r) => r.data.universe);
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
+
+			const entitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
 				.unwrap()
 				.flat()
-				.filter((p) => p.permission === action && p.struct === stream.struct.name);
+				.filter(
+					(e) =>
+						e.permissions.some((p) => p.action === action || p.action === '*') &&
+						e.struct === stream.struct.data.name
+				);
 
 			stream.pipe((d) => {
+				// console.log('Testing:', d);
 				if (bypass.some((b) => b(account, d))) {
-					return newStream.add(d.data);
+					return newStream.add(d.safe());
 				}
 
-				const dataUniverses = d.getUniverses().unwrap();
-				if (dataUniverses.some((du) => universes.includes(du))) {
+				// const dataUniverses = d.getUniverses().unwrap();
+				// if (dataUniverses.some((du) => universes.includes(du))) {
+				// console.log('Universe:', d.universe);
+				if (universes.includes(d.universe)) {
 					const { data } = d;
-					const properties: string[] = permissions
-						.map((p) => p.property)
-						.concat('id', 'created', 'updated', 'archived', 'universes', 'lifetime', 'attributes')
-						.filter((v, i, a) => a.indexOf(v) === i)
-						.filter(Boolean) as string[];
-
+					const properties = entitlements
+						.map((e) => e.permissions.map((p) => p.property))
+						.flat()
+						.filter(Boolean)
+						.concat(
+							'id',
+							'created',
+							'updated',
+							'archived',
+							// 'universes',
+							'universe',
+							'lifetime',
+							'attributes',
+							'canUpdate'
+						)
+						.filter((v, i, a) => a.indexOf(v) === i);
+					if (properties.includes('*')) {
+						return newStream.add(d.safe());
+					}
 					newStream.add(
 						Object.fromEntries(properties.map((p) => [p, data[p]])) as Partial<
 							Structable<S['data']['structure']>
@@ -236,80 +334,66 @@ export namespace Permissions {
 					);
 				}
 			});
-		})();
+		});
 
 		return newStream;
 	};
 
-	// global permissions
-	export const canDo = (roles: RoleData[], struct: Struct<Blank, string>, action: DataAction) => {
-		return attempt(() => {
-			const permissions = resolveAll(roles.map((r) => permissionsFromRole(r)))
+	export const canDo = (roles: RoleData[], struct: Struct, action: DataAction) => {
+		return attemptAsync(async () => {
+			if (!struct) throw new Error('Struct not found');
+			const entitlements = resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
 				.unwrap()
-				.flat()
-				.filter((p) => p.permission === action && p.struct === struct.name);
-
-			return permissions.length > 0;
+				.flat();
+			// console.log(JSON.stringify(entitlements, null, 4));
+			const res = entitlements.some((e) =>
+				e.permissions.some(
+					(p) => (p.action === action || p.action === '*') && e.struct === struct.data.name
+				)
+			);
+			console.log(res);
+			return res;
 		});
 	};
 
-	// const cantAccess = (req: Req) =>
-	//     new Status(
-	//         {
-	//             code: 403,
-	//             message: 'You do not have permission to access this resource',
-	//             color: 'danger',
-	//             instructions: ''
-	//         },
-	//         'Permissions',
-	//         'Invalid',
-	//         '{}',
-	//         req
-	//     );
+	export const canAccess = (
+		roles: RoleData[],
+		link: string,
+		linkUniverse: Universes.UniverseData
+	) => {
+		return attemptAsync(async () => {
+			if (!roles.some((r) => r.data.universe === linkUniverse.id)) {
+				return false;
+			}
+			return resolveAll(await Promise.all(roles.map((r) => entitlementsFromRole(r))))
+				.unwrap()
+				.flat()
+				.filter((e) => e.pages.includes(link) || e.pages.includes('*'));
+		});
+	};
 
-	// export const canAccess =
-	//     (
-	//         fn: (
-	//             account: Account.AccountData,
-	//             roles: RoleData[]
-	//         ) => Promise<boolean> | boolean
-	//     ): ServerFunction =>
-	//     async (req, res, next) => {
-	//         if (!(await req.getSession()).unwrap().data.accountId) {
-	//             return res.sendCustomStatus(cantAccess(req));
-	//         }
+	export const usersFromRole = (role: RoleData) => {
+		return attemptAsync(async () => {
+			const res = await DB.select()
+				.from(Account.Account.table)
+				.innerJoin(RoleAccount.table, eq(Account.Account.table.id, RoleAccount.table.account))
+				.where(eq(RoleAccount.table.role, role.id));
+			return res.map((r) => Account.Account.Generator(r.account));
+		});
+	};
 
-	//         const account = (await Session.getAccount(req.sessionId)).unwrap();
+	createEntitlement({
+		name: 'manage-roles',
+		struct: Role,
+		permissions: ['*'],
+		pages: ['roles']
+	});
 
-	//         if (!account) return res.sendCustomStatus(cantAccess(req));
-
-	//         const roles = (await getRoles(account)).unwrap();
-
-	//         if (!(await fn(account, roles)))
-	//             return res.sendCustomStatus(cantAccess(req));
-
-	//         next();
-	//     };
-
-	// export const forceUniverse =
-	//     (
-	//         getUniverse: (
-	//             session: Session.SessionData
-	//         ) => Promise<UniverseData | undefined> | UniverseData | undefined
-	//     ): ServerFunction =>
-	//     async (req, res, next) => {
-	//         const session = (await req.getSession()).unwrap();
-	//         if (!session) throw new Error('Session not found');
-	//         const universe = await getUniverse(session);
-	//         if (universe) {
-	//             req.universe = universe.id;
-	//             const rooms = req.socket?.rooms;
-	//             if (rooms && !rooms.has(universe.id)) {
-	//                 req.socket.join(universe.id);
-	//             }
-	//         }
-	//         next();
-	//     };
+	createEntitlement({
+		name: 'view-roles',
+		struct: Role,
+		permissions: ['read:name', 'read:description']
+	});
 }
 
 // for drizzle

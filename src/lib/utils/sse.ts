@@ -68,11 +68,11 @@ class SSE {
 					// if (e.id < id) return;
 					id = e.id;
 					if (!Object.hasOwn(e, 'event')) {
-						return console.error('Invalid event:', e);
+						return console.error('Invalid event (missing .event)', e);
 					}
 
 					if (!Object.hasOwn(e, 'data')) {
-						return console.error('Invalid data:', e);
+						return console.error('Invalid data (mising .data)', e);
 					}
 
 					if (e.event === 'close') {
