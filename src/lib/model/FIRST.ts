@@ -1,5 +1,6 @@
 import { sse } from '../utils/sse';
 import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
+import { browser } from '$app/environment';
 
 
 export namespace FIRST {
@@ -10,7 +11,8 @@ export namespace FIRST {
             flipX: 'boolean',
             flipY: 'boolean',
         },
-        socket: sse
+        socket: sse,
+        browser
     });
 
     export type EventsData = StructData<typeof Events.data.structure>;
@@ -24,6 +26,7 @@ export namespace FIRST {
             watchPriority: 'number',
         },
         socket: sse,
+        browser
     });
 
     export type TeamsData = StructData<typeof Teams.data.structure>;
@@ -38,6 +41,7 @@ export namespace FIRST {
             accountId: 'string',
         },
         socket: sse,
+        browser
     });
 
     export type TeamPicturesData = StructData<typeof TeamPictures.data.structure>;
@@ -51,6 +55,7 @@ export namespace FIRST {
             compLevel: 'string',
         },
         socket: sse,
+        browser
     });
 
     export type MatchesData = StructData<typeof Matches.data.structure>;
@@ -71,6 +76,7 @@ export namespace FIRST {
             blue3: 'number',
         },
         socket: sse,
+        browser
     });
 
     export type CustomMatchesData = StructData<typeof CustomMatches.data.structure>;

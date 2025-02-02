@@ -1,5 +1,6 @@
 import { Struct, type StructData, type DataArr } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
+import { browser } from '$app/environment';
 
 export namespace Strategy {
     export const Whiteboards = new Struct({
@@ -8,7 +9,8 @@ export namespace Strategy {
             name: 'string',
             strategyId: 'string',
         },
-        socket: sse
+        socket: sse,
+        browser
     });
 
     export type WhiteboardData = StructData<typeof Whiteboards.data.structure>;
@@ -24,6 +26,7 @@ export namespace Strategy {
             comment: 'string',
         },
         socket: sse,
+        browser
     });
 
     export type StrategyData = StructData<typeof Strategy.data.structure>;
@@ -40,6 +43,7 @@ export namespace Strategy {
             team4: 'number',
         },
         socket: sse,
+        browser
     });
 
     export type AlliancesData = StructData<typeof Alliances.data.structure>;

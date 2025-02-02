@@ -1,4 +1,3 @@
-
 <script lang="ts">
 	import 'filepond/dist/filepond.css';
 	import 'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css';
@@ -75,7 +74,7 @@
 					return res.value.abort;
 				} else {
 					console.error(res.error);
-					error("Failed to upload file");
+					error('Failed to upload file');
 				}
 
 				return () => {};

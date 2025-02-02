@@ -18,7 +18,7 @@ export class FileReceiver {
 	constructor(
 		public readonly config: {
 			maxFileSize: number; // In bytes
-			maxFiles: number;    // Maximum number of files allowed
+			maxFiles: number; // Maximum number of files allowed
 		}
 	) {}
 
@@ -27,31 +27,31 @@ export class FileReceiver {
 			if (!request.headers.get('content-type')?.startsWith('multipart/form-data')) {
 				throw new Error('Invalid content type. Expected multipart/form-data.');
 			}
-	
+
 			if (!request.body) {
 				throw new Error('No body found in request.');
 			}
-	
+
 			const busboy = Busboy({
 				headers: {
-					'content-type': request.headers.get('content-type') || '',
+					'content-type': request.headers.get('content-type') || ''
 				},
 				limits: {
 					fileSize: this.config.maxFileSize,
-					files: this.config.maxFiles,
-				},
+					files: this.config.maxFiles
+				}
 			});
-	
+
 			const files: { fieldName: string; filePath: string }[] = [];
 			let fileCount = 0;
-	
+
 			return new Promise<{
 				files: { fieldName: string; filePath: string }[];
 			}>((resolve, reject) => {
 				// Adapt the ReadableStream to a Node.js Readable
 				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				const nodeStream = Readable.from(request.body as any);
-	
+
 				busboy.on('file', (fieldName, file, fileInfo) => {
 					if (fileCount >= this.config.maxFiles) {
 						file.resume(); // Discard the rest of the file
@@ -59,32 +59,32 @@ export class FileReceiver {
 					}
 
 					const fileName = fileInfo.filename;
-	
+
 					const safeFileName = `${uuid()}_${fileName}`;
 					const filePath = path.join(UPLOAD_DIR, safeFileName);
-	
+
 					const writeStream = fs.createWriteStream(filePath);
 					file.pipe(writeStream);
-	
+
 					fileCount++;
-	
+
 					file.on('end', () => {
 						files.push({ fieldName, filePath });
 					});
-	
+
 					file.on('error', (err) => {
 						reject(err);
 					});
 				});
-	
+
 				busboy.on('finish', () => {
 					resolve({ files });
 				});
-	
+
 				busboy.on('error', (err) => {
 					reject(err);
 				});
-	
+
 				nodeStream.pipe(busboy);
 			});
 		});

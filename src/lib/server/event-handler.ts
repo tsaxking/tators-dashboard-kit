@@ -19,16 +19,18 @@ import { sse } from '$lib/server/utils/sse';
 export const handleEvent =
 	(struct: Struct) =>
 	async (event: RequestAction): Promise<Response> => {
-		const error = (error: Error) =>
-			new Response(
+		// console.log('Handling event:', event);
+		const error = (error: Error) => {
+			return new Response(
 				JSON.stringify({
 					success: false,
 					message: error.message
 				}),
 				{ status: 200 }
 			);
+		};
 		const s = (await Session.getSession(event.request)).unwrap();
-		if (!s) return error(new StructError('Session not found'));
+		if (!s) return error(new StructError(struct, 'Session not found'));
 
 		let roles: Permissions.RoleData[] = [];
 		let account: Account.AccountData | undefined;
@@ -36,9 +38,9 @@ export const handleEvent =
 
 		if (struct.data.name !== 'test') {
 			account = (await Session.getAccount(s)).unwrap();
-			if (!account) return error(new StructError('Not logged in'));
+			if (!account) return error(new StructError(struct, 'Not logged in'));
 
-			roles = (await Permissions.getRoles(account)).unwrap();
+			roles = (await Permissions.allAccountRoles(account)).unwrap();
 			isAdmin = !!(
 				await Account.Admins.fromProperty('accountId', account.id, {
 					type: 'single'
@@ -46,7 +48,7 @@ export const handleEvent =
 			).unwrap();
 		}
 
-		const invalidPermissions = error(new StructError('Invalid permissions'));
+		const invalidPermissions = error(new StructError(struct, 'Invalid permissions'));
 
 		const bypass = struct.bypasses
 			.filter((b) => b.action === event.action || b.action === '*')
@@ -67,9 +69,9 @@ export const handleEvent =
 
 		if (event.action === DataAction.ReadVersionHistory) {
 			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError('Missing ReadVersionHistory id'));
+				return error(new DataError(struct, 'Missing ReadVersionHistory id'));
 			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
-			if (!data) return error(new DataError('Data not found'));
+			if (!data) return error(new DataError(struct, 'Data not found'));
 			const history = (await data.getVersions()).unwrap();
 			return new Response(
 				JSON.stringify({
@@ -82,15 +84,15 @@ export const handleEvent =
 
 		if (event.action === DataAction.DeleteVersion) {
 			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError('Missing DeleteVersion id'));
+				return error(new DataError(struct, 'Missing DeleteVersion id'));
 			if (!Object.hasOwn(event.data as any, 'vhId'))
-				return error(new DataError('Missing DeleteVersion version'));
+				return error(new DataError(struct, 'Missing DeleteVersion version'));
 			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
-			if (!data) return error(new DataError('Data not found'));
+			if (!data) return error(new DataError(struct, 'Data not found'));
 			const version = (await data.getVersions())
 				.unwrap()
 				.find((v) => v.vhId === (event.data as any).vhId);
-			if (!version) return error(new DataError('Version not found'));
+			if (!version) return error(new DataError(struct, 'Version not found'));
 
 			(await version.delete()).unwrap();
 
@@ -104,15 +106,15 @@ export const handleEvent =
 
 		if (event.action === DataAction.RestoreVersion) {
 			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError('Missing RestoreVersion id'));
+				return error(new DataError(struct, 'Missing RestoreVersion id'));
 			if (!Object.hasOwn(event.data as any, 'vhId'))
-				return error(new DataError('Missing RestoreVersion version'));
+				return error(new DataError(struct, 'Missing RestoreVersion version'));
 			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
-			if (!data) return error(new DataError('Data not found'));
+			if (!data) return error(new DataError(struct, 'Data not found'));
 			const versions = (await data.getVersions())
 				.unwrap()
 				.find((v) => v.vhId === (event.data as any).vhId);
-			if (!versions) return error(new DataError('Version not found'));
+			if (!versions) return error(new DataError(struct, 'Version not found'));
 			const res = await versions.restore();
 			if (res.isErr()) return error(res.error);
 
@@ -126,13 +128,13 @@ export const handleEvent =
 
 		if (event.action === PropertyAction.Read) {
 			if (!Object.hasOwn(event.data as any, 'type'))
-				return error(new DataError('Missing Read type'));
+				return error(new DataError(struct, 'Missing Read type'));
 			if (
 				(event.data as any).type !== 'all' &&
 				(event.data as any).type !== 'archived' &&
 				!Object.hasOwn(event.data as any, 'args')
 			)
-				return error(new DataError('Missing Read args'));
+				return error(new DataError(struct, 'Missing Read args'));
 
 			let streamer: StructStream<typeof struct.data.structure, typeof struct.data.name>;
 			const type = (event.data as any).type as
@@ -154,10 +156,10 @@ export const handleEvent =
 					break;
 				case 'from-id':
 					if (!Object.hasOwn((event.data as any).args, 'id'))
-						return error(new DataError('Missing Read id'));
+						return error(new DataError(struct, 'Missing Read id'));
 					{
 						const data = (await struct.fromId((event.data as any).args.id)).unwrap();
-						if (!data) return error(new DataError('Data not found'));
+						if (!data) return error(new DataError(struct, 'Data not found'));
 						return new Response(
 							JSON.stringify({
 								success: true,
@@ -168,9 +170,9 @@ export const handleEvent =
 					}
 				case 'property':
 					if (!Object.hasOwn((event.data as any).args, 'key'))
-						return error(new DataError('Missing Read key'));
+						return error(new DataError(struct, 'Missing Read key'));
 					if (!Object.hasOwn((event.data as any).args, 'value'))
-						return error(new DataError('Missing Read value'));
+						return error(new DataError(struct, 'Missing Read value'));
 					streamer = struct.fromProperty(
 						(event.data as any).args.key,
 						(event.data as any).args.value,
@@ -181,13 +183,16 @@ export const handleEvent =
 					break;
 				case 'universe':
 					if (!Object.hasOwn((event.data as any).args, 'universe'))
-						return error(new DataError('Missing Read universe'));
-					streamer = struct.fromUniverse((event.data as any).args.universe, {
+						return error(new DataError(struct, 'Missing Read universe'));
+					// streamer = struct.fromUniverse((event.data as any).args.universe, {
+					// 	type: 'stream'
+					// });
+					streamer = struct.fromProperty('universe', (event.data as any).args.universe, {
 						type: 'stream'
 					});
 					break;
 				default:
-					return error(new DataError('Invalid Read type'));
+					return error(new DataError(struct, 'Invalid Read type'));
 			}
 
 			let readable: ReadableStream;
@@ -212,7 +217,10 @@ export const handleEvent =
 							PropertyAction.Read,
 							bypass
 						);
-						stream.pipe((d) => controller.enqueue(`${encode(JSON.stringify(d))}\n\n`));
+						stream.pipe((d) => {
+							// console.log('Sending:', d);
+							controller.enqueue(`${encode(JSON.stringify(d))}\n\n`);
+						});
 					},
 					cancel() {
 						streamer.off('end');
@@ -238,7 +246,7 @@ export const handleEvent =
 					}
 				});
 			} else {
-				return error(new StructError('Not logged in'));
+				return error(new StructError(struct, 'Not logged in'));
 			}
 
 			return new Response(readable, {
@@ -251,22 +259,28 @@ export const handleEvent =
 
 		if (event.action === DataAction.Create) {
 			const create = async () => {
-				if (
-					!struct.validate(event.data, {
-						optionals: [
-							'id',
-							'created',
-							'updated',
-							'archived',
-							'universes',
-							'attributes',
-							'lifetime'
-						]
-					})
-				)
-					return error(new DataError('Invalid data'));
+				console.log(event.data);
+				const validateRes = struct.validate(event.data, {
+					optionals: [
+						'id',
+						'created',
+						'updated',
+						'archived',
+						'universe',
+						'attributes',
+						'lifetime',
+						'canUpdate'
+					]
+				});
+				if (!validateRes.success)
+					return error(new DataError(struct, `Invalid data: ${validateRes.reason}`));
 
-				(await struct.new(event.data as any)).unwrap();
+				const created = (await struct.new(event.data as any)).unwrap();
+
+				const universe = event.request.request.headers.get('universe');
+				if (universe) {
+					(await created.setUniverse(universe)).unwrap();
+				}
 				return new Response(
 					JSON.stringify({
 						success: true
@@ -277,8 +291,9 @@ export const handleEvent =
 			if (runBypass()) {
 				return create();
 			}
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap()) {
 				return invalidPermissions;
+			}
 
 			return create();
 		}
@@ -293,7 +308,7 @@ export const handleEvent =
 
 			const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 			const found = (await struct.fromId(String(data.id))).unwrap();
-			if (!found) return error(new DataError('Data not found'));
+			if (!found) return error(new DataError(struct, 'Data not found'));
 
 			if (runBypass()) {
 				const res = await found.update(data);
@@ -319,11 +334,12 @@ export const handleEvent =
 
 		if (event.action === DataAction.Archive) {
 			const archive = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
-				if (!found) return error(new DataError('Data not found'));
+				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				(await found.setArchive(true)).unwrap();
 
@@ -335,18 +351,19 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return archive();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 			return archive();
 		}
 
 		if (event.action === DataAction.Delete) {
 			const remove = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
-				if (!found) return error(new DataError('Data not found'));
+				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				(await found.delete()).unwrap();
 				return new Response(
@@ -357,7 +374,7 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return remove();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 
 			return remove();
@@ -365,10 +382,11 @@ export const handleEvent =
 
 		if (event.action === DataAction.RestoreArchive) {
 			const restore = async () => {
-				if (!Object.hasOwn(event.data as any, 'id')) return error(new DataError('Missing id'));
+				if (!Object.hasOwn(event.data as any, 'id'))
+					return error(new DataError(struct, 'Missing id'));
 				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 				const found = (await struct.fromId(String(data.id))).unwrap();
-				if (!found) return error(new DataError('Data not found'));
+				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				await found.setArchive(false);
 
@@ -380,15 +398,16 @@ export const handleEvent =
 				);
 			};
 			if (runBypass()) return restore();
-			if (!Permissions.canDo(roles, this as any, DataAction.Create).unwrap())
+			if (!(await Permissions.canDo(roles, struct, DataAction.Create)).unwrap())
 				return invalidPermissions;
 			return restore();
 		}
 
-		return error(new StructError('Invalid action'));
+		return error(new StructError(struct, 'Invalid action'));
 	};
 
 export const connectionEmitter = (struct: Struct) => {
+	if (struct.data.frontend === false) return;
 	// Permission handling
 	const emitToConnections = async (
 		event: string,
@@ -412,13 +431,7 @@ export const connectionEmitter = (struct: Struct) => {
 			const a = account.value;
 			if (!a) return;
 
-			if (
-				(
-					await Account.Admins.fromProperty('accountId', a.id, {
-						type: 'single'
-					})
-				).unwrap()
-			) {
+			if ((await Account.isAdmin(account.value)).unwrap()) {
 				connection.send(`struct:${struct.name}`, {
 					event,
 					data: data.data
@@ -426,9 +439,17 @@ export const connectionEmitter = (struct: Struct) => {
 				return;
 			}
 
-			const roles = await Permissions.getRoles(a);
+			// const universes = data.getUniverses();
+			// if (universes.isErr()) return console.error(universes.error);
+
+			const roles = await Permissions.allAccountRoles(a);
 			if (roles.isErr()) return console.error(roles.error);
 			const r = roles.value;
+
+			// if (!r.some((r) => universes.value.includes(r.data.universe))) {
+			if (!r.some((r) => r.universe === data.universe)) {
+				return;
+			}
 
 			const res = await Permissions.filterAction(r, [data as any], PropertyAction.Read);
 			if (res.isErr()) return console.error(res.error);

@@ -1,5 +1,6 @@
 import { Struct, type DataArr, type StructData } from 'drizzle-struct/front-end';
 import { sse } from '../utils/sse';
+import { browser } from '$app/environment';
 
 export namespace Potato {
     export const Friend = new Struct({
@@ -10,7 +11,8 @@ export namespace Potato {
             name: 'string',
             lastClicked: 'string',
         },
-        socket: sse
+        socket: sse,
+        browser,
     });
 
     export type FriendData = StructData<typeof Friend.data.structure>;

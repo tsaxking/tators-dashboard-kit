@@ -234,7 +234,7 @@ otherwise dates will not work.
 
 			const data = (
 				await struct
-					.fromUniverse(res.id, {
+					.fromProperty('universe', res.id, {
 						type: 'stream'
 					})
 					.await()
@@ -446,7 +446,7 @@ export const dataActions = {
 
 			return doNext('Attributes set', undefined, next);
 		}),
-	addToUniverse: async (data: StructData, next?: Next) =>
+	setUniverse: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
 			const universes = (
 				await Universes.Universe.all({
@@ -455,37 +455,6 @@ export const dataActions = {
 			).unwrap();
 			const res = (
 				await select({
-					clear: true,
-					message: 'Select a universe',
-					options: universes.map((u) => ({
-						name: u.data.name,
-						value: u
-					}))
-				})
-			).unwrap();
-
-			if (!res) {
-				return doNext('No universe selected', undefined, next);
-			}
-
-			const res2 = await data.addUniverses(res.id);
-
-			if (res2.isErr()) {
-				console.error(res2.error);
-				return doNext('Failed to add data to universe', res2.error, next);
-			}
-
-			return doNext('Data added to universe', undefined, next);
-		}),
-	setUniverses: async (data: StructData, next?: Next) =>
-		attemptAsync(async () => {
-			const universes = (
-				await Universes.Universe.all({
-					type: 'stream'
-				}).await()
-			).unwrap();
-			const res = (
-				await multiSelect({
 					message: 'Select universes',
 					options: universes.map((u) => ({
 						name: u.data.name,
@@ -498,7 +467,7 @@ export const dataActions = {
 				return doNext('No universes selected', undefined, next);
 			}
 
-			const res2 = await data.setUniverses(res.map((r) => r.id));
+			const res2 = await data.setUniverse(res.id);
 
 			if (res2.isErr()) {
 				console.error(res2.error);
@@ -506,43 +475,6 @@ export const dataActions = {
 			}
 
 			return doNext('Universes set', undefined, next);
-		}),
-	removeFromUniverse: async (data: StructData, next?: Next) =>
-		attemptAsync(async () => {
-			const universes = (
-				await Universes.Universe.all({
-					type: 'stream'
-				}).await()
-			).unwrap();
-			const current = data
-				.getUniverses()
-				.unwrap()
-				.map((u) => universes.find((u2) => u2.id === u))
-				.filter(Boolean) as Universes.UniverseData[];
-
-			const res = (
-				await select({
-					clear: true,
-					message: 'Select a universe',
-					options: current.map((u) => ({
-						name: u.data.name,
-						value: u
-					}))
-				})
-			).unwrap();
-
-			if (!res) {
-				return doNext('No universe selected', undefined, next);
-			}
-
-			const res2 = await data.removeUniverses(res.id);
-
-			if (res2.isErr()) {
-				console.error(res2.error);
-				return doNext('Failed to remove data from universe', res2.error, next);
-			}
-
-			return doNext('Data removed from universe', undefined, next);
 		})
 };
 

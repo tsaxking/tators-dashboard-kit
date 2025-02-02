@@ -1,8 +1,8 @@
+import { Account } from '$lib/model/account.js';
 import { Universes } from '$lib/model/universe.js';
 
 export const load = (event) => {
-	const universe = event.data.universe;
 	return {
-		universe: universe ? Universes.Universe.Generator(universe) : null
+		universe: Universes.Universe.Generator(event.data.universe)
 	};
 };
