@@ -3,6 +3,8 @@ import { spawn } from 'child_process';
 import path from 'path';
 import * as tsNode from 'ts-node';
 import { EventEmitter } from "ts-utils/event-emitter";
+import { pathToFileURL } from 'url';
+import { createRequire } from 'module';
 
 
 export const runTask = async (command: string, args: string[], config?: Partial<{
@@ -62,4 +64,4 @@ export const runTs = async (file: string, fn: string, ...params: unknown[]) => {
         }
         return (await func(...params));
     });
-}
+};
