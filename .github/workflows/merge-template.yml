@@ -6,25 +6,25 @@ on:
       - '*'
 
 jobs:
-  format:
-    uses: ./.github/workflows/code-formatter.yml
+  # format:
+  #   uses: ./.github/workflows/code-formatter.yml
   build:
     uses: ./.github/workflows/testing-build.yml
   unit-tests:
     uses: ./.github/workflows/testing-unit.yml
   E2E:
     uses: ./.github/workflows/testing-e2e.yml
-  # check:
-  #   uses: ./.github/workflows/testing-svelte-check.yml
+  check:
+    uses: ./.github/workflows/testing-svelte-check.yml
 
   merge-template:
     runs-on: ubuntu-latest
     needs: [
-      format, 
+      # format, 
       build, 
       unit-tests, 
       E2E, 
-      # check
+      check
     ]
 
     strategy:
