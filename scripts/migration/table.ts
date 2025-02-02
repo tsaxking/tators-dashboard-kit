@@ -21,14 +21,15 @@ export class Table<T extends Record<string, unknown>> {
 
     constructor(
         public readonly name: string,
-        public readonly zod: z.ZodType<T>
+        public readonly zod: z.ZodType<T>,
+        public readonly database: Client,
     ) {}
 
 
 
-    public query(DB: Client, offset: number) {
+    public query(offset: number) {
         return attemptAsync(async () => {
-            const res = await DB.query(
+            const res = await this.database.query(
                 `SELECT * FROM ${this.name} LIMIT ${LIMIT} OFFSET ${offset};`
             );
 
@@ -45,7 +46,7 @@ export class Table<T extends Record<string, unknown>> {
             let length = LIMIT;
 
             while (length !== 0) {
-                const res = (await this.query(DB, offset)).unwrap();
+                const res = (await this.query(offset)).unwrap();
                 length = res.length;
                 offset += LIMIT;
                 for (const row of res) {

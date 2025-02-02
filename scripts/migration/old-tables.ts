@@ -1,30 +1,11 @@
-import { Client } from 'pg';
-import { config } from 'dotenv';
-import { Table } from './table';
-import { z } from 'zod';
-
-const initDB = async () => {
-    config();
-    
-    const { DB_HOST, DB_PORT, DB_USER, DB_PASS, OLD_DB_NAME } = process.env;
-    const DB = new Client({
-        user: DB_USER,
-        database: OLD_DB_NAME,
-        password: DB_PASS,
-        port: Number(DB_PORT),
-        host: DB_HOST,
-        keepAlive: true,
-    });
-    
-    await DB.connect();
-    return DB;
-};
+import { Client } from 'pg'
+import { Table } from './table'
+import { z } from 'zod'
 
 
-const main = async () => {
-    const DB = await initDB();
-
-    const Accounts = new Table(
+export const getOldTables = (DB: Client) => {
+    return {
+     Accounts: new Table(
         'accounts',
         z.object({
             id: z.string(),
@@ -45,18 +26,20 @@ const main = async () => {
             discord_id: z.string().optional(),
             custom_data: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const DiscordAccount = new Table(
+     DiscordAccount: new Table(
         'discord_account',
         z.object({
             key: z.string(),
             id: z.string(),
             date: z.number(),
         }),
-    );
+        DB,
+    ),
 
-    const Members = new Table(
+     Members: new Table(
         'members',
         z.object({
             id: z.string(),
@@ -66,9 +49,10 @@ const main = async () => {
             resume: z.string().optional(),
             board: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const Roles = new Table(
+     Roles: new Table(
         'roles',
         z.object({
             id: z.string(),
@@ -76,33 +60,37 @@ const main = async () => {
             description: z.string().optional(),
             rank: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const AccountRoles = new Table(
+     AccountRoles: new Table(
         'account_roles',
         z.object({
             account_id: z.string(),
             role_id: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const Permissions = new Table(
+     Permissions: new Table(
         'permissions',
         z.object({
             permission: z.string(),
             description: z.string().optional(),
         }),
-    );
+        DB,
+    ),
 
-    const RolePermissions = new Table(
+     RolePermissions: new Table(
         'role_permissions',
         z.object({
             role_id: z.string(),
             permission: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const Sessions = new Table(
+     Sessions: new Table(
         'sessions',
         z.object({
             id: z.string(),
@@ -115,35 +103,39 @@ const main = async () => {
             prev_url: z.string().optional(),
             custom_data: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const AccountSettings = new Table(
+     AccountSettings: new Table(
         'account_settings',
         z.object({
             account_id: z.string(),
             settings: z.string(), // JSON
         }),
-    );
+        DB,
+    ),
 
-    const Events = new Table(
+     Events: new Table(
         'events',
         z.object({
             event_key: z.string(),
             flipX: z.number().int(),
             flipY: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const Teams = new Table(
+     Teams: new Table(
         'teams',
         z.object({
             number: z.number().int(),
             event_key: z.string(),
             watch_priority: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const Matches = new Table(
+     Matches: new Table(
         'matches',
         z.object({
             id: z.string(),
@@ -151,9 +143,10 @@ const main = async () => {
             match_number: z.number().int(),
             comp_level: z.enum(['qm', 'ef', 'qf', 'sf', 'f', 'pr']),
         }),
-    );
+        DB,
+    ),
 
-    const CustomMatches = new Table(
+     CustomMatches: new Table(
         'custom_matches',
         z.object({
             id: z.string(),
@@ -172,9 +165,10 @@ const main = async () => {
             name: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const Whiteboards = new Table(
+     Whiteboards: new Table(
         'whiteboards',
         z.object({
             id: z.string(),
@@ -183,9 +177,10 @@ const main = async () => {
             strategy_id: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const MatchScouting = new Table(
+     MatchScouting: new Table(
         'match_scouting',
         z.object({
             id: z.string(),
@@ -200,9 +195,10 @@ const main = async () => {
             checks: z.string(), // JSON string array
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const TeamComments = new Table(
+     TeamComments: new Table(
         'team_comments',
         z.object({
             id: z.string(),
@@ -215,9 +211,10 @@ const main = async () => {
             event_key: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ScoutingQuestionSections = new Table(
+     ScoutingQuestionSections: new Table(
         'scouting_question_sections',
         z.object({
             id: z.string(),
@@ -227,9 +224,10 @@ const main = async () => {
             account_id: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ScoutingQuestionGroups = new Table(
+     ScoutingQuestionGroups: new Table(
         'scouting_question_groups',
         z.object({
             id: z.string(),
@@ -240,9 +238,10 @@ const main = async () => {
             account_id: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ScoutingQuestions = new Table(
+     ScoutingQuestions: new Table(
         'scouting_questions',
         z.object({
             id: z.string(),
@@ -253,9 +252,10 @@ const main = async () => {
             group_id: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ScoutingAnswers = new Table(
+     ScoutingAnswers: new Table(
         'scouting_answers',
         z.object({
             id: z.string(),
@@ -266,10 +266,11 @@ const main = async () => {
             account_id: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
 
-    const TBARequests = new Table(
+     TBARequests: new Table(
         't_b_a_requests',
         z.object({
             url: z.string(),
@@ -277,9 +278,10 @@ const main = async () => {
             updated: z.number().int(),
             update: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const Checklists = new Table(
+     Checklists: new Table(
         'checklists',
         z.object({
             id: z.string(),
@@ -288,9 +290,10 @@ const main = async () => {
             description: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ChecklistQuestions = new Table(
+     ChecklistQuestions: new Table(
         'checklist_questions',
         z.object({
             id: z.string(),
@@ -299,17 +302,19 @@ const main = async () => {
             interval: z.number().int().min(0),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const ChecklistAssignments = new Table(
+     ChecklistAssignments: new Table(
         'checklist_assignments',
         z.object({
             checklist_id: z.string(),
             account_id: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const ChecklistAnswers = new Table(
+     ChecklistAnswers: new Table(
         'checklist_answers',
         z.object({
             id: z.string(),
@@ -317,9 +322,10 @@ const main = async () => {
             question_id: z.string(),
             match_id: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const Alliances = new Table(
+     Alliances: new Table(
         'alliances',
         z.object({
             id: z.string(),
@@ -330,9 +336,10 @@ const main = async () => {
             team3: z.number().int(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const Strategy = new Table(
+     Strategy: new Table(
         'strategy',
         z.object({
             id: z.string(),
@@ -345,9 +352,10 @@ const main = async () => {
             checks: z.string(),
             archived: z.boolean(),
         }),
-    );
+        DB,
+    ),
 
-    const TeamPictures = new Table(
+     TeamPictures: new Table(
         'team_pictures',
         z.object({
             team_number: z.number().int(),
@@ -356,9 +364,10 @@ const main = async () => {
             time: z.number().int(),
             account_id: z.string(),
         }),
-    );
+        DB,
+    ),
 
-    const Blacklist = new Table(
+     Blacklist: new Table(
         'blacklist',
         z.object({
             id: z.string(),
@@ -367,9 +376,10 @@ const main = async () => {
             account_id: z.string().optional(),
             reason: z.string().optional(),
         }),
-    );
+        DB,
+    ),
 
-    const MatchScoutingArchive = new Table(
+     MatchScoutingArchive: new Table(
         'match_scouting_archive',
         z.object({
             id: z.number().int(),
@@ -380,9 +390,10 @@ const main = async () => {
             comp_level: z.enum(['qm', 'ef', 'qf', 'sf', 'f', 'pr']),
             created: z.number().int(),
         }),
-    );
+        DB,
+    ),
 
-    const AccountNotifications = new Table(
+     AccountNotifications: new Table(
         'account_notifications',
         z.object({
             id: z.string(),
@@ -394,6 +405,7 @@ const main = async () => {
             read: z.boolean(),
             created: z.number().int(),
         }),
-    );
-};
-
+        DB,
+    ),
+}
+}
