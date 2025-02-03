@@ -21,13 +21,8 @@
 		"db:studio": "drizzle-kit studio",
 		"build-storybook": "storybook build",
 		"debug": "vite --debug",
-<<<<<<< Updated upstream
 		"fix-readme": "npx vite-node ./scripts/fix-readme.ts",
 		"script": "npx vite-node ./scripts/index.ts"
-=======
-		"fix-readme": "node --loader @esbuild-kit/esm-loader ./scripts/fix-readme.ts",
-		"script": "node --loader @esbuild-kit/esm-loader ./scripts/index.ts"
->>>>>>> Stashed changes
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
