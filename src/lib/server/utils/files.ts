@@ -11,7 +11,10 @@ const UPLOAD_DIR = path.resolve(process.cwd(), 'static/uploads');
 fs.promises.mkdir(UPLOAD_DIR, { recursive: true }).catch(() => {});
 
 interface RequestEvent {
-	request: Request;
+	request: {
+		headers: Headers;
+		body: ReadableStream<Uint8Array> | null;
+	};
 }
 
 export class FileReceiver {

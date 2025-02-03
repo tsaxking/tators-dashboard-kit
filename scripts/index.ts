@@ -4,14 +4,14 @@ import { runTs } from '../src/lib/server/utils/task';
 // Convert import.meta.url to a file path
 
 const main = async () => {
-    const [,, file] = process.argv;
+    const [,, file, ...rest] = process.argv;
 
     if (!file) {
         console.error('No file provided');
         process.exit(0);
     }
 
-    const res = await runTs(path.join('scripts', file), 'main');
+    const res = await runTs(path.join('scripts', file), 'main', ...rest);
 
     if (res.isErr()) {
         console.error(res.error);
