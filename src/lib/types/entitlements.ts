@@ -1,1 +1,5 @@
-export type Entitlement = 'manage-roles' | 'manage-universe' | 'view-roles' | 'view-universe';
+export type Entitlement = 
+    'manage-roles'
+  | 'manage-universe'
+  | 'view-roles'
+  | 'view-universe';

@@ -1,5 +1,5 @@
 import { attemptAsync } from "ts-utils/check";
-import { spawn } from 'child_process';
+import { exec } from 'child_process';
 import path from 'path';
 import * as tsNode from 'ts-node';
 import { EventEmitter } from "ts-utils/event-emitter";
@@ -7,46 +7,13 @@ import { pathToFileURL } from 'url';
 import { createRequire } from 'module';
 
 
-export const runTask = async (command: string, args: string[], config?: Partial<{
-    timeout: number;
-    log: boolean;
-}>) => {
-    const em = new EventEmitter<{
-        data: string;
-        error: Error;
-        end: number;
-    }>();
-    try {
-        const child = spawn(command, args, {
-            stdio: 'pipe',
-            cwd: path.resolve(process.cwd()),
-        });
-        if (config?.timeout) {
-            setTimeout(() => {
-                child.kill();
-                if (config?.log) console.error('Task timeout');
-            }, config.timeout);
+export const runTask = (args: string[]) => {
+    return attemptAsync(async () => new Promise<void>((res, rej) => exec(args.join(' '), (error) => {
+        if (error) {
+            rej(error);
         }
-        child.stdout.on('data', (data) => {
-            em.emit('data', data.toString());
-            if (config?.log) console.log(data.toString());
-        });
-        child.stderr.on('data', (data) => {
-            em.emit('error', new Error(data.toString()));
-            if (config?.log) console.error(data.toString());
-        });
-        child.on('close', (code) => {
-            if (code === 0) {
-                em.emit('end', code);
-            } else {
-                if (config?.log) console.error(`Task failed with code ${code}`);
-                em.emit('end', code ?? 1);
-            }
-        });
-    } catch (error) {
-        em.emit('error', error as Error);
-    }
-    return em;
+        res();
+    })));
 };
 
 export const runTs = async (file: string, fn: string, ...params: unknown[]) => {

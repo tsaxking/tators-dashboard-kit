@@ -134,6 +134,7 @@ export namespace Universes {
 					entitlements: JSON.stringify(['manage-roles', 'manage-universe'])
 				})
 			).unwrap();
+			(await admin.setUniverse(u.id)).unwrap();
 			(await admin.setStatic(true)).unwrap();
 			await Permissions.RoleAccount.new({
 				role: admin.id,
@@ -150,6 +151,7 @@ export namespace Universes {
 					entitlements: JSON.stringify(['view-roles', 'view-universe'])
 				})
 			).unwrap();
+			(await member.setUniverse(u.id)).unwrap();
 			(await member.setStatic(true)).unwrap();
 
 			return u;
