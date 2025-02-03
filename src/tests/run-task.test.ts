@@ -14,16 +14,8 @@ describe('Run a typescript file', () => {
 });
 
 describe('Run a command', () => {
-	it('Will run git status', async () => {
-		const res = await runTask('git', ['status']);
-		res.on('data', (data) => {
-			console.log(data);
-		});
-		res.on('error', (error) => {
-			console.error(error);
-		});
-		res.on('end', (code) => {
-			expect(code).toBe(0);
-		});
-	});
+    it('Will run git status', async () => {
+        const res = (await runTask(['git', 'status'])).unwrap();
+        expect(res).toBe(undefined);
+    });
 });

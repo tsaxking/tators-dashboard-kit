@@ -182,8 +182,8 @@ export namespace Account {
 
 	export const newHash = (password: string) => {
 		return attempt(() => {
-			const salt = crypto.randomBytes(16).toString('hex');
-			const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+			const salt = crypto.randomBytes(32).toString('hex');
+			const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
 			return { hash, salt };
 		});
 	};
@@ -328,3 +328,6 @@ export namespace Account {
 export const _accountTable = Account.Account.table;
 // export const _oauth2TokensTable = Account.OAuth2Tokens.table;
 export const _adminsTable = Account.Admins.table;
+export const _developersTable = Account.Developers.table;
+export const _accountNotificationTable = Account.AccountNotification.table;
+export const _accountSettings = Account.Settings.table;
