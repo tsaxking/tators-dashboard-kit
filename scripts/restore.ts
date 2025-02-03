@@ -9,10 +9,10 @@ import { openStructs } from '../src/lib/server/cli/struct';
 import { DB } from "../src/lib/server/db";
 import { Struct } from "drizzle-struct/back-end";
 import AdmZip from 'adm-zip';
-import { main as backup } from './backup';
+import backup from './backup';
 import { resolveAll } from "ts-utils/check";
 
-export const main = async (file?: string) => {
+export default async (file?: string) => {
     await backup();
     (await openStructs()).unwrap();
     

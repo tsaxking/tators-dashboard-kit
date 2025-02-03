@@ -11,7 +11,7 @@ const main = async () => {
         process.exit(0);
     }
 
-    const res = await runTs(path.join('scripts', file), 'main', ...rest);
+    const res = await runTs(path.join('scripts', file), 'default', ...rest);
 
     if (res.isErr()) {
         console.error(res.error);

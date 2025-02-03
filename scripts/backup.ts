@@ -13,7 +13,7 @@ import { Test } from '../src/lib/server/structs/testing';
 
 export const BACKUP_DIR = path.join(process.cwd(), 'backups');
 
-export const main = async () => {
+export default async () => {
     if (!fs.existsSync(BACKUP_DIR)) {
         await fs.promises.mkdir(BACKUP_DIR, { recursive: true });
     }
