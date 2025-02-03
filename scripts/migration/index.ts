@@ -8,7 +8,8 @@ import { DB } from '../../src/lib/server/db';
 import { Struct } from 'drizzle-struct/back-end';
 import { z } from 'zod';
 import { Strategy } from '../../src/lib/server/structs/strategy';
-import { Table } from './table';
+import { main as backup } from '../backup';
+import { main as restore } from '../restore';
 
 const initDB = async () => {
 	config();
@@ -27,10 +28,13 @@ const initDB = async () => {
 	return DB;
 };
 
-const reset = () => {};
+const reset = () => {
+    return restore();
+};
 
 export const main = async () => {
-    (await Struct.buildAll(DB)).unwrap();
+    await backup();
+    // (await Struct.buildAll(DB)).unwrap();
     const oldDB = await initDB();
 	const old = getOldTables(oldDB);
 
