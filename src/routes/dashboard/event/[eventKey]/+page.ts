@@ -1,3 +1,3 @@
 export const load = (event) => {
-    return event.data;
+	return event.data;
 };
