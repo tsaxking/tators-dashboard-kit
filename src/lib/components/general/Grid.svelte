@@ -20,9 +20,12 @@
 		ValidationModule
 	]);
 
-	interface Props {
-		columnDefs: Array<any>;
-		rowData: Array<any>;
+	interface Props<T extends Record<string, unknown> = Record<string, unknown>> {
+		columnDefs: {
+			headerName: string;
+			field: keyof T;
+		}[];
+		rowData: T[];
 		classes: string;
 	}
 
