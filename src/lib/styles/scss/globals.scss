@@ -35,11 +35,9 @@ $cursors: (
 	nw-resize: 'nw-resize'
 );
 
-@each $name, $cursor in $cursors {
-	@if type-of($cursor) != 'string' {
-		@warn 'Cursor value for `#{$name}` is not a valid cursor.';
-	}
 
+
+@each $name, $cursor in $cursors {
 	.cursor-#{$name} {
 		cursor: $cursor;
 	}
@@ -47,7 +45,7 @@ $cursors: (
 
 @for $i from 0 through 12 {
 	.rotate-#{$i} {
-		transform: rotate(#{$i * 30}deg) !important;
+		transform: rotate(#{calc($i * 30)}deg) !important;
 	}
 }
 
@@ -59,6 +57,6 @@ $cursors: (
 
 @for $i from 0 through 10 {
 	.opacity-#{$i} {
-		opacity: $i / 10 !important;
+		opacity: calc($i / 10) !important;
 	}
 }
