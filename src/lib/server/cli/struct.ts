@@ -13,6 +13,7 @@ import { select, selectFromTable, repeatPrompt, confirm, prompt, multiSelect } f
 import { checkStrType, returnType } from 'drizzle-struct/utils';
 import { Permissions } from '../structs/permissions';
 import { Universes } from '../structs/universe';
+import terminal from '../utils/terminal';
 
 export const openStructs = () =>
 	attemptAsync(async () => {
@@ -38,7 +39,7 @@ export const openStructs = () =>
 
 				return structs;
 			} catch (err) {
-				console.error(err);
+				terminal.error(err);
 				return [];
 			}
 		};
@@ -105,7 +106,7 @@ type Next = (message: string, error?: Error) => Promise<void> | void;
 const doNext = (message: string, error?: Error, next?: Next) => {
 	if (next) return next(message, error);
 	if (error) throw error;
-	console.log(message);
+	terminal.log(message);
 };
 
 export const structActions = {
@@ -117,7 +118,7 @@ export const structActions = {
 		attemptAsync(async () => {
 			const properties = Object.entries(struct.data.structure);
 
-			console.log(
+			terminal.log(
 				`
 Type instructions:
 Booleans: y = true, n = false, 1 = true, 0 = false, true = true, false = false
@@ -152,9 +153,9 @@ otherwise dates will not work.
 			const res = await struct.new(data as Structable<T['data']['structure']>);
 
 			if (res.isErr()) {
-				console.error(res.error);
+				terminal.error(res.error);
 				return async () => {
-					console.log('Failed to create new data');
+					terminal.log('Failed to create new data');
 					const confirmed = (await confirm({ message: 'Try again?' })).unwrap();
 					if (confirmed) {
 						await structActions.new(struct);
@@ -257,7 +258,7 @@ otherwise dates will not work.
 			if ((await confirm({ message: 'Are you sure you want to clear all data?' })).unwrap()) {
 				const res = await struct.clear();
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to clear data', res.error, next);
 				}
 
@@ -312,9 +313,9 @@ export const dataActions = {
 			const res = await data.update(newData as Partial<Structable<Blank>>);
 
 			if (res.isErr()) {
-				console.error(res.error);
+				terminal.error(res.error);
 				return async () => {
-					console.log('Failed to update data');
+					terminal.log('Failed to update data');
 					const confirmed = (await confirm({ message: 'Try again?' })).unwrap();
 					if (confirmed) {
 						await dataActions.update(data);
@@ -331,7 +332,7 @@ export const dataActions = {
 			if ((await confirm({ message: 'Are you sure you want to delete this data?' })).unwrap()) {
 				const res = await data.delete();
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to delete data', res.error, next);
 				}
 
@@ -345,7 +346,7 @@ export const dataActions = {
 			if ((await confirm({ message: 'Are you sure you want to archive this data?' })).unwrap()) {
 				const res = await data.setArchive(true);
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to archive data', res.error, next);
 				}
 
@@ -359,7 +360,7 @@ export const dataActions = {
 			if ((await confirm({ message: 'Are you sure you want to restore this data?' })).unwrap()) {
 				const res = await data.setArchive(false);
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to restore data', res.error, next);
 				}
 
@@ -376,7 +377,7 @@ export const dataActions = {
 	addAttributes: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
 			const current = data.getAttributes().unwrap();
-			console.log('Current attributes:', current);
+			terminal.log('Current attributes:', current);
 
 			const res = (
 				await prompt({
@@ -392,7 +393,7 @@ export const dataActions = {
 			const res2 = await data.addAttributes(...attributes);
 
 			if (res2.isErr()) {
-				console.error(res2.error);
+				terminal.error(res2.error);
 				return doNext('Failed to add attributes', res2.error, next);
 			}
 
@@ -401,7 +402,7 @@ export const dataActions = {
 	removeAttributes: async (data: StructData, next?: Next) =>
 		attemptAsync(async () => {
 			const current = data.getAttributes().unwrap();
-			console.log('Current attributes:', current);
+			terminal.log('Current attributes:', current);
 
 			const res = (
 				await prompt({
@@ -417,7 +418,7 @@ export const dataActions = {
 			const res2 = await data.removeAttributes(...attributes);
 
 			if (res2.isErr()) {
-				console.error(res2.error);
+				terminal.error(res2.error);
 				return doNext('Failed to remove attributes', res2.error, next);
 			}
 
@@ -440,7 +441,7 @@ export const dataActions = {
 			const res2 = await data.setAttributes(attributes);
 
 			if (res2.isErr()) {
-				console.error(res2.error);
+				terminal.error(res2.error);
 				return doNext('Failed to set attributes', res2.error, next);
 			}
 
@@ -470,7 +471,7 @@ export const dataActions = {
 			const res2 = await data.setUniverse(res.id);
 
 			if (res2.isErr()) {
-				console.error(res2.error);
+				terminal.error(res2.error);
 				return doNext('Failed to set universes', res2.error, next);
 			}
 
@@ -492,7 +493,7 @@ export const selectDataAction = (data: StructData, next?: Next) =>
 			})
 		).unwrap();
 		if (!res) {
-			return console.log('No action selected');
+			return terminal.log('No action selected');
 		}
 
 		return res(data, next);
@@ -511,7 +512,7 @@ export const versionActions = {
 			) {
 				const res = await version.restore();
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to restore version', res.error, next);
 				}
 
@@ -532,7 +533,7 @@ export const versionActions = {
 			) {
 				const res = await version.delete();
 				if (res.isErr()) {
-					console.error(res.error);
+					terminal.error(res.error);
 					return doNext('Failed to delete version', res.error, next);
 				}
 

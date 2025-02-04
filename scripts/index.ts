@@ -1,5 +1,6 @@
 import path from 'path';
 import { runTs } from '../src/lib/server/utils/task';
+import terminal from '../src/lib/server/utils/terminal';
 
 // Convert import.meta.url to a file path
 
@@ -7,19 +8,19 @@ const main = async () => {
 	const [, , file, ...rest] = process.argv;
 
 	if (!file) {
-		console.error('No file provided');
+		terminal.error('No file provided');
 		process.exit(0);
 	}
 
 	const res = await runTs(path.join('scripts', file), 'default', ...rest);
 
 	if (res.isErr()) {
-		console.error(res.error);
+		terminal.error(res.error);
 		process.exit(1);
 	}
 
 	if (res.isOk()) {
-		console.log(res.value);
+		terminal.log(res.value);
 		process.exit(0);
 	}
 };

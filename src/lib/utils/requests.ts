@@ -4,7 +4,7 @@ import { Stream } from 'ts-utils/stream';
 import { v4 as uuid } from 'uuid';
 import { EventEmitter } from 'ts-utils/event-emitter';
 export namespace Requests {
-	const metadata: Record<string, string> = {};
+	export const metadata: Record<string, string> = {};
 	let requests: ServerRequest[] = [];
 
 	class RequestError extends Error {
@@ -26,8 +26,8 @@ export namespace Requests {
 
 	class ServerRequest<T extends 'get' | 'post' = 'get' | 'post', Return = unknown> {
 		public readonly time = Date.now();
-		public promise?: Promise<Result<Return>>;
-		public response?: Result<Return>;
+		public promise?: Promise<Result<Readonly<Return>>>;
+		public response?: Result<Readonly<Return>>;
 		constructor(
 			public readonly url: string,
 			public readonly method: T,

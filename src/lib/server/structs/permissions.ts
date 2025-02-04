@@ -254,7 +254,6 @@ export namespace Permissions {
 					return universes.includes(d.universe);
 				})
 				.map((d) => {
-					const { data } = d;
 					const properties: string[] = usedEntitlements
 						.map((e) => e.permissions.map((perm) => perm.property))
 						.flat()
@@ -265,6 +264,7 @@ export namespace Permissions {
 					if (properties.includes('*')) {
 						return d.safe();
 					}
+					const data = d.safe();
 
 					return Object.fromEntries(properties.map((p) => [p, data[p]])) as Partial<
 						Structable<S['data']['structure']>
@@ -321,7 +321,7 @@ export namespace Permissions {
 							'universe',
 							'lifetime',
 							'attributes',
-							'canUpdate'
+							'canUpdate',
 						)
 						.filter((v, i, a) => a.indexOf(v) === i);
 					if (properties.includes('*')) {
@@ -351,7 +351,6 @@ export namespace Permissions {
 					(p) => (p.action === action || p.action === '*') && e.struct === struct.data.name
 				)
 			);
-			console.log(res);
 			return res;
 		});
 	};

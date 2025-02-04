@@ -6,7 +6,7 @@ import { passwordStrength } from 'check-password-strength';
 import { OAuth2Client } from 'google-auth-library';
 import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from '$env/static/private';
 
-const log = (...args: unknown[]) => console.log('[oauth/sign-up]', ...args);
+// const log = (...args: unknown[]) => console.log('[oauth/sign-up]', ...args);
 
 export const actions = {
 	register: async (event) => {

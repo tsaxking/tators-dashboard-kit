@@ -259,7 +259,6 @@ export const handleEvent =
 
 		if (event.action === DataAction.Create) {
 			const create = async () => {
-				console.log(event.data);
 				const validateRes = struct.validate(event.data, {
 					optionals: [
 						'id',
@@ -302,9 +301,23 @@ export const handleEvent =
 			delete (event.data as any).created;
 			delete (event.data as any).updated;
 			delete (event.data as any).archived;
-			delete (event.data as any).universes;
+			// delete (event.data as any).universes;
 			delete (event.data as any).attributes;
 			delete (event.data as any).lifetime;
+			delete (event.data as any).canUpdate;
+			delete (event.data as any).universe;
+
+			if (struct.data.safes !== undefined) {
+				for (const key of Object.keys(event.data as object)) {
+					if (struct.data.safes.includes(key)) {
+						// user may not update safes
+						delete (event.data as any)[key];
+					}
+				}
+			}
+
+			if (!Object.hasOwn(event.data as any, 'id'))
+				return error(new DataError(struct, 'Missing id'));
 
 			const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
 			const found = (await struct.fromId(String(data.id))).unwrap();
@@ -434,7 +447,7 @@ export const connectionEmitter = (struct: Struct) => {
 			if ((await Account.isAdmin(account.value)).unwrap()) {
 				connection.send(`struct:${struct.name}`, {
 					event,
-					data: data.data
+					data: data.safe()
 				});
 				return;
 			}

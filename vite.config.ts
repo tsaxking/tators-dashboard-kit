@@ -9,6 +9,6 @@ export default defineConfig({
 
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
-		watch: process.argv.includes('watch'),
+		watch: process.argv.includes('watch')
 	}
 });

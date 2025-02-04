@@ -9,7 +9,10 @@ import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
 import '$lib/server/utils/files';
 import { env } from '$env/dynamic/private';
 import path from 'path';
+import terminal from '$lib/server/utils/terminal';
 
+
+terminal.log('Loading structs...');
 config();
 
 Struct.each((struct) => {

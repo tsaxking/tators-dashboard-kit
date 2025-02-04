@@ -80,6 +80,7 @@
 		"adm-zip": "^0.5.16",
 		"bootstrap": "^5.3.3",
 		"busboy": "^1.6.0",
+		"chalk": "^5.4.1",
 		"check-password-strength": "^2.0.10",
 		"cli-table": "^0.3.11",
 		"colors": "git+https://github.com/tsaxking/colors.git",

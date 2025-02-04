@@ -434,7 +434,6 @@ export const notify = <Type extends 'toast' | 'alert'>(config: NotificationConfi
 			textColor: config.textColor,
 			onHide: () => {
 				notif.remove();
-				console.log('hide');
 			}
 		}
 	});

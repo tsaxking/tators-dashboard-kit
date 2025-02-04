@@ -10,7 +10,7 @@ export const load = async (event) => {
 
 	if (!invite.value) throw redirect(ServerCode.permanentRedirect, '/404');
 
-	const universe = await Universes.Universe.fromId(invite.value.data.universe);
+	const universe = await Universes.Universe.fromId(invite.value.data.universeId);
 
 	if (universe.isErr()) {
 		throw fail(ServerCode.internalServerError);

@@ -7,8 +7,6 @@ import { Universes } from './universe';
 
 const { PUBLIC_DOMAIN, SESSION_DURATION } = process.env;
 
-console.log({ PUBLIC_DOMAIN });
-
 interface RequestEvent {
 	cookies: {
 		get: (name: string) => string | undefined;

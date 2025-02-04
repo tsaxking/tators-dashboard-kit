@@ -29,7 +29,8 @@ export namespace Account {
 		},
 		generators: {
 			id: () => (uuid() + uuid() + uuid() + uuid()).replace(/-/g, '')
-		}
+		},
+		safes: ['key', 'salt', 'verification']
 	});
 
 	Account.queryListen('universe-members', async (event, data) => {
