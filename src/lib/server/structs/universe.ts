@@ -32,8 +32,8 @@ export namespace Universes {
 				lifetime: 0,
 				attributes: '[]',
 				universe: '2122',
-				updated: new Date(),
-				created: new Date(),
+				updated: new Date().toISOString(),
+				created: new Date().toISOString(),
 			}, {
 				overwriteGlobals: true,
 			});

@@ -101,11 +101,11 @@
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",
 		"svelte-filepond": "^0.2.2",
+		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git",
 		"ts-utils": "github:tsaxking/global-ts-utilities",
 		"uuid": "^11.0.4",
 		"vite-node": "^3.0.4",
 		"yaml": "^2.7.0",
-		"zod": "^3.24.1",
-		"tatorscout-utils": "git+https://github.com/tsaxking/tatorscout-utils.git"
+		"zod": "^3.24.1"
 	}
 }
