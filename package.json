@@ -21,7 +21,7 @@
 		"db:studio": "drizzle-kit studio",
 		"build-storybook": "storybook build",
 		"debug": "vite --debug",
-		"fix-readme": "npx vite-node ./scripts/fix-readme.ts",
+		"fix-readme": "pnpm script fix-readme.ts",
 		"script": "npx vite-node ./scripts/index.ts"
 	},
 	"devDependencies": {
