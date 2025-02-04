@@ -10,6 +10,9 @@ export namespace Checklist {
             eventKey: text('event_key').notNull(),
             description: text('description').notNull(),
         },
+        generators: {
+            universe: () => '2122',
+        }
     });
 
 
@@ -20,6 +23,9 @@ export namespace Checklist {
             question: text('question').notNull(),
             interval: integer('interval').notNull(), // number of matches between
         },
+        generators: {
+            universe: () => '2122',
+        }
     });
 
 
@@ -29,6 +35,9 @@ export namespace Checklist {
             questionId: text('question_id').notNull(),
             accountId: text('account_id').notNull(),
         },
+        generators: {
+            universe: () => '2122',
+        }
     });
 
     export const Answers = new Struct({
@@ -38,6 +47,9 @@ export namespace Checklist {
             questionId: text('question_id').notNull(),
             matchId: text('match_id').notNull(),
         },
+        generators: {
+            universe: () => '2122',
+        }
     });
 }
 

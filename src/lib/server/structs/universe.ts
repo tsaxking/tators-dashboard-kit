@@ -19,6 +19,28 @@ export namespace Universes {
 		}
 	});
 
+	Universe.on('build', async () => {
+		const exists = (await Universe.fromId('2122')).unwrap();
+		if (!exists) {
+			Universe.new({
+				id: '2122',
+				name: 'Team Tators',
+				description: 'Team Tators single universe',
+				public: false,
+				archived: false,
+				canUpdate: false,
+				lifetime: 0,
+				attributes: '[]',
+				universe: '2122',
+				updated: new Date(),
+				created: new Date(),
+			}, {
+				overwriteGlobals: true,
+			});
+		}
+	});
+
+
 	Universe.on('delete', (u) => {
 		Struct.each((s) => {
 			s.each((d) => {

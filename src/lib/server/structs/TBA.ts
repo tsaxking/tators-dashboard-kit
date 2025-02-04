@@ -15,6 +15,9 @@ export namespace TBA {
             url: text('url').notNull().unique(),
             response: text('response').notNull(),
         },
+        generators: {
+            universe: () => '2122',
+        },
     });
 
     export const Events = new Struct({
@@ -23,6 +26,9 @@ export namespace TBA {
             year: integer('year').notNull(),
             eventKey: text('event_key').notNull(),
             data: text('data').notNull(), // JSON Event Object
+        },
+        generators: {
+            universe: () => '2122',
         },
     });
 
@@ -45,7 +51,10 @@ export namespace TBA {
             eventKey: text('event_key').notNull(),
             teamKey: text('team_key').notNull(), // frcXXXX
             data: text('data').notNull(), // JSON Team Object
-        }
+        },
+        generators: {
+            universe: () => '2122',
+        },
     });
 
     export const Matches = new Struct({
@@ -54,6 +63,9 @@ export namespace TBA {
             eventKey: text('event_key').notNull(),
             matchKey: text('match_key').notNull(), // 2020casj_qf1m1
             data: text('data').notNull(), // JSON Match Object
+        },
+        generators: {
+            universe: () => '2122',
         },
     });
 

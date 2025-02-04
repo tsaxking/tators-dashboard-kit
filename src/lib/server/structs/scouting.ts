@@ -20,7 +20,10 @@ export namespace Scouting {
         versionHistory: {
             type: 'versions',
             amount: 3,
-        }
+        },
+        generators: {
+            universe: () => '2122',
+        },
     });
 
     export const TeamComments = new Struct({
@@ -36,7 +39,10 @@ export namespace Scouting {
         versionHistory: {
             type: 'versions',
             amount: 3,
-        }
+        },
+        generators: {
+            universe: () => '2122',
+        },
     });
 
     export namespace PIT {
@@ -50,7 +56,10 @@ export namespace Scouting {
             versionHistory: {
                 type: 'versions',
                 amount: 3,
-            }
+            },
+            generators: {
+                universe: () => '2122',
+            },
         });
 
         export const Groups = new Struct({
@@ -64,7 +73,10 @@ export namespace Scouting {
             versionHistory: {
                 type: 'versions',
                 amount: 3,
-            }
+            },
+            generators: {
+                universe: () => '2122',
+            },
         });
 
         export const Questions = new Struct({
@@ -81,7 +93,10 @@ export namespace Scouting {
             versionHistory: {
                 type: 'versions',
                 amount: 3,
-            }
+            },
+            generators: {
+                universe: () => '2122',
+            },
         });
 
         export const Answers = new Struct({
@@ -95,7 +110,10 @@ export namespace Scouting {
             versionHistory: {
                 type: 'versions',
                 amount: 3,
-            }
+            },
+            generators: {
+                universe: () => '2122',
+            },
         });
     }
 }

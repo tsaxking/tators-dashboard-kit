@@ -56,6 +56,9 @@ export namespace Potato {
             name: text('name').notNull(),
             lastClicked: text('last_clicked').notNull(),
         },
+        generators: {
+            universe: () => '2122',
+        },
     });
 
     export type FriendData = typeof Friend.sample;

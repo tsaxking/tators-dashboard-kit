@@ -25,7 +25,7 @@ Struct.each((struct) => {
 	}
 });
 
-// Struct.setupLogger(path.join(process.cwd(), 'logs', 'structs'));
+Struct.setupLogger(path.join(process.cwd(), 'logs', 'structs'));
 
 export const load = async (event) => {
 	const session = await Session.getSession(event);
