@@ -35,8 +35,6 @@ $cursors: (
 	nw-resize: 'nw-resize'
 );
 
-
-
 @each $name, $cursor in $cursors {
 	.cursor-#{$name} {
 		cursor: $cursor;

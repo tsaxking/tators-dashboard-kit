@@ -22,7 +22,8 @@
 		"build-storybook": "storybook build",
 		"debug": "vite --debug",
 		"fix-readme": "pnpm script fix-readme.ts",
-		"script": "npx vite-node ./scripts/index.ts"
+		"script": "npx vite-node ./scripts/index.ts",
+		"check:system": "pnpm run lint && pnpm run check && pnpm run test"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
