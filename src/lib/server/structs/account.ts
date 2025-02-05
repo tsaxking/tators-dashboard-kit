@@ -12,6 +12,7 @@ import { DataAction, PropertyAction } from 'drizzle-struct/types';
 import { z } from 'zod';
 import { Universes } from './universe';
 import { Permissions } from './permissions';
+import { Email } from './email';
 
 export namespace Account {
 	export const Account = new Struct({
@@ -181,6 +182,23 @@ export namespace Account {
 
 	Settings.bypass('*', (account, setting) => account.id === setting?.accountId);
 
+	const PASSWORD_REQUEST_LIFETIME = parseInt(String(process.env.PASSWORD_REQUEST_LIFETIME)) || 1000 * 60 * 30;
+
+	export const PasswordReset = new Struct({
+		name: 'password_reset',
+		structure: {
+			accountId: text('account_id').notNull(),
+			expires: text('expires').notNull(),
+		},
+		lifetime: PASSWORD_REQUEST_LIFETIME,
+		validators: {
+			expires: (e) => new Date(String(e)).toString() !== 'Invalid Date' && new Date(String(e)).getTime() > Date.now(),
+		},
+		generators: {
+			expires: (): string => new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString(),
+		}
+	});
+
 	export const newHash = (password: string) => {
 		return attempt(() => {
 			const salt = crypto.randomBytes(32).toString('hex');
@@ -252,10 +270,6 @@ export namespace Account {
 		});
 	};
 
-	export const sendEmail = () => {
-		return attemptAsync(async () => {});
-	};
-
 	export const sendAccountNotif = (
 		accountId: string,
 		notif: Notification & {
@@ -323,6 +337,44 @@ export namespace Account {
 			type: 'stream'
 		}).await();
 	};
+
+	export const requestPasswordReset = async (account: AccountData) => {
+		return attemptAsync(async () => {
+			PasswordReset.fromProperty('accountId', account.id, {
+				type: 'stream',
+			}).pipe(pr => pr.delete());
+
+			const pr = (await PasswordReset.new({
+				expires: new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString(), // gets overwritten by generator
+				accountId: account.id,
+			})).unwrap();
+
+			const link = (await Email.createLink(
+				`/account/password-reset/${pr.id}`,
+				new Date(pr.data.expires),
+			)).unwrap();
+
+			const email = account.data.email;
+
+			(await Email.send({
+				type: 'forgot-password',
+				to: email,
+				data: {
+					link,
+					supportEmail: process.env.SUPPORT_EMAIL || '',
+				},
+				subject: 'Password Reset Request',
+			})).unwrap();
+
+			(await sendAccountNotif(account.id, {
+				title: 'Password Reset Request',
+				message: 'A password reset link has been sent to your email',
+				severity: 'warning',
+				icon: 'info',
+				link: '',
+			})).unwrap();
+		});
+	}
 }
 
 // for drizzle
@@ -332,3 +384,4 @@ export const _adminsTable = Account.Admins.table;
 export const _developersTable = Account.Developers.table;
 export const _accountNotificationTable = Account.AccountNotification.table;
 export const _accountSettings = Account.Settings.table;
+export const _passwordReset = Account.PasswordReset.table;

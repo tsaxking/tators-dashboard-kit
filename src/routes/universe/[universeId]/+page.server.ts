@@ -12,7 +12,7 @@ export const load = async (event) => {
 	}
 
 	if (!universe.value) {
-		throw redirect(ServerCode.permanentRedirect, '/404');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?url=${event.request.url}`);
 	}
 
 	return {
