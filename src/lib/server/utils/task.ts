@@ -2,10 +2,9 @@ import { attemptAsync } from 'ts-utils/check';
 import { exec } from 'child_process';
 import path from 'path';
 // import * as tsNode from 'ts-node';
-import fs from 'fs';
 import url from 'url';
 
-export const runTask = (args: string[]) => {
+export const runTask = (...args: string[]) => {
 	return attemptAsync(
 		async () =>
 			new Promise<void>((res, rej) =>

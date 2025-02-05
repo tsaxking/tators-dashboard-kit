@@ -12,15 +12,17 @@ const main = async () => {
 		process.exit(0);
 	}
 
+	terminal.log('Running file:', file);
+
 	const res = await runTs(path.join('scripts', file), 'default', ...rest);
 
 	if (res.isErr()) {
-		terminal.error(res.error);
+		await terminal.error(res.error);
 		process.exit(1);
 	}
 
 	if (res.isOk()) {
-		terminal.log(res.value);
+		await terminal.log(res.value);
 		process.exit(0);
 	}
 };

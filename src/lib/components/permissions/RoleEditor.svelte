@@ -4,6 +4,7 @@
 	import { Permissions } from '$lib/model/permissions';
 	import { confirm } from '$lib/utils/prompts';
 	import { onMount } from 'svelte';
+	import { z } from 'zod';
 
 	interface Props {
 		role: Permissions.RoleData;
@@ -27,7 +28,12 @@
 	};
 
 	export const reset = () => {
-		value = new Set(JSON.parse(role.data.entitlements ?? '[]'));
+		try {
+			value = new Set(z.array(z.string()).parse(JSON.parse(role.data.entitlements ?? '[]')));
+		} catch (error) {
+			console.error(error);
+			value = new Set();
+		}
 	};
 
 	onMount(() => {
@@ -49,7 +55,12 @@
 		});
 
 		return role.subscribe((e) => {
-			value = new Set(JSON.parse(e.entitlements ?? '[]'));
+			try {
+				value = new Set(z.array(z.string()).parse(JSON.parse(e.entitlements ?? '[]')));
+			} catch (error) {
+				console.error(error);
+				value = new Set();
+			}
 		});
 	});
 </script>

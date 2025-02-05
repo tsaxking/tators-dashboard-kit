@@ -118,10 +118,10 @@ export namespace Permissions {
 
 	export const entitlementsFromRole = async (role: RoleData) => {
 		return attemptAsync(async () => {
-			const entitlements = JSON.parse(role.data.entitlements);
+			const entitlements = z.array(z.string()).parse(JSON.parse(role.data.entitlements));
 			return resolveAll<EntitlementPermission>(
 				await Promise.all(
-					entitlements.map((e: string) => {
+					entitlements.map((e) => {
 						return readEntitlement(e as Entitlement);
 					})
 				)
@@ -321,7 +321,7 @@ export namespace Permissions {
 							'universe',
 							'lifetime',
 							'attributes',
-							'canUpdate',
+							'canUpdate'
 						)
 						.filter((v, i, a) => a.indexOf(v) === i);
 					if (properties.includes('*')) {

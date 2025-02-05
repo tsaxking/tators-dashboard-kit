@@ -8,6 +8,7 @@ import { sse } from '$lib/utils/sse';
 import type { DataAction, PropertyAction } from 'drizzle-struct/types';
 import { browser } from '$app/environment';
 import { Requests } from '$lib/utils/requests';
+import { z } from 'zod';
 
 export namespace Permissions {
 	export const Role = new Struct({
@@ -36,7 +37,13 @@ export namespace Permissions {
 			}[]
 		>('/struct/entitlements', {
 			expectStream: false,
-			cache: true
+			cache: true,
+			parser: z.array(
+				z.object({
+					name: z.string(),
+					struct: z.string()
+				})
+			)
 		});
 	};
 

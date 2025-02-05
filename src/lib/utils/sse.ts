@@ -63,7 +63,13 @@ class SSE {
 
 			const onMessage = (event: MessageEvent) => {
 				try {
-					const e = JSON.parse(decode(event.data));
+					const e = z
+						.object({
+							id: z.number(),
+							event: z.string(),
+							data: z.unknown()
+						})
+						.parse(JSON.parse(decode(event.data)));
 					// console.log(e);
 					// if (e.id < id) return;
 					id = e.id;

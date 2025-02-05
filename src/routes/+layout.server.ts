@@ -11,7 +11,6 @@ import { env } from '$env/dynamic/private';
 import path from 'path';
 import terminal from '$lib/server/utils/terminal';
 
-
 terminal.log('Loading structs...');
 config();
 

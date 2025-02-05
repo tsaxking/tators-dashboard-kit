@@ -72,17 +72,17 @@ export namespace Account {
 	);
 
 	export const getSelf = (): SingleWritable<typeof Account.data.structure> => {
-		attemptAsync(async () => {
-			const data = (
-				await Requests.get<
-					PartialStructable<typeof Account.data.structure> & Structable<GlobalCols>
-				>('/account/self', {
-					expectStream: false
-				})
-			).unwrap();
+		// attemptAsync(async () => {
+		// 	const data = (
+		// 		await Requests.get<
+		// 			PartialStructable<typeof Account.data.structure> & Structable<GlobalCols>
+		// 		>('/account/self', {
+		// 			expectStream: false
+		// 		})
+		// 	).unwrap();
 
-			self.set(Account.Generator(data));
-		});
+		// 	self.set(Account.Generator(data));
+		// });
 
 		return self;
 	};
@@ -90,17 +90,17 @@ export namespace Account {
 	const notifs = new DataArr(AccountNotification, []);
 
 	export const getNotifs = (limit: number, offset: number) => {
-		attemptAsync(async () => {
-			const data = (
-				await Requests.get<
-					(PartialStructable<typeof AccountNotification.data.structure> & Structable<GlobalCols>)[]
-				>(`/account/notifications/${limit}/${offset}`, {
-					expectStream: false
-				})
-			).unwrap();
+		// attemptAsync(async () => {
+		// 	const data = (
+		// 		await Requests.get<
+		// 			(PartialStructable<typeof AccountNotification.data.structure> & Structable<GlobalCols>)[]
+		// 		>(`/account/notifications/${limit}/${offset}`, {
+		// 			expectStream: false
+		// 		})
+		// 	).unwrap();
 
-			notifs.add(...data.map((n) => AccountNotification.Generator(n)));
-		});
+		// 	notifs.add(...data.map((n) => AccountNotification.Generator(n)));
+		// });
 
 		return notifs;
 	};
