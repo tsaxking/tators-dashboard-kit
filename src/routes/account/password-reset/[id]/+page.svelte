@@ -7,10 +7,6 @@
 
     const { account } = data;
 
-    if (form?.redirect) {
-        goto(form.redirect);
-    }
-
     if (form?.message) {
         notify({
             type: 'alert',

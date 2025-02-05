@@ -16,6 +16,7 @@ export const load = async (event) => {
     }
 
     if (!pr.value) {
+        terminal.log('No password reset found');
         throw redirect(
             ServerCode.permanentRedirect,
             `/status/404?url=${event.request.url}`,
@@ -23,6 +24,7 @@ export const load = async (event) => {
     }
 
     if (new Date(pr.value.data.expires) < new Date()) {
+        terminal.log('Password reset expired');
         throw redirect(
             ServerCode.permanentRedirect,
             `/status/404?url=${event.request.url}`,
@@ -38,6 +40,7 @@ export const load = async (event) => {
     }
 
     if (!account.value) {
+        terminal.log('No account found');
         throw redirect(
             ServerCode.permanentRedirect,
             `/status/404?url=${event.request.url}`,
@@ -53,6 +56,11 @@ export const actions = {
     reset: async (event) => {
         const pr = await Account.PasswordReset.fromId(event.params.id);
 
+        const notFound = () => redirect(
+            ServerCode.seeOther,
+            `/status/404?url=${event.request.url}`,
+        );
+
         if (pr.isErr()) {
             terminal.error(pr.error);
             throw fail(
@@ -61,15 +69,13 @@ export const actions = {
         }
     
         if (!pr.value) {
-            return {
-                redirect: `/status/404?url=${event.request.url}`,
-            }
+            terminal.log('No password reset found');
+            throw notFound();
         }
     
         if (new Date(pr.value.data.expires) < new Date()) {
-            return {
-                redirect: `/status/404?url=${event.request.url}`,
-            }
+            terminal.log('Password reset expired');
+            throw notFound();
         }
     
         const account = await Account.Account.fromId(pr.value.data.accountId);
@@ -81,9 +87,8 @@ export const actions = {
         }
     
         if (!account.value) {
-            return {
-                redirect: `/status/404?url=${event.request.url}`,
-            }
+            terminal.log('No account found');
+            throw notFound();
         }
 
         const body = await event.request.formData();
@@ -92,12 +97,14 @@ export const actions = {
 
         if (password.success && confirmPassword.success) {
             if (password.data !== confirmPassword.data) {
+                terminal.log('Passwords do not match');
                 return {
                     message: 'Passwords do not match',
                 }
             }
 
             if (passwordStrength(password.data).id < 2) {
+                terminal.log('Password is not strong enough');
 				return {
 					message:
 						'Password is not strong enough. Please include at least one uppercase letter, one lowercase letter, one number, and one special character, with a minimum length of 8 characters.',
@@ -126,9 +133,12 @@ export const actions = {
 
             await pr.value.delete();
 
-            return {
-                redirect: '/account/sign-in',
-            }
+            terminal.log('Password reset successful');
+
+            throw redirect(
+                ServerCode.seeOther,
+                '/account/sign-in',
+            );
         }
 
         throw fail(

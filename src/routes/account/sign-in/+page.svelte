@@ -6,7 +6,6 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { Form } from '$lib/utils/form';
-	import { Requests } from '$lib/utils/requests';
 
 	let { form }: { form?: ActionData } = $props();
 
@@ -18,8 +17,8 @@
 
 	const requestPasswordReset = () => {
 		new Form(
-			'/account/sign-in?/request-password-reset',
-			'POST',
+			// '/account/sign-in?/request-password-reset',
+			// 'POST',
 		)
 			.input('user', {
 				type: 'text',
@@ -29,21 +28,21 @@
 			})
 			.prompt({
 				title: 'Request Password Reset',
-				send: true,
+				send: false,
 			})
-			// .then(val => {
-			// 	if (val.isErr()) {
-			// 		return console.error(val.error);
-			// 	}
+			.then(val => {
+				if (val.isErr()) {
+					return console.error(val.error);
+				}
 
-			// 	Requests.get('/account/sign-in?/request-password-reset', {
-			// 		body: val.value,
-			// 	}).then(res => {
-			// 		if (res.ok) {
-			// 			goto('/account/password-reset');
-			// 		}
-			// 	});
-			// });
+				fetch(
+					'/account/sign-in?/request-password-reset',
+					{
+						method: 'POST',
+						body: new FormData(val.value.form),
+					},
+				)
+			});
 	};
 </script>
 

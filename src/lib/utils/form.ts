@@ -70,7 +70,8 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 		public readonly action?: string,
 		public readonly method?: 'POST' | 'GET',
 		public readonly inputs: T = {} as T
-	) {}
+	) {
+	}
 
 	input<Name extends string, I extends keyof Inputs>(
 		name: Name,
@@ -313,7 +314,8 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 		return attemptAsync(async () => {
 			clearModals();
 			let form: HTMLFormElement;
-			return new Promise<{ [key in keyof T]: InputReturnType<T[key]['type']> }>((res, rej) => {
+			let sent = false;
+			return new Promise<{value: { [key in keyof T]: InputReturnType<T[key]['type']> }; form: HTMLFormElement; }>((res, rej) => {
 				if (!modalTarget) return rej('Modal target not found, likely not in the DOM environment');
 				const modal = mount(Modal, {
 					target: modalTarget,
@@ -330,17 +332,17 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 								);
 								return div.innerHTML;
 							},
-							setup(el: Element) {
-								if (!(el instanceof HTMLFormElement))
+							setup(formEl: Element) {
+								if (!(formEl instanceof HTMLFormElement))
 									return console.error(
 										'Element is not a form, there may be an issue with the setup and some things may not work as intended'
 									);
-								const id = el.id;
+								const id = formEl.id;
 								if (!id)
 									return console.error(
 										'Form does not have an ID, there may be an issue with the setup and some things may not work as intended'
 									);
-								el.querySelectorAll(`.input-${id}`).forEach((i) => {
+								formEl.querySelectorAll(`.input-${id}`).forEach((i) => {
 									const onchange = (e: Event) => {
 										const input = e.target as HTMLInputElement;
 										if (input.type === 'checkbox') {
@@ -371,24 +373,29 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 								const submit = (e: Event) => {
 									// console.log('Sumbitted');
 									if (config.send) {
+										if (sent) return;
+										sent = true;
 										// console.log('sending...', self.action);
 										// send the form to the server
 										fetch(self.action || '', {
 											method: self.method || 'POST',
-											body: new FormData(el)
+											body: new FormData(formEl)
 										});
 										return;
 									}
 									e.preventDefault();
-									res(self.value());
+									res({
+										value: self.value(),
+										form,
+									});
 									modal.hide();
 								};
 
 								// console.log('Adding submit listener');
 
-								el.addEventListener('submit', submit);
-								self.eventListeners.push({ element: el, type: 'submit', listener: submit });
-								form = el;
+								formEl.addEventListener('submit', submit);
+								self.eventListeners.push({ element: formEl, type: 'submit', listener: submit });
+								form = formEl;
 								return () => self.destroy();
 							}
 						})),
@@ -400,7 +407,10 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 									if (config.send) {
 										form?.submit();
 									}
-									res(self.value());
+									res({
+										value: self.value(),
+										form,
+									});
 									modal.hide();
 								}
 							},

@@ -42,7 +42,13 @@ export const load = async (event) => {
 		}
 	}
 
-	if (event.url.pathname !== '/account/sign-in' && event.url.pathname !== '/account/sign-up') {
+	if (![
+		'/account/sign-in',
+		'/account/sign-up',
+	].includes(event.url.pathname) && 
+	!event.url.pathname.includes('/account/password-reset') &&
+	!event.url.pathname.includes('/status')
+) {
 		session.value.update({
 			prevUrl: event.url.pathname,
 			requests: session.value.data.requests + 1

@@ -109,6 +109,7 @@ export const actions = {
 	'request-password-reset': async (event) => {
 		const formdata = await event.request.formData();
 		const user = z.string().safeParse(formdata.get('user'));
+		terminal.log(user);
 		const exit = () => ({
 			redirect: '/account/password-reset',
 		})
