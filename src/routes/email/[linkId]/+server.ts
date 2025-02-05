@@ -9,7 +9,7 @@ export const GET = async (event) => {
 	}
 
 	if (!link.value) {
-		throw redirect(ServerCode.permanentRedirect, '/404');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?url=${event.request.url}`);
 	}
 
 	if (link.value.data.expires !== 'never' && new Date(link.value.data.expires) < new Date()) {

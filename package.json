@@ -102,7 +102,8 @@
 		"fuzzy-search": "^3.2.1",
 		"google-auth-library": "^9.15.0",
 		"googleapis": "^144.0.0",
-		"html-constructor": "git+https://github.com/tsaxking/html-constructor.git",
+		"html-constructor": "github:tsaxking/html-constructor",
+		"http-status-codes": "^2.3.0",
 		"math": "github:tsaxking/calculations",
 		"mjml": "^4.15.3",
 		"multiparty": "^4.2.3",
@@ -116,5 +117,18 @@
 		"vite-node": "^3.0.4",
 		"yaml": "^2.7.0",
 		"zod": "^3.24.1"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": [
+			"@sveltejs/kit",
+			"colors",
+			"drizzle-struct",
+			"esbuild",
+			"html-constructor",
+			"math",
+			"svelte-preprocess",
+			"ts-utils",
+			"html-constructor"
+		]
 	}
 }

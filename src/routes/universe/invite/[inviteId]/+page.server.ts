@@ -8,7 +8,7 @@ export const load = async (event) => {
 		throw fail(ServerCode.internalServerError);
 	}
 
-	if (!invite.value) throw redirect(ServerCode.permanentRedirect, '/404');
+	if (!invite.value) throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 
 	const universe = await Universes.Universe.fromId(invite.value.data.universeId);
 
@@ -16,7 +16,7 @@ export const load = async (event) => {
 		throw fail(ServerCode.internalServerError);
 	}
 
-	if (!universe.value) throw redirect(ServerCode.permanentRedirect, '/404');
+	if (!universe.value) throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 
 	return {
 		invite: invite.value.safe(),
@@ -39,7 +39,7 @@ export const actions = {
 
 			await invite.value.delete();
 		} else {
-			throw redirect(ServerCode.permanentRedirect, '/404');
+			throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 		}
 	},
 	decline: async (event) => {
