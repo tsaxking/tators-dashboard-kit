@@ -6,7 +6,9 @@ export default defineConfig({
 	optimizeDeps: {
 		include: ['ts-utils/**', 'drizzle-struct/**']
 	},
-	plugins: [sveltekit()],
+	plugins: [
+		sveltekit(), 
+	],
 
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
@@ -16,6 +18,6 @@ export default defineConfig({
 		noExternal: ['node-html-parser']
 	},
 	server: {
-		port: Number(process.env.PORT) || 5173
+		port: Number(process.env.PORT) || 5173,
 	}
 });
