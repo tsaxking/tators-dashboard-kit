@@ -6,7 +6,7 @@
 	"scripts": {
 		"cli": "npx vite-node ./src/lib/server/cli/index.ts",
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && pnpm build:email",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -23,7 +23,8 @@
 		"debug": "vite --debug",
 		"fix-readme": "pnpm script fix-readme.ts",
 		"script": "npx vite-node ./scripts/index.ts",
-		"check:system": "pnpm run lint && pnpm run check && pnpm run test"
+		"check:system": "pnpm run lint && pnpm run check && pnpm run test",
+		"build:email": "pnpm script mjml-batch"
 	},
 	"devDependencies": {
 		"@chromatic-com/storybook": "^3.2.3",
@@ -46,6 +47,7 @@
 		"@types/fuzzy-search": "^2.1.5",
 		"@types/multiparty": "^4.2.1",
 		"@types/node": "^22.10.4",
+		"@types/nodemailer": "^6.4.17",
 		"@types/pg": "^8.11.11",
 		"@types/uuid": "^10.0.0",
 		"concurrently": "^9.1.2",
@@ -70,6 +72,7 @@
 	"dependencies": {
 		"@esbuild-kit/esm-loader": "^2.6.5",
 		"@inquirer/prompts": "^7.2.1",
+		"@neoxia-js/nodemailer-sendgrid-transport": "^0.1.1",
 		"@node-rs/argon2": "^1.8.3",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
@@ -97,8 +100,11 @@
 		"fuzzy-search": "^3.2.1",
 		"google-auth-library": "^9.15.0",
 		"googleapis": "^144.0.0",
+		"html-constructor": "git+https://github.com/tsaxking/html-constructor.git",
 		"math": "github:tsaxking/calculations",
+		"mjml": "^4.15.3",
 		"multiparty": "^4.2.3",
+		"nodemailer": "^6.10.0",
 		"pg": "^8.13.1",
 		"postgres": "^3.4.5",
 		"proper-lockfile": "^4.1.2",

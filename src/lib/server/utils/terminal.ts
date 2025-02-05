@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
 const { LOG, LOG_FILE } = process.env;
-console.log({ LOG, LOG_FILE });
+
 const doLog = ['true', 'y', 'yes', 't'].includes(LOG?.toLowerCase() || 'false');
 
 const getCallsite = () => {
@@ -10,7 +10,11 @@ const getCallsite = () => {
     if (!stack) {
         return '';
     }
-    return stack.split('\n')[3].trim().slice(3);
+    const [fn, ...location] =  stack.split('\n')[3].trim().slice(3).split(' ');
+    if (fn.includes('/')) {
+        return `/${path.relative(process.cwd(), [fn, ...location].join(' ').replace(/\)|\(/g, ''))}`;
+    }
+    return `${fn} /${path.relative(process.cwd(), location.join(' ').replace(/\)|\(/g, ''))}`;
 };
 
 export const save = (callsite: string, type: string, ...args: unknown[]) => {
@@ -32,7 +36,7 @@ export const log = (...args: unknown[]) => {
         ...args,
     );
 
-    save(callsite, 'LOG', ...args);
+    return save(callsite, 'LOG', ...args);
 };
 
 
@@ -45,7 +49,7 @@ export const error = (...args: unknown[]) => {
         ...args,
     );
 
-    save(callsite, 'ERROR', ...args);
+    return save(callsite, 'ERROR', ...args);
 };
 
 
@@ -58,7 +62,7 @@ export const warn = (...args: unknown[]) => {
         ...args,
     );
 
-    save(callsite, 'WARN', ...args);
+    return save(callsite, 'WARN', ...args);
 };
 
 export default {
