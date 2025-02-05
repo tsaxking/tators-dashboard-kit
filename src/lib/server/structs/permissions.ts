@@ -321,7 +321,7 @@ export namespace Permissions {
 							'universe',
 							'lifetime',
 							'attributes',
-							'canUpdate',
+							'canUpdate'
 						)
 						.filter((v, i, a) => a.indexOf(v) === i);
 					if (properties.includes('*')) {

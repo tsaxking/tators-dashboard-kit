@@ -1,5 +1,6 @@
 import { writable, type Subscriber, type Unsubscriber, type Writable } from 'svelte/store';
 import { attempt } from 'ts-utils/check';
+import { z } from 'zod';
 
 export namespace Dashboard {
 	type CardData = {
@@ -106,7 +107,12 @@ export namespace Dashboard {
 		return attempt(() => {
 			const hidden = localStorage.getItem(`dashboard-cards-${location.pathname}`);
 			if (!hidden) return new Set<string>();
-			return new Set(JSON.parse(hidden));
+			const arr = z.array(z.string()).safeParse(JSON.parse(hidden));
+			if (!arr.success) {
+				console.error(arr.error);
+				return new Set();
+			}
+			return new Set(arr.data);
 		});
 	};
 }
