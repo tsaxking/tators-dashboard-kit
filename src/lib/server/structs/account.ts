@@ -182,20 +182,23 @@ export namespace Account {
 
 	Settings.bypass('*', (account, setting) => account.id === setting?.accountId);
 
-	const PASSWORD_REQUEST_LIFETIME = parseInt(String(process.env.PASSWORD_REQUEST_LIFETIME)) || 1000 * 60 * 30;
+	const PASSWORD_REQUEST_LIFETIME =
+		parseInt(String(process.env.PASSWORD_REQUEST_LIFETIME)) || 1000 * 60 * 30;
 
 	export const PasswordReset = new Struct({
 		name: 'password_reset',
 		structure: {
 			accountId: text('account_id').notNull(),
-			expires: text('expires').notNull(),
+			expires: text('expires').notNull()
 		},
 		lifetime: PASSWORD_REQUEST_LIFETIME,
 		validators: {
-			expires: (e) => new Date(String(e)).toString() !== 'Invalid Date' && new Date(String(e)).getTime() > Date.now(),
+			expires: (e) =>
+				new Date(String(e)).toString() !== 'Invalid Date' &&
+				new Date(String(e)).getTime() > Date.now()
 		},
 		generators: {
-			expires: (): string => new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString(),
+			expires: (): string => new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString()
 		}
 	});
 
@@ -341,40 +344,45 @@ export namespace Account {
 	export const requestPasswordReset = async (account: AccountData) => {
 		return attemptAsync(async () => {
 			PasswordReset.fromProperty('accountId', account.id, {
-				type: 'stream',
-			}).pipe(pr => pr.delete());
+				type: 'stream'
+			}).pipe((pr) => pr.delete());
 
-			const pr = (await PasswordReset.new({
-				expires: new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString(), // gets overwritten by generator
-				accountId: account.id,
-			})).unwrap();
+			const pr = (
+				await PasswordReset.new({
+					expires: new Date(Date.now() + PASSWORD_REQUEST_LIFETIME).toISOString(), // gets overwritten by generator
+					accountId: account.id
+				})
+			).unwrap();
 
-			const link = (await Email.createLink(
-				`/account/password-reset/${pr.id}`,
-				new Date(pr.data.expires),
-			)).unwrap();
+			const link = (
+				await Email.createLink(`/account/password-reset/${pr.id}`, new Date(pr.data.expires))
+			).unwrap();
 
 			const email = account.data.email;
 
-			(await Email.send({
-				type: 'forgot-password',
-				to: email,
-				data: {
-					link,
-					supportEmail: process.env.SUPPORT_EMAIL || '',
-				},
-				subject: 'Password Reset Request',
-			})).unwrap();
+			(
+				await Email.send({
+					type: 'forgot-password',
+					to: email,
+					data: {
+						link,
+						supportEmail: process.env.SUPPORT_EMAIL || ''
+					},
+					subject: 'Password Reset Request'
+				})
+			).unwrap();
 
-			(await sendAccountNotif(account.id, {
-				title: 'Password Reset Request',
-				message: 'A password reset link has been sent to your email',
-				severity: 'warning',
-				icon: 'info',
-				link: '',
-			})).unwrap();
+			(
+				await sendAccountNotif(account.id, {
+					title: 'Password Reset Request',
+					message: 'A password reset link has been sent to your email',
+					severity: 'warning',
+					icon: 'info',
+					link: ''
+				})
+			).unwrap();
 		});
-	}
+	};
 }
 
 // for drizzle

@@ -6,143 +6,114 @@ import { z } from 'zod';
 import { passwordStrength } from 'check-password-strength';
 
 export const load = async (event) => {
-    const pr = await Account.PasswordReset.fromId(event.params.id);
+	const pr = await Account.PasswordReset.fromId(event.params.id);
 
-    if (pr.isErr()) {
-        terminal.error(pr.error);
-        throw fail(
-            ServerCode.internalServerError,
-        );
-    }
+	if (pr.isErr()) {
+		terminal.error(pr.error);
+		throw fail(ServerCode.internalServerError);
+	}
 
-    if (!pr.value) {
-        terminal.log('No password reset found');
-        throw redirect(
-            ServerCode.permanentRedirect,
-            `/status/404?url=${event.request.url}`,
-        );
-    }
+	if (!pr.value) {
+		terminal.log('No password reset found');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?url=${event.request.url}`);
+	}
 
-    if (new Date(pr.value.data.expires) < new Date()) {
-        terminal.log('Password reset expired');
-        throw redirect(
-            ServerCode.permanentRedirect,
-            `/status/404?url=${event.request.url}`,
-        );
-    }
+	if (new Date(pr.value.data.expires) < new Date()) {
+		terminal.log('Password reset expired');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?url=${event.request.url}`);
+	}
 
-    const account = await Account.Account.fromId(pr.value.data.accountId);
-    if (account.isErr()) {
-        terminal.error(account.error);
-        throw fail(
-            ServerCode.internalServerError,
-        );
-    }
+	const account = await Account.Account.fromId(pr.value.data.accountId);
+	if (account.isErr()) {
+		terminal.error(account.error);
+		throw fail(ServerCode.internalServerError);
+	}
 
-    if (!account.value) {
-        terminal.log('No account found');
-        throw redirect(
-            ServerCode.permanentRedirect,
-            `/status/404?url=${event.request.url}`,
-        );
-    }
+	if (!account.value) {
+		terminal.log('No account found');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?url=${event.request.url}`);
+	}
 
-    return {
-        account: account.value.data.username,
-    }
+	return {
+		account: account.value.data.username
+	};
 };
 
 export const actions = {
-    reset: async (event) => {
-        const pr = await Account.PasswordReset.fromId(event.params.id);
+	reset: async (event) => {
+		const pr = await Account.PasswordReset.fromId(event.params.id);
 
-        const notFound = () => redirect(
-            ServerCode.seeOther,
-            `/status/404?url=${event.request.url}`,
-        );
+		const notFound = () => redirect(ServerCode.seeOther, `/status/404?url=${event.request.url}`);
 
-        if (pr.isErr()) {
-            terminal.error(pr.error);
-            throw fail(
-                ServerCode.internalServerError,
-            );
-        }
-    
-        if (!pr.value) {
-            terminal.log('No password reset found');
-            throw notFound();
-        }
-    
-        if (new Date(pr.value.data.expires) < new Date()) {
-            terminal.log('Password reset expired');
-            throw notFound();
-        }
-    
-        const account = await Account.Account.fromId(pr.value.data.accountId);
-        if (account.isErr()) {
-            terminal.error(account.error);
-            throw fail(
-                ServerCode.internalServerError,
-            );
-        }
-    
-        if (!account.value) {
-            terminal.log('No account found');
-            throw notFound();
-        }
+		if (pr.isErr()) {
+			terminal.error(pr.error);
+			throw fail(ServerCode.internalServerError);
+		}
 
-        const body = await event.request.formData();
-        const password = z.string().safeParse(body.get('password'));
-        const confirmPassword = z.string().safeParse(body.get('confirmPassword'));
+		if (!pr.value) {
+			terminal.log('No password reset found');
+			throw notFound();
+		}
 
-        if (password.success && confirmPassword.success) {
-            if (password.data !== confirmPassword.data) {
-                terminal.log('Passwords do not match');
-                return {
-                    message: 'Passwords do not match',
-                }
-            }
+		if (new Date(pr.value.data.expires) < new Date()) {
+			terminal.log('Password reset expired');
+			throw notFound();
+		}
 
-            if (passwordStrength(password.data).id < 2) {
-                terminal.log('Password is not strong enough');
+		const account = await Account.Account.fromId(pr.value.data.accountId);
+		if (account.isErr()) {
+			terminal.error(account.error);
+			throw fail(ServerCode.internalServerError);
+		}
+
+		if (!account.value) {
+			terminal.log('No account found');
+			throw notFound();
+		}
+
+		const body = await event.request.formData();
+		const password = z.string().safeParse(body.get('password'));
+		const confirmPassword = z.string().safeParse(body.get('confirmPassword'));
+
+		if (password.success && confirmPassword.success) {
+			if (password.data !== confirmPassword.data) {
+				terminal.log('Passwords do not match');
 				return {
-					message:
-						'Password is not strong enough. Please include at least one uppercase letter, one lowercase letter, one number, and one special character, with a minimum length of 8 characters.',
+					message: 'Passwords do not match'
 				};
 			}
 
-            const hash = Account.newHash(password.data);
-            if (hash.isErr()) {
-                terminal.error(hash.error);
-                throw fail(
-                    ServerCode.internalServerError,
-                );
-            }
+			if (passwordStrength(password.data).id < 2) {
+				terminal.log('Password is not strong enough');
+				return {
+					message:
+						'Password is not strong enough. Please include at least one uppercase letter, one lowercase letter, one number, and one special character, with a minimum length of 8 characters.'
+				};
+			}
 
-            const res = await account.value.update({
-                key: hash.value.hash,
-                salt: hash.value.salt,
-            });
+			const hash = Account.newHash(password.data);
+			if (hash.isErr()) {
+				terminal.error(hash.error);
+				throw fail(ServerCode.internalServerError);
+			}
 
-            if (res.isErr()) {
-                terminal.error(res.error);
-                throw fail(
-                    ServerCode.internalServerError,
-                );
-            }
+			const res = await account.value.update({
+				key: hash.value.hash,
+				salt: hash.value.salt
+			});
 
-            await pr.value.delete();
+			if (res.isErr()) {
+				terminal.error(res.error);
+				throw fail(ServerCode.internalServerError);
+			}
 
-            terminal.log('Password reset successful');
+			await pr.value.delete();
 
-            throw redirect(
-                ServerCode.seeOther,
-                '/account/sign-in',
-            );
-        }
+			terminal.log('Password reset successful');
 
-        throw fail(
-            ServerCode.badRequest,
-        );
-    }
-}
+			throw redirect(ServerCode.seeOther, '/account/sign-in');
+		}
+
+		throw fail(ServerCode.badRequest);
+	}
+};

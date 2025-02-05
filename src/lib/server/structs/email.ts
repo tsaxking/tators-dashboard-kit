@@ -39,7 +39,9 @@ export namespace Email {
 				? 'https://'
 				: 'http://';
 
-			return protocol + PUBLIC_DOMAIN + '/email/' + l.id;
+			const domain = PUBLIC_DOMAIN?.includes('localhost') ? 'localhost' + ':' + process.env.PORT : PUBLIC_DOMAIN;
+
+			return protocol + domain + '/email/' + l.id;
 		});
 	};
 

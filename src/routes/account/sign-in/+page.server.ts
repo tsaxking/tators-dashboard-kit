@@ -111,8 +111,8 @@ export const actions = {
 		const user = z.string().safeParse(formdata.get('user'));
 		terminal.log(user);
 		const exit = () => ({
-			redirect: '/account/password-reset',
-		})
+			redirect: '/account/password-reset'
+		});
 		if (!user.success) {
 			terminal.error(user.error);
 			return exit();
@@ -143,5 +143,5 @@ export const actions = {
 		}
 
 		return exit();
-	},
+	}
 };

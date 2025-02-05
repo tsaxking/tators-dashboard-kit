@@ -70,8 +70,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 		public readonly action?: string,
 		public readonly method?: 'POST' | 'GET',
 		public readonly inputs: T = {} as T
-	) {
-	}
+	) {}
 
 	input<Name extends string, I extends keyof Inputs>(
 		name: Name,
@@ -315,7 +314,10 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 			clearModals();
 			let form: HTMLFormElement;
 			let sent = false;
-			return new Promise<{value: { [key in keyof T]: InputReturnType<T[key]['type']> }; form: HTMLFormElement; }>((res, rej) => {
+			return new Promise<{
+				value: { [key in keyof T]: InputReturnType<T[key]['type']> };
+				form: HTMLFormElement;
+			}>((res, rej) => {
 				if (!modalTarget) return rej('Modal target not found, likely not in the DOM environment');
 				const modal = mount(Modal, {
 					target: modalTarget,
@@ -386,7 +388,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 									e.preventDefault();
 									res({
 										value: self.value(),
-										form,
+										form
 									});
 									modal.hide();
 								};
@@ -409,7 +411,7 @@ export class Form<T extends { [key: string]: Input<keyof Inputs> }> {
 									}
 									res({
 										value: self.value(),
-										form,
+										form
 									});
 									modal.hide();
 								}

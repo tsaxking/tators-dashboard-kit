@@ -16,32 +16,28 @@
 	}
 
 	const requestPasswordReset = () => {
-		new Form(
+		new Form()
 			// '/account/sign-in?/request-password-reset',
 			// 'POST',
-		)
 			.input('user', {
 				type: 'text',
 				placeholder: 'Username or Email',
 				label: 'Username or Email',
-				required: true,
+				required: true
 			})
 			.prompt({
 				title: 'Request Password Reset',
-				send: false,
+				send: false
 			})
-			.then(val => {
+			.then((val) => {
 				if (val.isErr()) {
 					return console.error(val.error);
 				}
 
-				fetch(
-					'/account/sign-in?/request-password-reset',
-					{
-						method: 'POST',
-						body: new FormData(val.value.form),
-					},
-				)
+				fetch('/account/sign-in?/request-password-reset', {
+					method: 'POST',
+					body: new FormData(val.value.form)
+				});
 			});
 	};
 </script>
