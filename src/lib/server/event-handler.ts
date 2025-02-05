@@ -15,6 +15,7 @@ import { Session } from './structs/session';
 import { Permissions } from './structs/permissions';
 import { encode } from 'ts-utils/text';
 import { sse } from '$lib/server/utils/sse';
+import { z } from 'zod';
 
 export const handleEvent =
 	(struct: Struct) =>
@@ -68,9 +69,15 @@ export const handleEvent =
 		};
 
 		if (event.action === DataAction.ReadVersionHistory) {
-			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError(struct, 'Missing ReadVersionHistory id'));
-			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+			const parsed = z
+				.object({
+					id: z.string()
+				})
+				.safeParse(event.data);
+
+			if (!parsed.success) return error(new DataError(struct, 'Invalid data'));
+
+			const data = (await struct.fromId(String(parsed.data.id))).unwrap();
 			if (!data) return error(new DataError(struct, 'Data not found'));
 			const history = (await data.getVersions()).unwrap();
 			return new Response(
@@ -83,15 +90,17 @@ export const handleEvent =
 		}
 
 		if (event.action === DataAction.DeleteVersion) {
-			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError(struct, 'Missing DeleteVersion id'));
-			if (!Object.hasOwn(event.data as any, 'vhId'))
-				return error(new DataError(struct, 'Missing DeleteVersion version'));
-			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+			const parsed = z
+				.object({
+					id: z.string(),
+					vhId: z.string()
+				})
+				.safeParse(event.data);
+			if (!parsed.success) return error(new DataError(struct, 'Invalid data'));
+
+			const data = (await struct.fromId(String(parsed.data.id))).unwrap();
 			if (!data) return error(new DataError(struct, 'Data not found'));
-			const version = (await data.getVersions())
-				.unwrap()
-				.find((v) => v.vhId === (event.data as any).vhId);
+			const version = (await data.getVersions()).unwrap().find((v) => v.vhId === parsed.data.vhId);
 			if (!version) return error(new DataError(struct, 'Version not found'));
 
 			(await version.delete()).unwrap();
@@ -105,15 +114,17 @@ export const handleEvent =
 		}
 
 		if (event.action === DataAction.RestoreVersion) {
-			if (!Object.hasOwn(event.data as any, 'id'))
-				return error(new DataError(struct, 'Missing RestoreVersion id'));
-			if (!Object.hasOwn(event.data as any, 'vhId'))
-				return error(new DataError(struct, 'Missing RestoreVersion version'));
-			const data = (await struct.fromId(String((event.data as any).id))).unwrap();
+			const parsed = z
+				.object({
+					id: z.string(),
+					vhId: z.string()
+				})
+				.safeParse(event.data);
+
+			if (!parsed.success) return error(new DataError(struct, 'Invalid data'));
+			const data = (await struct.fromId(String(parsed.data.id))).unwrap();
 			if (!data) return error(new DataError(struct, 'Data not found'));
-			const versions = (await data.getVersions())
-				.unwrap()
-				.find((v) => v.vhId === (event.data as any).vhId);
+			const versions = (await data.getVersions()).unwrap().find((v) => v.vhId === parsed.data.vhId);
 			if (!versions) return error(new DataError(struct, 'Version not found'));
 			const res = await versions.restore();
 			if (res.isErr()) return error(res.error);
@@ -127,14 +138,14 @@ export const handleEvent =
 		}
 
 		if (event.action === PropertyAction.Read) {
-			if (!Object.hasOwn(event.data as any, 'type'))
-				return error(new DataError(struct, 'Missing Read type'));
-			if (
-				(event.data as any).type !== 'all' &&
-				(event.data as any).type !== 'archived' &&
-				!Object.hasOwn(event.data as any, 'args')
-			)
-				return error(new DataError(struct, 'Missing Read args'));
+			const parsed = z
+				.object({
+					type: z.string(),
+					args: z.unknown().optional()
+				})
+				.safeParse(event.data);
+
+			if (!parsed.success) return error(new DataError(struct, 'Invalid data'));
 
 			let streamer: StructStream<typeof struct.data.structure, typeof struct.data.name>;
 			const type = (event.data as any).type as
@@ -158,7 +169,13 @@ export const handleEvent =
 					if (!Object.hasOwn((event.data as any).args, 'id'))
 						return error(new DataError(struct, 'Missing Read id'));
 					{
-						const data = (await struct.fromId((event.data as any).args.id)).unwrap();
+						const safe = z
+							.object({
+								id: z.string()
+							})
+							.safeParse(parsed.data.args);
+						if (!safe.success) return error(new DataError(struct, 'Invalid Read id'));
+						const data = (await struct.fromId(safe.data.id)).unwrap();
 						if (!data) return error(new DataError(struct, 'Data not found'));
 						return new Response(
 							JSON.stringify({
@@ -169,27 +186,32 @@ export const handleEvent =
 						);
 					}
 				case 'property':
-					if (!Object.hasOwn((event.data as any).args, 'key'))
-						return error(new DataError(struct, 'Missing Read key'));
-					if (!Object.hasOwn((event.data as any).args, 'value'))
-						return error(new DataError(struct, 'Missing Read value'));
-					streamer = struct.fromProperty(
-						(event.data as any).args.key,
-						(event.data as any).args.value,
-						{
+					{
+						const safe = z
+							.object({
+								key: z.string(),
+								value: z.string()
+							})
+							.safeParse(parsed.data.args);
+						if (!safe.success) return error(new DataError(struct, 'Invalid Read property'));
+						streamer = struct.fromProperty(safe.data.key, safe.data.value, {
 							type: 'stream'
-						}
-					);
+						});
+					}
 					break;
 				case 'universe':
-					if (!Object.hasOwn((event.data as any).args, 'universe'))
-						return error(new DataError(struct, 'Missing Read universe'));
-					// streamer = struct.fromUniverse((event.data as any).args.universe, {
-					// 	type: 'stream'
-					// });
-					streamer = struct.fromProperty('universe', (event.data as any).args.universe, {
-						type: 'stream'
-					});
+					{
+						const safe = z
+							.object({
+								universe: z.string()
+							})
+							.safeParse(parsed.data.args);
+
+						if (!safe.success) return error(new DataError(struct, 'Invalid Read universe'));
+						streamer = struct.fromProperty('universe', safe.data.universe, {
+							type: 'stream'
+						});
+					}
 					break;
 				default:
 					return error(new DataError(struct, 'Invalid Read type'));
@@ -273,7 +295,7 @@ export const handleEvent =
 				});
 				if (!validateRes.success)
 					return error(new DataError(struct, `Invalid data: ${validateRes.reason}`));
-
+				// no need for zod validation, as it's already done in struct.validate
 				const created = (await struct.new(event.data as any)).unwrap();
 
 				const universe = event.request.request.headers.get('universe');
@@ -316,6 +338,7 @@ export const handleEvent =
 				}
 			}
 
+			// this is all that's necessary. I don't want to zod validate with an unknown schema
 			if (!Object.hasOwn(event.data as any, 'id'))
 				return error(new DataError(struct, 'Missing id'));
 
@@ -347,11 +370,15 @@ export const handleEvent =
 
 		if (event.action === DataAction.Archive) {
 			const archive = async () => {
-				if (!Object.hasOwn(event.data as any, 'id'))
-					return error(new DataError(struct, 'Missing id'));
+				const safe = z
+					.object({
+						id: z.string()
+					})
+					.safeParse(event.data);
 
-				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
-				const found = (await struct.fromId(String(data.id))).unwrap();
+				if (!safe.success) return error(new DataError(struct, 'Invalid data'));
+
+				const found = (await struct.fromId(String(safe.data.id))).unwrap();
 				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				(await found.setArchive(true)).unwrap();
@@ -371,11 +398,15 @@ export const handleEvent =
 
 		if (event.action === DataAction.Delete) {
 			const remove = async () => {
-				if (!Object.hasOwn(event.data as any, 'id'))
-					return error(new DataError(struct, 'Missing id'));
+				const safe = z
+					.object({
+						id: z.string()
+					})
+					.safeParse(event.data);
 
-				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
-				const found = (await struct.fromId(String(data.id))).unwrap();
+				if (!safe.success) return error(new DataError(struct, 'Invalid data'));
+
+				const found = (await struct.fromId(safe.data.id)).unwrap();
 				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				(await found.delete()).unwrap();
@@ -395,10 +426,15 @@ export const handleEvent =
 
 		if (event.action === DataAction.RestoreArchive) {
 			const restore = async () => {
-				if (!Object.hasOwn(event.data as any, 'id'))
-					return error(new DataError(struct, 'Missing id'));
-				const data = event.data as Structable<typeof struct.data.structure & typeof globalCols>;
-				const found = (await struct.fromId(String(data.id))).unwrap();
+				const safe = z
+					.object({
+						id: z.string()
+					})
+					.safeParse(event.data);
+
+				if (!safe.success) return error(new DataError(struct, 'Invalid data'));
+
+				const found = (await struct.fromId(safe.data.id)).unwrap();
 				if (!found) return error(new DataError(struct, 'Data not found'));
 
 				await found.setArchive(false);
