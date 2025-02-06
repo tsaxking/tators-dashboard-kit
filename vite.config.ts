@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
-
+import { config } from 'dotenv';
+config();
 export default defineConfig({
 	optimizeDeps: {
 		include: ['ts-utils/**', 'drizzle-struct/**']
@@ -8,9 +9,13 @@ export default defineConfig({
 	plugins: [sveltekit()],
 
 	test: {
-		include: ['src/**/*.{test,spec}.{js,ts}']
+		include: ['src/**/*.{test,spec}.{js,ts}'],
+		watch: process.argv.includes('watch')
+	},
+	ssr: {
+		noExternal: ['node-html-parser']
 	},
 	server: {
-		port: 2122,
+		port: Number(process.env.PORT) || 5173
 	}
 });

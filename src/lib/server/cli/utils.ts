@@ -3,6 +3,7 @@ import * as inquirer from '@inquirer/prompts';
 import FuzzySearch from 'fuzzy-search';
 import Table from 'cli-table';
 import { Colors } from './colors';
+import terminal from '../utils/terminal';
 
 type GlobalConfig = {
 	message: string;
@@ -166,7 +167,7 @@ export const selectFromTable = async <T extends Record<string, unknown>>(
 			new Promise<number | undefined>((res) => {
 				if (config.clear) console.clear();
 				if (!config.options.length) {
-					console.log('No options available');
+					terminal.log('No options available');
 					return res(undefined);
 				}
 
@@ -183,7 +184,7 @@ export const selectFromTable = async <T extends Record<string, unknown>>(
 
 				const run = (selected: number) => {
 					console.clear();
-					console.log(config.message);
+					terminal.log(config.message);
 					const t = new Table({
 						head: headers
 					});
@@ -199,7 +200,7 @@ export const selectFromTable = async <T extends Record<string, unknown>>(
 						)
 					);
 
-					console.log(t.toString());
+					terminal.log(t.toString());
 
 					stdin.on('data', handleKey);
 				};
@@ -276,10 +277,10 @@ export class Folder {
 				try {
 					(await selected()).unwrap();
 				} catch (error) {
-					console.error(error);
+					terminal.error(error);
 				}
 			} else {
-				console.log('Cancelled');
+				terminal.log('Cancelled');
 			}
 
 			return;
@@ -288,8 +289,8 @@ export class Folder {
 
 	get exit() {
 		return new Action('Exit', 'Exit the CLI', '🚪', () => {
-			console.log('Exiting CLI');
-			console.log('Goodbye!');
+			terminal.log('Exiting CLI');
+			terminal.log('Goodbye!');
 			process.exit(0);
 		});
 	}

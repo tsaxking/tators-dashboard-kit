@@ -1,9 +1,10 @@
 import { FileReceiver } from '$lib/server/utils/files.js';
 import { error } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
+import terminal from '$lib/server/utils/terminal';
 
 export const POST = async (event) => {
-	console.log('Received file upload request');
+	terminal.log('Received file upload request');
 
 	const fr = new FileReceiver({
 		maxFiles: 1,
@@ -12,7 +13,7 @@ export const POST = async (event) => {
 
 	const res = await fr.receive(event);
 	if (res.isErr()) {
-		console.error(res.error);
+		terminal.error(res.error);
 		return error(ServerCode.internalServerError, 'Failed to receive file');
 	}
 

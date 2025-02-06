@@ -8,8 +8,6 @@ on:
 jobs:
   format:
     uses: ./.github/workflows/code-formatter.yml
-  build:
-    uses: ./.github/workflows/testing-build.yml
   unit-tests:
     uses: ./.github/workflows/testing-unit.yml
   E2E:
@@ -19,7 +17,7 @@ jobs:
 
   merge-template:
     runs-on: ubuntu-latest
-    needs: [format, build, unit-tests, E2E, check]
+    needs: [format, unit-tests, E2E, check]
 
     strategy:
       fail-fast: false

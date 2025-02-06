@@ -1,58 +1,66 @@
 import { integer } from 'drizzle-orm/pg-core';
 import { text } from 'drizzle-orm/pg-core';
 import { Struct } from 'drizzle-struct/back-end';
+import { createEntitlement } from '../utils/entitlements';
 
 export namespace Checklist {
-    export const Checklists = new Struct({
-        name: 'checklists',
-        structure: {
-            name: text('name').notNull(),
-            eventKey: text('event_key').notNull(),
-            description: text('description').notNull(),
-        },
-        generators: {
-            universe: () => '2122',
-        }
-    });
+	export const Checklists = new Struct({
+		name: 'checklists',
+		structure: {
+			name: text('name').notNull(),
+			eventKey: text('event_key').notNull(),
+			description: text('description').notNull()
+		},
+		generators: {
+			universe: () => '2122'
+		}
+	});
 
+	export const Questions = new Struct({
+		name: 'checklist_questions',
+		structure: {
+			checklistId: text('checklist_id').notNull(),
+			question: text('question').notNull(),
+			interval: integer('interval').notNull() // number of matches between
+		},
+		generators: {
+			universe: () => '2122'
+		}
+	});
 
-    export const Questions = new Struct({
-        name: 'checklist_questions',
-        structure: {
-            checklistId: text('checklist_id').notNull(),
-            question: text('question').notNull(),
-            interval: integer('interval').notNull(), // number of matches between
-        },
-        generators: {
-            universe: () => '2122',
-        }
-    });
+	export const Assignments = new Struct({
+		name: 'checklist_assignments',
+		structure: {
+			questionId: text('question_id').notNull(),
+			accountId: text('account_id').notNull()
+		},
+		generators: {
+			universe: () => '2122'
+		}
+	});
 
+	export const Answers = new Struct({
+		name: 'checklist_answers',
+		structure: {
+			accountId: text('account_id').notNull(),
+			questionId: text('question_id').notNull(),
+			matchId: text('match_id').notNull()
+		},
+		generators: {
+			universe: () => '2122'
+		}
+	});
 
-    export const Assignments = new Struct({
-        name: 'checklist_assignments',
-        structure: {
-            questionId: text('question_id').notNull(),
-            accountId: text('account_id').notNull(),
-        },
-        generators: {
-            universe: () => '2122',
-        }
-    });
+	createEntitlement({
+		name: 'view-checklist',
+		struct: Checklists,
+		pemissions: [
+		]
+	});
 
-    export const Answers = new Struct({
-        name: 'checklist_answers',
-        structure: {
-            accountId: text('account_id').notNull(),
-            questionId: text('question_id').notNull(),
-            matchId: text('match_id').notNull(),
-        },
-        generators: {
-            universe: () => '2122',
-        }
-    });
+	createEntitlement({
+	});
 }
-
 
 export const _checklistTable = Checklist.Checklists.table;
 export const _checklistQuestionsTable = Checklist.Questions.table;

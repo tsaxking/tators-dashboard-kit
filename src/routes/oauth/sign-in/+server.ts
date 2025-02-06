@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { google } from 'googleapis';
 import { ServerCode } from 'ts-utils/status';
 
-const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
+// const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
 
 export const GET = async (event) => {
 	const code = event.url.searchParams.get('code');

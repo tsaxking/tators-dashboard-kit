@@ -1,4 +1,5 @@
 @use 'sass:color';
+@import 'bootstrap/dist/css/bootstrap.min.css';
 
 $colors: (
 	primary: #007bff,
@@ -28,6 +29,8 @@ $colors: (
 		--#{$color}-transparent: rgba($value, 0);
 		--#{$color}-light: lighten($value, $lighten-percentage);
 		--#{$color}-dark: darken($value, $darken-percentage);
+
+		--bg-#{$color}: var(--#{$color});
 
 		.bg-#{$color} {
 			background-color: var(--#{$color});

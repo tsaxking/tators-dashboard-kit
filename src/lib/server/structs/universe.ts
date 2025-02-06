@@ -22,24 +22,26 @@ export namespace Universes {
 	Universe.on('build', async () => {
 		const exists = (await Universe.fromId('2122')).unwrap();
 		if (!exists) {
-			Universe.new({
-				id: '2122',
-				name: 'Team Tators',
-				description: 'Team Tators single universe',
-				public: false,
-				archived: false,
-				canUpdate: false,
-				lifetime: 0,
-				attributes: '[]',
-				universe: '2122',
-				updated: new Date().toISOString(),
-				created: new Date().toISOString(),
-			}, {
-				overwriteGlobals: true,
-			});
+			Universe.new(
+				{
+					id: '2122',
+					name: 'Team Tators',
+					description: 'Team Tators single universe',
+					public: false,
+					archived: false,
+					canUpdate: false,
+					lifetime: 0,
+					attributes: '[]',
+					universe: '2122',
+					updated: new Date().toISOString(),
+					created: new Date().toISOString()
+				},
+				{
+					overwriteGlobals: true
+				}
+			);
 		}
 	});
-
 
 	Universe.on('delete', (u) => {
 		Struct.each((s) => {
@@ -87,7 +89,7 @@ export namespace Universes {
 	export const UniverseInvite = new Struct({
 		name: 'universe_invite',
 		structure: {
-			universe: text('universe').notNull(),
+			universeId: text('universe_id').notNull(),
 			account: text('account').notNull(),
 			inviter: text('inviter').notNull()
 		}
@@ -188,7 +190,7 @@ export namespace Universes {
 		return attemptAsync(async () => {
 			const invite = (
 				await UniverseInvite.new({
-					universe: universe.id,
+					universeId: universe.id,
 					account: account.id,
 					inviter: inviter.id
 				})
@@ -308,17 +310,17 @@ export namespace Universes {
 		});
 	};
 
-	createEntitlement({
-		name: 'manage-universe',
-		struct: Universe,
-		permissions: ['*']
-	});
+	// createEntitlement({
+	// 	name: 'manage-universe',
+	// 	struct: Universe,
+	// 	permissions: ['*']
+	// });
 
-	createEntitlement({
-		name: 'view-universe',
-		struct: Universe,
-		permissions: ['read:name', 'read:description', 'read:public']
-	});
+	// createEntitlement({
+	// 	name: 'view-universe',
+	// 	struct: Universe,
+	// 	permissions: ['read:name', 'read:description', 'read:public']
+	// });
 }
 
 export const _universeTable = Universes.Universe.table;
