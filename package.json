@@ -93,7 +93,7 @@
 		"colors": "git+https://github.com/tsaxking/colors.git",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.38.3",
-		"drizzle-struct": "github:tsaxking/drizzle-struct",
+		"drizzle-struct": "github:tsaxking/drizzle-struct#2025-02-06-TK-UpdatePrevNewEmitter",
 		"drizzle-zod": "^0.6.1",
 		"filepond": "^4.32.7",
 		"filepond-plugin-image-crop": "^2.0.6",
