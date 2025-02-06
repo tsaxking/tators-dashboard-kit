@@ -7,10 +7,9 @@ import {
 	type TBAMatch as M,
 	teamsFromMatch
 } from 'tatorscout/tba';
-import { attemptAsync, resolveAll } from 'ts-utils/check';
+import { attemptAsync } from 'ts-utils/check';
 import { TBA } from '../structs/TBA';
 import { StructData } from 'drizzle-struct/back-end';
-import { string, z } from 'zod';
 
 export class Event {
 	public static getEvents(year: number) {
@@ -66,17 +65,6 @@ export class Event {
 				start_date: event.startDate.toISOString(),
 				end_date: event.endDate.toISOString(),
 				year: event.year,
-				event_code: '???',
-				event_type: 0,
-				district: {
-					abbreviation: '???',
-					display_name: '???',
-					key: '???',
-					year: event.year
-				},
-				city: '???',
-				state_prov: '???',
-				country: '???'
 			};
 
 			return (
