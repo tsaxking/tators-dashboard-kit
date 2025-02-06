@@ -16,6 +16,7 @@ import { Permissions } from './structs/permissions';
 import { encode } from 'ts-utils/text';
 import { sse } from '$lib/server/utils/sse';
 import { z } from 'zod';
+import terminal from '$lib/server/utils/terminal';
 
 export const handleEvent =
 	(struct: Struct) =>
@@ -462,8 +463,10 @@ export const connectionEmitter = (struct: Struct) => {
 		event: string,
 		data: StructData<typeof struct.data.structure, typeof struct.data.name>
 	) => {
+		// console.log(sse);
 		sse.each(async (connection) => {
 			if (struct.name === 'test') {
+				// terminal.log('Emitting: ', data.data);
 				connection.send(`struct:${struct.name}`, {
 					event,
 					data: data.data

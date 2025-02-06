@@ -55,7 +55,7 @@ export namespace Session {
 				).unwrap();
 
 				event.cookies.set('ssid', session.id, {
-					httpOnly: true,
+					httpOnly: false,
 					domain: PUBLIC_DOMAIN ?? '',
 					path: '/',
 					expires: new Date(Date.now() + parseInt(SESSION_DURATION ?? '0'))
