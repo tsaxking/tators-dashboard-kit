@@ -51,7 +51,7 @@ describe('Run tests on the Test Struct', () => {
 		let update = false;
 		T.on('update', (d) => {
 			if (update) return;
-			expect(d.data.age).toBe(21);
+			expect(d.to.data.age).toBe(21);
 			update = true;
 		});
 	});

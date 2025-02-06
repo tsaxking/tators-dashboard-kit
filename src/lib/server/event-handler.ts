@@ -518,7 +518,7 @@ export const connectionEmitter = (struct: Struct) => {
 	});
 
 	struct.on('update', (data) => {
-		emitToConnections('update', data);
+		emitToConnections('update', data.to);
 	});
 
 	struct.on('archive', (data) => {
