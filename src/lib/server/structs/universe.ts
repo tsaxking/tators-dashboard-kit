@@ -288,14 +288,17 @@ export namespace Universes {
 
 	createEntitlement({
 		name: 'manage-universe',
-		struct: Universe,
-		permissions: ['*']
+		structs: [Universe],
+		permissions: ['*'],
+		group: 'Universe'
 	});
 
 	createEntitlement({
 		name: 'view-universe',
-		struct: Universe,
-		permissions: ['read:name', 'read:description', 'read:public']
+		structs: [Universe],
+		// permissions: ['read:name', 'read:description', 'read:public']
+		permissions: ['universe:read:name', 'universe:read:description'],
+		group: 'Universe'
 	});
 }
 

@@ -1,4 +1,5 @@
 import { sse } from '$lib/server/utils/sse';
+import terminal from '$lib/server/utils/terminal';
 
 // setInterval(() => {
 // 	sse.send('ping', null);
@@ -7,7 +8,7 @@ import { sse } from '$lib/server/utils/sse';
 export async function GET(event) {
 	const res = await sse.connect(event);
 	if (res.isErr()) {
-		console.error(res.error);
+		terminal.error(res.error);
 		return new Response('Server Error', {
 			status: 500
 		});

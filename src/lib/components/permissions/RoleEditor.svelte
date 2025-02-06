@@ -13,7 +13,7 @@
 	const { role }: Props = $props();
 
 	type S = {
-		struct: string;
+		group: string;
 		permission: string[];
 	};
 
@@ -40,12 +40,12 @@
 		Permissions.getEntitlements().then((e) => {
 			if (e.isOk()) {
 				entitlements = e.value.reduce((acc, ent) => {
-					const has = acc.find((e) => e.struct === ent.struct);
+					const has = acc.find((e) => e.group === ent.group);
 					if (has) {
 						has.permission.push(ent.name);
 					} else {
 						acc.push({
-							struct: ent.struct,
+							group: ent.group,
 							permission: [ent.name]
 						});
 					}
@@ -69,7 +69,7 @@
 	<div class="row">
 		{#each entitlements as e, i}
 			<h4>
-				{e.struct}
+				{e.group}
 			</h4>
 			<ul class="list-unstyled">
 				{#each e.permission as p}

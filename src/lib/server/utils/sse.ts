@@ -4,6 +4,7 @@ import { Session } from '../structs/session';
 import { encode } from 'ts-utils/text';
 import { EventEmitter, SimpleEventEmitter } from 'ts-utils/event-emitter';
 import type { Notification } from '$lib/types/notification';
+import terminal from './terminal';
 
 type Stream = ReadableStreamDefaultController<string>;
 
@@ -53,6 +54,7 @@ export class Connection {
 
 	send(event: string, data: unknown) {
 		return attempt(() => {
+			// terminal.log('Sending', event, data);
 			this.controllers.forEach((c) =>
 				c.enqueue(`data: ${encode(JSON.stringify({ event, data, id: this.index++ }))}\n\n`)
 			);
