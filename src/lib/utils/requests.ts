@@ -3,8 +3,10 @@ import { attemptAsync, type Result } from 'ts-utils/check';
 import { Stream } from 'ts-utils/stream';
 import { v4 as uuid } from 'uuid';
 import { EventEmitter } from 'ts-utils/event-emitter';
+import { z } from 'zod';
+
 export namespace Requests {
-	const metadata: Record<string, string> = {};
+	export const metadata: Record<string, string> = {};
 	let requests: ServerRequest[] = [];
 
 	class RequestError extends Error {
@@ -24,10 +26,10 @@ export namespace Requests {
 		});
 	}, 1000 * 60);
 
-	class ServerRequest<T extends 'get' | 'post' = 'get' | 'post', Return = unknown> {
+	class ServerRequest<T extends 'get' | 'post' = 'get' | 'post'> {
 		public readonly time = Date.now();
-		public promise?: Promise<Result<Return>>;
-		public response?: Result<Return>;
+		public promise?: Promise<Result<unknown>>;
+		public response?: Result<unknown>;
 		constructor(
 			public readonly url: string,
 			public readonly method: T,
@@ -36,9 +38,9 @@ export namespace Requests {
 
 		send() {
 			const sending = requests.find((r) => r.id === this.id);
-			if (sending && sending.promise) return sending.promise as Promise<Result<Return>>;
+			if (sending && sending.promise) return sending.promise as Promise<Result<unknown>>;
 
-			this.promise = attemptAsync<Return>(async () => {
+			this.promise = attemptAsync(async () => {
 				const result = await fetch(this.url, {
 					method: this.method.toUpperCase(),
 					headers: {
@@ -96,27 +98,33 @@ export namespace Requests {
 		}
 	}
 
-	export type GetConfig = {
+	export type GetConfig<T = unknown> = {
 		expectStream: boolean;
 		headers?: Record<string, string>;
 		cache?: boolean;
+		parser: z.ZodType<T>;
 	};
-	export const get = async <T = unknown>(url: string, config: GetConfig) => {
-		const sr = new ServerRequest<'get', T>(url, 'get', config);
-		requests.push(sr);
-		return sr.send();
+	export const get = async <T = unknown>(url: string, config: GetConfig<T>) => {
+		return attemptAsync(async () => {
+			const sr = new ServerRequest<'get'>(url, 'get', config);
+			requests.push(sr);
+			return config.parser.parse((await sr.send()).unwrap());
+		});
 	};
 
-	export type PostConfig = {
+	export type PostConfig<T = unknown> = {
 		expectStream: boolean;
 		headers?: Record<string, string>;
 		body: unknown;
 		cache?: boolean;
+		parser: z.ZodType<T>;
 	};
-	export const post = async <T = unknown>(url: string, config: PostConfig) => {
-		const sr = new ServerRequest<'post', T>(url, 'post', config);
-		requests.push(sr);
-		return sr.send();
+	export const post = async <T = unknown>(url: string, config: PostConfig<T>) => {
+		return attemptAsync(async () => {
+			const sr = new ServerRequest<'post'>(url, 'post', config);
+			requests.push(sr);
+			return config.parser.parse((await sr.send()).unwrap());
+		});
 	};
 
 	export const setMeta = (key: string, value: string) => {

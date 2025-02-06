@@ -2,6 +2,7 @@
 import { Account } from '../structs/account';
 import { selectData, structActions } from './struct';
 import { Action, confirm, Folder, password, prompt } from './utils';
+import terminal from '../utils/terminal';
 
 export default new Folder('Accounts', 'Edit accounts', '👤', [
 	new Action('List', 'List all accounts', '📋', async () => {
@@ -38,21 +39,21 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 			}).await()
 		).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
-		if (typeof a === 'undefined') return console.log('Cancelled');
+		if (typeof a === 'undefined') return terminal.log('Cancelled');
 		const account = accounts[a];
-		if (!account) return console.log('Invalid account');
+		if (!account) return terminal.log('Invalid account');
 		const confirmed = await confirm({
 			message: `Verify ${account.data.username}?`
 		});
 
-		if (!confirmed) return console.log('Cancelled');
+		if (!confirmed) return terminal.log('Cancelled');
 
 		await account.update({
 			verification: '',
 			verified: true
 		});
 
-		return console.log(`Account ${account.data.username} is now verified`);
+		return terminal.log(`Account ${account.data.username} is now verified`);
 	}),
 	new Action('Unverify', 'Unverify an account', '🔓', async () => {
 		const accounts = (
@@ -61,20 +62,20 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 			}).await()
 		).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
-		if (typeof a === 'undefined') return console.log('Cancelled');
+		if (typeof a === 'undefined') return terminal.log('Cancelled');
 		const account = accounts[a];
-		if (!account) return console.log('Invalid account');
+		if (!account) return terminal.log('Invalid account');
 		const confirmed = await confirm({
 			message: `Unverify ${account.data.username}?`
 		});
 
-		if (!confirmed) return console.log('Cancelled');
+		if (!confirmed) return terminal.log('Cancelled');
 
 		await account.update({
 			verified: false
 		});
 
-		return console.log(`Account ${account.data.username} is now unverified`);
+		return terminal.log(`Account ${account.data.username} is now unverified`);
 	}),
 	new Action('Make Admin', 'Make an account an admin', '👑', async () => {
 		const accounts = (
@@ -83,21 +84,21 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 			}).await()
 		).unwrap();
 		const a = (await selectData(accounts as any)).unwrap();
-		if (typeof a === 'undefined') return console.log('Cancelled');
+		if (typeof a === 'undefined') return terminal.log('Cancelled');
 		const account = accounts[a];
-		if (!account) return console.log('Invalid account');
+		if (!account) return terminal.log('Invalid account');
 		const confirmed = await confirm({
 			message: `Make ${account.data.username} an admin?`
 		});
 
-		if (!confirmed) return console.log('Cancelled');
+		if (!confirmed) return terminal.log('Cancelled');
 
 		const isAdmin = (
 			await Account.Admins.fromProperty('accountId', account.id, {
 				type: 'stream'
 			}).await()
 		).unwrap().length;
-		if (isAdmin) return console.log('Account is already an admin');
+		if (isAdmin) return terminal.log('Account is already an admin');
 
 		(
 			await Account.Admins.new({
@@ -105,7 +106,7 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 			})
 		).unwrap();
 
-		return console.log(`Account ${account.data.username} is now an admin`);
+		return terminal.log(`Account ${account.data.username} is now an admin`);
 	}),
 	new Action('Remove Admin', 'Remove an account as an admin', '🚫', async () => {
 		const admins = (
@@ -114,19 +115,19 @@ export default new Folder('Accounts', 'Edit accounts', '👤', [
 			}).await()
 		).unwrap();
 		const a = (await selectData(admins as any)).unwrap();
-		if (typeof a === 'undefined') return console.log('Cancelled');
+		if (typeof a === 'undefined') return terminal.log('Cancelled');
 		const admin = admins[a];
-		if (!admin) return console.log('Invalid admin');
+		if (!admin) return terminal.log('Invalid admin');
 		const account = (await Account.Account.fromId(admin.data.accountId)).unwrap();
-		if (!account) return console.log('Invalid account');
+		if (!account) return terminal.log('Invalid account');
 		const confirmed = await confirm({
 			message: `Remove ${account.data.username} as an admin?`
 		});
 
-		if (!confirmed) return console.log('Cancelled');
+		if (!confirmed) return terminal.log('Cancelled');
 
 		(await admin.delete()).unwrap();
 
-		return console.log(`Account ${account.data.username} is no longer an admin`);
+		return terminal.log(`Account ${account.data.username} is no longer an admin`);
 	})
 ]);

@@ -5,8 +5,9 @@ import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { SECRET_OAUTH2_CLIENT_ID, SECRET_OAUTH2_CLIENT_SECRET } from '$env/static/private';
+import terminal from '$lib/server/utils/terminal';
 
-const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
+// const log = (...args: unknown[]) => console.log('[oauth/sign-in]', ...args);
 
 export const actions = {
 	login: async (event) => {
@@ -104,5 +105,43 @@ export const actions = {
 		// log(authorizeUrl);
 
 		throw redirect(ServerCode.temporaryRedirect, authorizeUrl);
+	},
+	'request-password-reset': async (event) => {
+		const formdata = await event.request.formData();
+		const user = z.string().safeParse(formdata.get('user'));
+		terminal.log(user);
+		const exit = () => ({
+			redirect: '/account/password-reset'
+		});
+		if (!user.success) {
+			terminal.error(user.error);
+			return exit();
+		}
+
+		let account = await Account.Account.fromProperty('username', user.data, { type: 'single' });
+		if (account.isErr()) {
+			terminal.error(account.error);
+			return exit();
+		}
+
+		if (!account.value) {
+			account = await Account.Account.fromProperty('email', user.data, { type: 'single' });
+			if (account.isErr()) {
+				terminal.error(account.error);
+				return exit();
+			}
+		}
+
+		if (!account.value) {
+			return exit();
+		}
+
+		const reset = await Account.requestPasswordReset(account.value);
+
+		if (reset.isErr()) {
+			terminal.error(reset.error);
+		}
+
+		return exit();
 	}
 };

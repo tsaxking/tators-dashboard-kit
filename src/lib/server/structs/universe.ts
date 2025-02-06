@@ -65,7 +65,7 @@ export namespace Universes {
 	export const UniverseInvite = new Struct({
 		name: 'universe_invite',
 		structure: {
-			universe: text('universe').notNull(),
+			universeId: text('universe_id').notNull(),
 			account: text('account').notNull(),
 			inviter: text('inviter').notNull()
 		}
@@ -166,7 +166,7 @@ export namespace Universes {
 		return attemptAsync(async () => {
 			const invite = (
 				await UniverseInvite.new({
-					universe: universe.id,
+					universeId: universe.id,
 					account: account.id,
 					inviter: inviter.id
 				})

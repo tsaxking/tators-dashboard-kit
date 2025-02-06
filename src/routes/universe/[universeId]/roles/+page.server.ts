@@ -17,7 +17,8 @@ export const load = async (event) => {
 		throw fail(ServerCode.internalServerError);
 	}
 
-	if (!account.value) throw redirect(ServerCode.permanentRedirect, '/404');
+	if (!account.value)
+		throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 
 	const { universeId } = event.params;
 
@@ -27,7 +28,8 @@ export const load = async (event) => {
 		throw fail(ServerCode.internalServerError);
 	}
 
-	if (!universe.value) throw redirect(ServerCode.permanentRedirect, '/404');
+	if (!universe.value)
+		throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 
 	const roles = await Universes.memberRoles(account.value, universe.value);
 	if (roles.isErr()) {
@@ -36,7 +38,7 @@ export const load = async (event) => {
 	}
 
 	if (!(await Permissions.canAccess(roles.value, 'roles', universe.value)).unwrap()) {
-		throw redirect(ServerCode.permanentRedirect, '/404');
+		throw redirect(ServerCode.permanentRedirect, `/status/404?${event.request.url}`);
 	}
 
 	return {

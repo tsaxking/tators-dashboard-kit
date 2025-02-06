@@ -118,10 +118,10 @@ export namespace Permissions {
 
 	export const entitlementsFromRole = async (role: RoleData) => {
 		return attemptAsync(async () => {
-			const entitlements = JSON.parse(role.data.entitlements);
+			const entitlements = z.array(z.string()).parse(JSON.parse(role.data.entitlements));
 			return resolveAll<EntitlementPermission>(
 				await Promise.all(
-					entitlements.map((e: string) => {
+					entitlements.map((e) => {
 						return readEntitlement(e as Entitlement);
 					})
 				)
@@ -254,7 +254,6 @@ export namespace Permissions {
 					return universes.includes(d.universe);
 				})
 				.map((d) => {
-					const { data } = d;
 					const properties: string[] = usedEntitlements
 						.map((e) => e.permissions.map((perm) => perm.property))
 						.flat()
@@ -265,6 +264,7 @@ export namespace Permissions {
 					if (properties.includes('*')) {
 						return d.safe();
 					}
+					const data = d.safe();
 
 					return Object.fromEntries(properties.map((p) => [p, data[p]])) as Partial<
 						Structable<S['data']['structure']>
@@ -351,7 +351,6 @@ export namespace Permissions {
 					(p) => (p.action === action || p.action === '*') && e.struct === struct.data.name
 				)
 			);
-			console.log(res);
 			return res;
 		});
 	};

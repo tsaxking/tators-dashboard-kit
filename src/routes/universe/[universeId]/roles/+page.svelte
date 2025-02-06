@@ -53,7 +53,7 @@
 			});
 
 		if (data.isOk()) {
-			const { name, description } = data.value;
+			const { name, description } = data.value.value;
 			Permissions.Role.new({
 				name,
 				description,

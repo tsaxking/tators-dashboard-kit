@@ -4,10 +4,11 @@ import { Universes } from '$lib/server/structs/universe.js';
 import { fail, redirect } from '@sveltejs/kit';
 import { ServerCode } from 'ts-utils/status';
 import { z } from 'zod';
+import terminal from '$lib/server/utils/terminal';
 
 export const load = async (event) => {
 	const error = (error: Error) => {
-		console.error(error);
+		terminal.error(error);
 		return fail(ServerCode.internalServerError);
 	};
 
@@ -86,8 +87,8 @@ export const actions = {
 			.safeParse(Object.fromEntries(body.entries()));
 
 		if (!res.success) {
-			console.log('Zod failed:', body);
-			console.error(res.error);
+			terminal.log('Zod failed:', body);
+			terminal.error(res.error);
 			throw fail(ServerCode.badRequest, {
 				message: 'Invalid form data'
 			});
@@ -102,7 +103,7 @@ export const actions = {
 		const session = await Session.getSession(event);
 
 		if (session.isErr()) {
-			console.error(session.error);
+			terminal.error(session.error);
 			throw fail(ServerCode.internalServerError, {
 				message: 'Failed to get session'
 			});
@@ -111,7 +112,7 @@ export const actions = {
 		const account = await Session.getAccount(session.value);
 
 		if (account.isErr()) {
-			console.error(account.error);
+			terminal.error(account.error);
 			throw fail(ServerCode.internalServerError, {
 				message: 'Failed to get account'
 			});
@@ -145,7 +146,7 @@ export const actions = {
 		);
 
 		if (universe.isErr()) {
-			console.error(universe.error);
+			terminal.error(universe.error);
 			throw fail(ServerCode.internalServerError, {
 				message: 'Failed to create universe'
 			});

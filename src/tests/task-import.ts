@@ -1,5 +1,7 @@
+import terminal from '../lib/server/utils/terminal';
+
 // Used for the run-task.test.ts unit test
 export const test = (str: string) => {
-    console.log(str);
-    return str;
-}
+	terminal.log(str);
+	return str;
+};
