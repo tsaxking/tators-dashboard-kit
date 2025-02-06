@@ -19,6 +19,9 @@ export namespace Scouting {
 		versionHistory: {
 			type: 'versions',
 			amount: 3
+		},
+		generators: {
+			universe: () => '2122'
 		}
 	});
 
@@ -35,6 +38,9 @@ export namespace Scouting {
 		versionHistory: {
 			type: 'versions',
 			amount: 3
+		},
+		generators: {
+			universe: () => '2122'
 		}
 	});
 
@@ -49,6 +55,9 @@ export namespace Scouting {
 			versionHistory: {
 				type: 'versions',
 				amount: 3
+			},
+			generators: {
+				universe: () => '2122'
 			}
 		});
 
@@ -63,6 +72,9 @@ export namespace Scouting {
 			versionHistory: {
 				type: 'versions',
 				amount: 3
+			},
+			generators: {
+				universe: () => '2122'
 			}
 		});
 
@@ -80,6 +92,9 @@ export namespace Scouting {
 			versionHistory: {
 				type: 'versions',
 				amount: 3
+			},
+			generators: {
+				universe: () => '2122'
 			}
 		});
 
@@ -94,6 +109,9 @@ export namespace Scouting {
 			versionHistory: {
 				type: 'versions',
 				amount: 3
+			},
+			generators: {
+				universe: () => '2122'
 			}
 		});
 	}

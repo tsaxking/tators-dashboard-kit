@@ -13,6 +13,7 @@ import { DB } from '$lib/server/db/';
 import { handleEvent, connectionEmitter } from '$lib/server/event-handler';
 import '$lib/server/utils/files';
 import { env } from '$env/dynamic/private';
+import path from 'path';
 config();
 
 Struct.each((struct) => {
@@ -23,7 +24,7 @@ Struct.each((struct) => {
 	}
 });
 
-// Struct.setupLogger(path.join(process.cwd(), 'logs', 'structs'));
+Struct.setupLogger(path.join(process.cwd(), 'logs', 'structs'));
 
 export const load = async (event) => {
 	const session = await Session.getSession(event);

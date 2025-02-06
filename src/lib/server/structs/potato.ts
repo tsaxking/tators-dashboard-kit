@@ -67,6 +67,9 @@ export namespace Potato {
 			level: integer('level').notNull(),
 			name: text('name').notNull(),
 			lastClicked: text('last_clicked').notNull()
+		},
+		generators: {
+			universe: () => '2122'
 		}
 	});
 
