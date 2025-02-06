@@ -64,7 +64,7 @@ export class Event {
 				name: event.name,
 				start_date: event.startDate.toISOString(),
 				end_date: event.endDate.toISOString(),
-				year: event.year,
+				year: event.year
 			};
 
 			return (
