@@ -13,11 +13,10 @@ export const GET = async () => {
 			entitlements.value
 				.map((e) => ({
 					name: e.name,
-					struct: e.struct
+					structs: e.structs,
+					group: e.group
 				}))
-				.sort((a, b) => {
-					return a.struct.localeCompare(b.struct);
-				})
+				.sort((a, b) => a.group.localeCompare(b.group))
 		),
 		{}
 	);

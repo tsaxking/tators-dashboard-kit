@@ -33,7 +33,8 @@ export namespace Permissions {
 		return Requests.get<
 			{
 				name: string;
-				struct: string;
+				structs: string[];
+				group: string;
 			}[]
 		>('/struct/entitlements', {
 			expectStream: false,
@@ -41,7 +42,8 @@ export namespace Permissions {
 			parser: z.array(
 				z.object({
 					name: z.string(),
-					struct: z.string()
+					structs: z.array(z.string()),
+					group: z.string()
 				})
 			)
 		});
